@@ -1,0 +1,3 @@
+[submodule "benchmarks/ocr/lambda-OCRmyPDF"]
+	path = benchmarks/ocr/lambda-OCRmyPDF
+	url = https://github.com/chronograph-pe/lambda-OCRmyPDF.git
