@@ -1,0 +1,9 @@
+---
+sourceLocationPrefix: "/Users/arshia/repos/compliance/codeql"
+baselineLinesOfCode: 39
+unicodeNewlines: false
+columnKind: "utf32"
+primaryLanguage: "python"
+creationMetadata:
+  cliVersion: "2.12.3"
+  creationTime: "2023-02-23T22:46:54.001099Z"
