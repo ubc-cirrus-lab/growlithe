@@ -1,2 +1,5 @@
 # cache files
 high-level-flow/.cache/
+
+# codeql databases
+high-level-flow/codeqldb/
