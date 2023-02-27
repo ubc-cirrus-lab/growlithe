@@ -6,3 +6,7 @@ high-level-flow/codeqldb/
 
 # test queries
 high-level-flow/queries/test.ql
+
+# vscode workspace settings
+high-level-flow/queries/serverless-compliance.code-workspace
+high-level-flow/.DS_Store
