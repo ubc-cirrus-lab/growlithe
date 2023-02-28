@@ -14,10 +14,7 @@ jobs:
         run: |
           chmod +x .github/codeql/run.sh
           .github/codeql/run.sh
-          echo "text<<EOF" >> $GITHUB_OUTPUT
-          cat ./high-level-flow/code/query_results/*.csv >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "::group::My title"
+          cat ./high-level-flow/code/query_results/*.csv
+          echo "::endgroup::"
         shell: bash
-
-      - name: Print Results
-        run: echo "${{join(steps.run_tests.outputs.*, '\n')}}"
