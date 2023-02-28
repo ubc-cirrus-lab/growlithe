@@ -2,10 +2,7 @@
 
 set -ex
 
-
-ls
-ls ../
-cd ../../high-level-flow/code
+cd ./high-level-flow/code
 queries=(file requests socket boto3)
 mkdir -p query_results
 
