@@ -13,8 +13,10 @@ jobs:
         id: query-results
         run: |
           chmod +x .github/codeql/run.sh
+          echo "::group::Execution Logs"
           .github/codeql/run.sh
-          echo "::group::My title"
+          echo "::endgroup::"
+          echo "::group::Results"
           cat ./high-level-flow/code/query_results/*.csv
           echo "::endgroup::"
         shell: bash
