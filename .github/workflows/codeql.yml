@@ -11,13 +11,6 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run Queries
         run: |
-          chmod +x .github/codeql/setup.sh
-          .github/codeql/setup.sh
-        shell: bash
-      
-      - uses: actions/checkout@v2
-      - name: Print Results
-        run: |
-          chmod +x .github/codeql/results.sh
-          .github/codeql/results.sh
+          chmod +x .github/codeql/run.sh
+          .github/codeql/run.sh
         shell: bash

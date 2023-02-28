@@ -16,4 +16,4 @@ for query in "${queries[@]}"; do
     codeql database analyze codeqldb --format=csv --output=query_results/$query.csv queries/$query.ql
 done
 
-cat query_results/*.csv
+cat query_results/*.csv > $GITHUB_OUTPUT
