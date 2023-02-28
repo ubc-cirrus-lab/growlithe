@@ -5,23 +5,12 @@ on:
     branches: ['codeql-workflow-integration', 'coarse-grain-dataflow']
 
 jobs:
-  analyze:
-    name: Analyze
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    
-    strategy:
-      fail-fast: false
-
+  run_tests:
+    runs-on: ubuntu-20.04
     steps:
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          config-file: ./.github/codeql/codeql-config.yml
-          languages: python
-    
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+    - uses: actions/checkout@v2
+    - name: Run script file
+      run: |
+         chmod +x .github/codeql/test.sh
+         .github/codeql/test.sh
+      shell: bash
