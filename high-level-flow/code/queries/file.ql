@@ -15,7 +15,7 @@ where
   call.getLocation().getFile() = m.getFile() and
   if call.getNumArgument() >= 2 then
     if call.getArg(1).asExpr().(Str).getS().regexpMatch(".*(?:[aw]|r\\+).*")
-    then msg = "file is opened for write $@"
-    else msg = "file is opened for read $@"
-  else msg = "file is opened for read $@"
-select call, msg, call.getLocation(), "here"
+    then msg = "write"
+    else msg = "read"
+  else msg = "read"
+select call.getArg(0), msg

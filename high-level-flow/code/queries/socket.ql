@@ -14,4 +14,4 @@ where
   cls.getName() = "socket" and
   cls.getACall().getNode() = call and
   call.getLocation().getFile() = m.getFile()
-select call, "opening socket at $@", call.getLocation(), "here"
+select call, "socket"

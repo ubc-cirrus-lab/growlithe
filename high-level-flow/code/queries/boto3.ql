@@ -15,4 +15,4 @@ where
   (method.getScope().getScope().(Module).getPackageName() = "boto3" or
   method.getScope().getScope().getScope().(Module).getPackageName() = "boto3") and
   call.getLocation().getFile() = m.getFile()
-select call, "calling method $@", method, method.getName()
+select call.getArg(0), method.getName().toString()

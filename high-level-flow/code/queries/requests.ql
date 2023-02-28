@@ -14,4 +14,4 @@ where
   method.getACall().getNode() = call and
   method.getScope().getScope().(Module).getPackage().getName() in ["requests", "urllib"] and
   call.getLocation().getFile() = m.getFile()
-select call, "calling method $@", method, method.getName()
+select call.getArg(0), method.getName()
