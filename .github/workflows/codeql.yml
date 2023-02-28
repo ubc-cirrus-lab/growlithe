@@ -20,4 +20,4 @@ jobs:
         shell: bash
 
       - name: Print Results
-        run: echo "${{ steps.query-results.outputs.* }}"
+        run: echo "${{join(steps.run_tests.outputs.*, '\n')}}"
