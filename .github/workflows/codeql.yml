@@ -10,7 +10,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run Queries
+        id: query-results
         run: |
           chmod +x .github/codeql/run.sh
           .github/codeql/run.sh
+          cat ./high-level-flow/code/query_results/*.csv >> $GITHUB_OUTPUT
         shell: bash
+
+      - name: Print Results
+        run: echo "${{ steps.query-results.outputs.* }}"
