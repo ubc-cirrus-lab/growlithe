@@ -1,0 +1,27 @@
+name: CodeQL coverage
+
+on:
+  push:
+    branches: ['codeql-workflow-integration', 'coarse-grain-dataflow']
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          config-file: ./.github/codeql/codeql-config.yml
+          languages: python
+    
+    - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
