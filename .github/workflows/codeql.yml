@@ -5,12 +5,19 @@ on:
     branches: ['codeql-workflow-integration', 'coarse-grain-dataflow']
 
 jobs:
-  run_tests:
-    runs-on: ubuntu-20.04
+  codeql:
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Run script file
-      run: |
-         chmod +x .github/codeql/test.sh
-         .github/codeql/test.sh
-      shell: bash
+      - uses: actions/checkout@v2
+      - name: Run Queries
+        run: |
+          chmod +x .github/codeql/setup.sh
+          .github/codeql/setup.sh
+        shell: bash
+      
+      - uses: actions/checkout@v2
+      - name: Print Results
+        run: |
+          chmod +x .github/codeql/results.sh
+          .github/codeql/results.sh
+        shell: bash
