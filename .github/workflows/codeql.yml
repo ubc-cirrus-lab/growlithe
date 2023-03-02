@@ -1,14 +1,12 @@
 name: CodeQL coverage
 
-on:
-  push:
-    branches: ['codeql-workflow-integration', 'coarse-grain-dataflow']
+on: push
 
 jobs:
   codeql:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Run Queries
         id: query-results
         run: |
