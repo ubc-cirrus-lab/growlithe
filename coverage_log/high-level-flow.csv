@@ -1,0 +1,6 @@
+read,/main.py,25:15-25:24
+write,/main.py,28:15-28:24
+get,/main.py,7:29-7:52
+post,/main.py,8:31-8:55
+urlopen,/main.py,10:18-10:42
+socket,/main.py,13:10-13:58
