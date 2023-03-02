@@ -17,6 +17,16 @@ jobs:
           .github/codeql/run.sh
           echo "::endgroup::"
           echo "::group::Results"
-          cat ./high-level-flow/code/query_results/*.csv
+          cat ./high-level-flow/code/query_results/*.csv > aggregate.csv
+          mkdir -p coverage_log
+          while read -r text; do
+            IFS=, read -r _ _ _ cmd file start_line start_column end_line end_column <<< "$text"
+            echo "${cmd//\"},${file//\"},${start_line//\"}:${start_column//\"}-${end_line//\"}:${end_column//\"}"
+          done < aggregate.csv > coverage_log/high-level-flow.csv
+          git config --global user.name 'CodeQL Coverage'
+          git add coverage_log/high-level-flow.csv
+          git commit -m "CodeQL coverage report"
+          git push
           echo "::endgroup::"
+          
         shell: bash

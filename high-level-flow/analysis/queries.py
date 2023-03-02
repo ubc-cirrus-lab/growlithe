@@ -20,7 +20,7 @@ class GraphVisualization:
     def visualize(self):
         G = nx.DiGraph()
         G.add_edges_from([list(a) for a in self.visual.keys()])
-        pos = nx.spring_layout(G, k=0.7, seed=0)
+        pos = nx.spring_layout(G, k=0.8, seed=0)
         nx.draw_networkx_nodes(G, pos, nodelist=self.functions, node_color="tab:red", alpha=0.1, node_size=400)
         nx.draw_networkx_labels(G, pos, labels={a: a for a in self.labels}, font_size=8)
         nx.draw_networkx_edges(G, pos, width=1)
