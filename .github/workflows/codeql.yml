@@ -21,9 +21,10 @@ jobs:
             IFS=, read -r _ _ _ cmd file start_line start_column end_line end_column <<< "$text"
             echo "${cmd//\"},${file//\"},${start_line//\"}:${start_column//\"}-${end_line//\"}:${end_column//\"}"
           done < aggregate.csv > coverage_log/high-level-flow.csv
+          cat coverage_log/high-level-flow.csv
           git config --global user.name 'CodeQL Coverage'
           git add coverage_log/high-level-flow.csv
-          git commit -m "CodeQL coverage report"
+          git commit -m "CodeQL coverage report" || echo "No changes"
           git push
           echo "::endgroup::"
           
