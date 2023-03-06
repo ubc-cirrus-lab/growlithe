@@ -6,12 +6,28 @@
 import python
 import semmle.python.filters.GeneratedCode
 
+Call has_first_level_call(ClassValue target, Function main) {
+  target.getACall().getNode() = result and
+  result.getScope() = main
+}
 
-from ClassValue cls, Module m, Call call
+Call has_second_level_call(ClassValue target, Function main) {
+  exists(PythonFunctionValue f, Call icall |
+      target.getACall().getNode() = result and
+      result.getScope() = f.getScope() and 
+      f.getACall().getNode() = icall and
+      icall.getScope() = main
+  )
+}
+
+from ClassValue cls, Module m, Call call, Function main
 where
   exists(m.getFile().getRelativePath()) and 
   not m.getFile() instanceof GeneratedFile and
   cls.getName() = "socket" and
-  cls.getACall().getNode() = call and
-  call.getLocation().getFile() = m.getFile()
+  call.getLocation().getFile() = m.getFile() and
+  main.getName() = "main" and
+  main.getLocation().getFile() = m.getFile() and
+  (has_second_level_call(cls, main) = call or
+  has_first_level_call(cls, main) = call)
 select call, "socket"
