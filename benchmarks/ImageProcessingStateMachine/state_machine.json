@@ -8,7 +8,7 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-2:417140135939:function:ImageProcessingGetInput:$LATEST"
+        "FunctionName": "arn:aws:lambda:us-east-1:880306299867:function:ImageProcessingGetInput:$LATEST"
       },
       "Retry": [
         {
@@ -30,7 +30,7 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-2:417140135939:function:ImageProcessingFlip:$LATEST"
+        "FunctionName": "arn:aws:lambda:us-east-1:880306299867:function:ImageProcessingFlip:$LATEST"
       },
       "Retry": [
         {
@@ -52,7 +52,7 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-2:417140135939:function:ImageProcessingRotate:$LATEST"
+        "FunctionName": "arn:aws:lambda:us-east-1:880306299867:function:ImageProcessingRotate:$LATEST"
       },
       "Retry": [
         {
@@ -74,7 +74,7 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-2:417140135939:function:ImageProcessingFilter:$LATEST"
+        "FunctionName": "arn:aws:lambda:us-east-1:880306299867:function:ImageProcessingFilter:$LATEST"
       },
       "Retry": [
         {
@@ -96,7 +96,7 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-2:417140135939:function:ImageProcessingGrayScale:$LATEST"
+        "FunctionName": "arn:aws:lambda:us-east-1:880306299867:function:ImageProcessingGrayScale:$LATEST"
       },
       "Retry": [
         {
@@ -118,7 +118,7 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-2:417140135939:function:ImageProcessingResize:$LATEST"
+        "FunctionName": "arn:aws:lambda:us-east-1:880306299867:function:ImageProcessingResize:$LATEST"
       },
       "Retry": [
         {
