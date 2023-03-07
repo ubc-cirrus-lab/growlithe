@@ -7,6 +7,12 @@ import python
 import semmle.python.filters.GeneratedCode
 import semmle.python.ApiGraphs
 
+
+API::CallNode has_zero_level_call(API::Node target, Function main) {
+  target.getACall() = result and
+  result.getScope() = main.getScope()
+}
+
 API::CallNode has_first_level_call(API::Node target, Function main) {
   target.getACall() = result and
   result.getScope() = main
@@ -30,7 +36,8 @@ where
   main.getName() = "main" and
   main.getLocation().getFile() = m.getFile() and
   (has_second_level_call(API::builtin("open"), main) = call or
-  has_first_level_call(API::builtin("open"), main) = call) and 
+  has_first_level_call(API::builtin("open"), main) = call or
+  has_zero_level_call(API::builtin("open"), main) = call) and 
   if call.getNumArgument() >= 2 then
     if call.getArg(1).asExpr().(Str).getS().regexpMatch(".*(?:[aw]|r\\+).*")
     then msg = "write"

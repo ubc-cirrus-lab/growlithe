@@ -6,6 +6,12 @@
 import python
 import semmle.python.filters.GeneratedCode
 
+
+Call has_zero_level_call(PythonFunctionValue target, Function main) {
+  target.getACall().getNode() = result and
+  result.getScope() = main.getScope()
+}
+
 Call has_first_level_call(PythonFunctionValue target, Function main) {
   target.getACall().getNode() = result and
   result.getScope() = main
@@ -30,5 +36,6 @@ where
   main.getName() = "main" and
   main.getLocation().getFile() = m.getFile() and
   (has_second_level_call(method, main) = call or
-  has_first_level_call(method, main) = call)
+  has_first_level_call(method, main) = call or
+  has_zero_level_call(method, main) = call)
 select call.getArg(0), method.getName()
