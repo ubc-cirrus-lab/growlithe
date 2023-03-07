@@ -77,7 +77,10 @@ def create_graph(states):
         handler = None
         children = []
         if 'Resource' in value and 'lambda' in value['Resource']:
-            handler = value['Resource']
+            if value['Resource'] == 'arn:aws:states:::lambda:invoke':
+                handler = value['Parameters']['FunctionName']
+            else:
+                handler = value['Resource']
         if 'Next' in value:
             children.append(value['Next'])
         if 'Choices' in value:
@@ -100,7 +103,11 @@ def step_function_handler_extractor(state_machine_arn, output_file):
     handlers = []
     for key, value in states.items():
         if 'Resource' in value and 'lambda' in value['Resource']:
-            handlers.append(f"{key}.{get_lambda_handler_name(value['Resource'])}")
+            if value['Resource'] == 'arn:aws:states:::lambda:invoke':
+                handler = value['Parameters']['FunctionName']
+            else:
+                handler = value['Resource']
+            handlers.append(f"{key}.{get_lambda_handler_name(handler)}")
     if output_file:
         with open(output_file, 'w') as f:
             writer = csv.writer(f)
