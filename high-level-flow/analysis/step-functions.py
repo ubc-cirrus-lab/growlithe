@@ -80,6 +80,9 @@ def create_graph(states):
             handler = value['Resource']
         if 'Next' in value:
             children.append(value['Next'])
+        if 'Choices' in value:
+            for choice in value['Choices']:
+                children.append(choice['Next'])
         if 'Catch' in value:
             for catch in value['Catch']:
                 children.append(catch['Next'])
