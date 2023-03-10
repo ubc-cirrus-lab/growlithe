@@ -1,6 +1,6 @@
 /**
  * @kind problem
- * @id py/boto3
+ * @id py/boto3-ID
  */
 
 import python
@@ -33,8 +33,9 @@ where
   method.getName() in ["client", "resource"] and
   (method.getScope().getScope().(Module).getPackageName() = "boto3" or
   method.getScope().getScope().getScope().(Module).getPackageName() = "boto3") and
-  main.getName() = "main" and
+  main.getName() = "FUNCTION_NAME" and
   main.getLocation().getFile() = m.getFile() and
+  main.getEnclosingModule().getFile().getAbsolutePath() = "SCRIPT_PATH" and
   (has_second_level_call(method, main) = call or
   has_first_level_call(method, main) = call or
   has_zero_level_call(method, main) = call)

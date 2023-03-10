@@ -5,6 +5,7 @@ import csv
 import networkx as nx
 import matplotlib.pyplot as plt
 
+
 class GraphVisualization:
    
     def __init__(self):
@@ -19,6 +20,7 @@ class GraphVisualization:
         pos = nx.spring_layout(G, seed=1)
         nx.draw_networkx(G, pos=pos, node_shape="s", node_color="None", node_size=1000)
         plt.show()
+
 
 class Graph:
     def __init__(self, nodes):
@@ -44,6 +46,7 @@ class Graph:
             for child in node.children:
                 graph.addEdge(node.name, child.name)
         graph.visualize()
+
 
 class Node:
     def __init__(self, name, handler, children):
@@ -75,51 +78,51 @@ def create_graph(states):
     for key, value in states.items():
         name = key
         handler = None
-        children = []
-        if 'Resource' in value and 'lambda' in value['Resource']:
-            if value['Resource'] == 'arn:aws:states:::lambda:invoke':
-                handler = value['Parameters']['FunctionName']
-            else:
-                handler = value['Resource']
-        if 'Next' in value:
-            children.append(value['Next'])
-        if 'Choices' in value:
-            for choice in value['Choices']:
-                children.append(choice['Next'])
-        if 'Catch' in value:
-            for catch in value['Catch']:
-                children.append(catch['Next'])
+        handler, children = get_children(value)
         nodes.append(Node(name, handler, children))
     graph = Graph(nodes)
     str_to_node(graph)
     graph.plot_graph()
 
+def get_children(value):
+    children = []
+    if 'Resource' in value and 'lambda' in value['Resource']:
+        if value['Resource'] == 'arn:aws:states:::lambda:invoke':
+            handler = value['Parameters']['FunctionName']
+        else:
+            handler = value['Resource']
+    if 'Next' in value:
+        children.append(value['Next'])
+    if 'Choices' in value:
+        for choice in value['Choices']:
+            children.append(choice['Next'])
+    if 'Catch' in value:
+        for catch in value['Catch']:
+            children.append(catch['Next'])
+    return handler,children
 
-def step_function_handler_extractor(state_machine_arn, output_file):
+def step_function_handler_extractor(state_machine_arn, output_file, visualize):
     client = boto3.client('stepfunctions')
     response = client.describe_state_machine(stateMachineArn=state_machine_arn)
     states = json.loads(response['definition'])['States']
-    create_graph(states)
+    if visualize:
+        create_graph(states)
     handlers = []
     for key, value in states.items():
         if 'Resource' in value and 'lambda' in value['Resource']:
-            if value['Resource'] == 'arn:aws:states:::lambda:invoke':
-                handler = value['Parameters']['FunctionName']
-            else:
-                handler = value['Resource']
-            handlers.append(f"{key}.{get_lambda_handler_name(handler)}")
+            handler, children = get_children(value)
+            handlers.append(f"{key}.{get_lambda_handler_name(handler)}.{children}")
     if output_file:
         with open(output_file, 'w') as f:
             writer = csv.writer(f)
             for handler in handlers:
                 writer.writerow(handler.split('.'))
-    for handler in handlers:
-        print(handler)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('arn', help = 'State Machine ARN')
     parser.add_argument('-o', '--output', help = 'Output file name')
+    parser.add_argument('--visualize', action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
-    step_function_handler_extractor(args.arn, args.output)
+    step_function_handler_extractor(args.arn, args.output, args.visualize)

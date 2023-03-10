@@ -1,6 +1,6 @@
 /**
  * @kind problem
- * @id py/socket
+ * @id py/socket-ID
  */
 
 import python
@@ -31,8 +31,9 @@ where
   not m.getFile() instanceof GeneratedFile and
   cls.getName() = "socket" and
   call.getLocation().getFile() = m.getFile() and
-  main.getName() = "main" and
+  main.getName() = "FUNCTION_NAME" and
   main.getLocation().getFile() = m.getFile() and
+  main.getEnclosingModule().getFile().getAbsolutePath() = "SCRIPT_PATH" and
   (has_second_level_call(cls, main) = call or
   has_first_level_call(cls, main) = call or
   has_zero_level_call(cls, main) = call)

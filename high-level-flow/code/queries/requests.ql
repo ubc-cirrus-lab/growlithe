@@ -1,6 +1,6 @@
 /**
  * @kind problem
- * @id py/requests
+ * @id py/requests-ID
  */
 
 import python
@@ -33,8 +33,9 @@ where
   method.getQualifiedName() in ["get", "post", "put", "urlopen"] and
   method.getScope().getScope().(Module).getPackage().getName() in ["requests", "urllib"] and
   call.getLocation().getFile() = m.getFile() and
-  main.getName() = "main" and
+  main.getName() = "FUNCTION_NAME" and
   main.getLocation().getFile() = m.getFile() and
+  main.getEnclosingModule().getFile().getAbsolutePath() = "SCRIPT_PATH" and
   (has_second_level_call(method, main) = call or
   has_first_level_call(method, main) = call or
   has_zero_level_call(method, main) = call)
