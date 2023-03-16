@@ -4,6 +4,7 @@ import csv
 import networkx as nx
 import matplotlib.pyplot as plt
 import ast
+import re
 
 
 class GraphVisualization:
@@ -88,17 +89,52 @@ def match_results(results, handlers):
     for result in results:
         for handler in handlers:
             if handler.name in result['ruleId']:
-                file_name = result['locations'][0]['physicalLocation']['artifactLocation']['uri']
-                start_line = result['locations'][0]['physicalLocation']['region']['startLine']
-                start_column = result['locations'][0]['physicalLocation']['region']['startColumn']
-                if 'endLine' in result['locations'][0]['physicalLocation']['region']:
-                    end_line = result['locations'][0]['physicalLocation']['region']['endLine']
-                else:
-                    end_line = start_line
-                end_column = result['locations'][0]['physicalLocation']['region']['endColumn']
-                variable = read_variable(file_name, start_line, start_column, end_line, end_column)
-                handler.results.append({f"""{variable}""": result['message']['text']})
+                if 'resource' in result['message']['text']:
+                    match_boto3(result, handler)
                 break
+
+def match_boto3(result, handler):
+    reources = {}
+    for line in result['message']['text'].split('\n'):
+        action_pattern = r"uses: \[(\w+)\]\((\d+)\)"
+        match = re.search(action_pattern, line)
+        if match:
+            if match.group(1) not in reources:
+                reources[match.group(1)] = []
+            reources[match.group(1)].append(int(match.group(2)))
+    for resource, ids in reources.items():
+        location = result['locations'][0]
+        variable = f"{get_variable(location)} ({resource}): "
+        for loc in result['relatedLocations']:
+            if loc['id'] in ids:
+                variable += f"{get_variable(loc)}, "
+        msg = ''
+        actions = {}
+        for line in result['message']['text'].split('\n'):
+            action_pattern = r"uses: \[\w+\]\((\d+)\) action: \[(\w+)\]\((\d+)\)"
+            match = re.search(action_pattern, line)
+            if match:
+                for loc in result['relatedLocations']:
+                    if loc['id'] == int(match.group(3)):
+                        if match.group(2) not in actions:
+                            actions[match.group(2)] = []
+                        actions[match.group(2)] += [get_variable(loc)]
+                        break
+        for action, variables in actions.items():
+            msg += f"{action}: {', '.join(variables)}\n"
+        handler.results.append({f"""{variable}""": msg})
+
+def get_variable(location):
+    file_name = location['physicalLocation']['artifactLocation']['uri']
+    start_line = location['physicalLocation']['region']['startLine']
+    start_column = location['physicalLocation']['region']['startColumn']
+    if 'endLine' in location['physicalLocation']['region']:
+        end_line = location['physicalLocation']['region']['endLine']
+    else:
+        end_line = start_line
+    end_column = location['physicalLocation']['region']['endColumn']
+    variable = read_variable(file_name, start_line, start_column, end_line, end_column)
+    return variable
 
 def draw_graph(handlers):
     edges = []

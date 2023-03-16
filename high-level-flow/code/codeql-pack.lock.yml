@@ -5,6 +5,10 @@ dependencies:
     version: 0.8.0
   codeql/regex:
     version: 0.0.7
+  codeql/suite-helpers:
+    version: 0.4.1
   codeql/tutorial:
     version: 0.0.4
+  codeql/util:
+    version: 0.0.5
 compiled: false

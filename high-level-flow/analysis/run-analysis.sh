@@ -4,7 +4,7 @@ set -ex
 
 HANDLER_FILE=handlers.csv
 RESULTS_FILE=query-results.sarif
-STEP_FUNCTION_ARN=arn:aws:states:us-east-1:880306299867:stateMachine:ImageProcessing
+STEP_FUNCTION_ARN=$1
 
 mkdir -p tmp/src
 cp linker.py step_functions.py sarif_parser.py tmp/
@@ -32,4 +32,4 @@ codeql database analyze ./src/codeqldb ./queries/ --format=sarifv2.1.0 --output=
 python3 sarif_parser.py $RESULTS_FILE $HANDLER_FILE
 
 cd ..
-rm -r tmp
+# rm -r tmp
