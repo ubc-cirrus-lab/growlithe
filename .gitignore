@@ -1,8 +1,15 @@
 # cache files
-high-level-flow/.cache/
+.cache/
 
 # codeql databases
-high-level-flow/codeqldb/
+codeqldb/
 
 # test queries
-high-level-flow/queries/test.ql
+test.ql
+
+# query results
+query_results/
+
+# vscode workspace settings
+serverless-compliance.code-workspace
+**/.DS_Store
