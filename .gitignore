@@ -13,3 +13,8 @@ query_results/
 # vscode workspace settings
 serverless-compliance.code-workspace
 **/.DS_Store
+
+node_modules/
+.serverless/
+archive/
+*.lock.yml
