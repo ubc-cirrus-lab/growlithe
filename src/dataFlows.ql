@@ -1,4 +1,3 @@
-import Sinks
 import utils.TaintTracker
 
 // Query to find possible flows
