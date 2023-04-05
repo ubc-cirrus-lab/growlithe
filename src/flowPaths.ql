@@ -1,10 +1,13 @@
+/**
+ * @kind path-problem
+ * @id py/flowPaths
+ */
+
 import utils.TaintTracker
 
 // Query to get valid paths for these dataflows
-from
-  TaintTracker::Tracker config, DataFlow::PathNode source, DataFlow::PathNode sink,
-  DataFlow::PathNode pred, DataFlow::PathNode succ
+from TaintTracker::Tracker config, DataFlow::PathNode edgeSource, DataFlow::PathNode edgeSink
 where
-  config.hasFlowPath(source, sink) and
-  DataFlow::PathGraph::edges(pred, succ)
-select pred, succ
+  config.hasFlowPath(edgeSource, edgeSink) and
+  DataFlow::PathGraph::edges(edgeSource, edgeSink)
+select edgeSource.getNode(), edgeSource, edgeSink, "FlowPath to $@", edgeSink.getNode(), "FlowSink"

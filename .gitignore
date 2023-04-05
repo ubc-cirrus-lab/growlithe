@@ -1,8 +1,10 @@
 # cache files
 .cache/
-
+*.zip
 # codeql databases
+codeql/
 codeqldb/
+db/
 
 # test queries
 test.ql
@@ -14,7 +16,13 @@ query_results/
 serverless-compliance.code-workspace
 **/.DS_Store
 
+# Libs
 node_modules/
+
+# Configs
 .serverless/
-archive/
 *.lock.yml
+
+# Archives, Outputs & Data
+archive/
+output/
