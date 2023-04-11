@@ -1,7 +1,7 @@
 import Calls
 
 module Boto3 {
-  Call get_boto3_resources() {
+  Call get_boto3_resources(string resource_name) {
     exists(
       PythonFunctionValue method, Call call, Module mod, Function main, Variable client,
       Variable resource, Call resource_calls, Call client_calls
@@ -25,7 +25,8 @@ module Boto3 {
       ) and
       resource.getALoad().getParentNode*().(Call) = resource_calls and
       client.getALoad().getParentNode*().(Call) = client_calls and
-      result = resource_calls
+      result = resource_calls and
+      resource_name = client_calls.getAnArg().getAFlowNode().getNode().(StrConst).getS()
     )
   }
 }
