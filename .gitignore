@@ -26,3 +26,4 @@ node_modules/
 # Archives, Outputs & Data
 archive/
 output/
+tmp/
