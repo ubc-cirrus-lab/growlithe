@@ -1,0 +1,204 @@
+{
+  "$schema" : "https://json.schemastore.org/sarif-2.1.0.json",
+  "version" : "2.1.0",
+  "runs" : [ {
+    "tool" : {
+      "driver" : {
+        "name" : "CodeQL",
+        "organization" : "GitHub",
+        "semanticVersion" : "2.12.6",
+        "notifications" : [ {
+          "id" : "cli/database/analyze",
+          "name" : "cli/database/analyze",
+          "shortDescription" : {
+            "text" : "CodeQL CLI: database analyze"
+          },
+          "fullDescription" : {
+            "text" : "CodeQL CLI: database analyze"
+          },
+          "defaultConfiguration" : {
+            "enabled" : true
+          }
+        } ],
+        "rules" : [ {
+          "id" : "py/dataFlows",
+          "name" : "py/dataFlows",
+          "defaultConfiguration" : {
+            "enabled" : true,
+            "level" : "warning"
+          },
+          "properties" : {
+            "id" : "py/dataFlows",
+            "kind" : "problem"
+          }
+        } ]
+      },
+      "extensions" : [ {
+        "name" : "legacy-upgrades",
+        "semanticVersion" : "0.0.0",
+        "locations" : [ {
+          "uri" : "file:///Users/arshia/Library/Application%20Support/Code/User/globalStorage/github.vscode-codeql/distribution6/codeql/legacy-upgrades/",
+          "description" : {
+            "text" : "The QL pack root directory."
+          }
+        }, {
+          "uri" : "file:///Users/arshia/Library/Application%20Support/Code/User/globalStorage/github.vscode-codeql/distribution6/codeql/legacy-upgrades/qlpack.yml",
+          "description" : {
+            "text" : "The QL pack definition file."
+          }
+        } ]
+      }, {
+        "name" : "serverless-compliance",
+        "semanticVersion" : "0.0.0+69b10c25ef85e287006fe6076a52d66dc8eacc1c",
+        "locations" : [ {
+          "uri" : "file:///Users/arshia/repos/compliance/serverless-compliance/src/",
+          "description" : {
+            "text" : "The QL pack root directory."
+          }
+        }, {
+          "uri" : "file:///Users/arshia/repos/compliance/serverless-compliance/src/qlpack.yml",
+          "description" : {
+            "text" : "The QL pack definition file."
+          }
+        } ]
+      } ]
+    },
+    "invocations" : [ {
+      "toolExecutionNotifications" : [ {
+        "message" : {
+          "text" : "A fatal error occurred: Could not process query metadata for /Users/arshia/repos/compliance/serverless-compliance/high-level-flow/analysis/tmp/queries/Resize/flow.ql.\nError was: Cannot process query metadata for a query without the '@kind' metadata property. To learn more, see https://codeql.github.com/docs/writing-codeql-queries/metadata-for-codeql-queries/ [NO_KIND_SPECIFIED]"
+        },
+        "level" : "error",
+        "descriptor" : {
+          "id" : "cli/database/analyze",
+          "index" : 0
+        },
+        "properties" : {
+          "attributes" : {
+            "exitCode" : 2
+          },
+          "visibility" : { }
+        }
+      }, {
+        "message" : {
+          "text" : "A fatal error occurred: Could not write SARIF file\n(eventual cause: FileSystemException \"/Users/arshia/repos/compliance/serverless-compliance/high-level-flow/analysis/tmp: Is a directory\")"
+        },
+        "level" : "error",
+        "descriptor" : {
+          "id" : "cli/database/analyze",
+          "index" : 0
+        },
+        "properties" : {
+          "attributes" : {
+            "exitCode" : 2
+          },
+          "visibility" : { }
+        }
+      } ],
+      "executionSuccessful" : true
+    } ],
+    "artifacts" : [ {
+      "location" : {
+        "uri" : "LambdaFunctions/ImageProcessingResize/lambda_function.py",
+        "uriBaseId" : "%SRCROOT%",
+        "index" : 0
+      }
+    } ],
+    "results" : [ {
+      "ruleId" : "py/dataFlows",
+      "ruleIndex" : 0,
+      "rule" : {
+        "id" : "py/dataFlows",
+        "index" : 0
+      },
+      "message" : {
+        "text" : "Taint from [event](1) ==> [imageprocessingbenchmark](2)\nTaint from [event](1) ==> [imageprocessingbenchmark](3)\nTaint from [imageprocessingbenchmark](4) ==> [imageprocessingbenchmark](2)\nTaint from [imageprocessingbenchmark](4) ==> [imageprocessingbenchmark](3)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "LambdaFunctions/ImageProcessingResize/lambda_function.py",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          }
+        }
+      } ],
+      "partialFingerprints" : {
+        "primaryLocationLineHash" : "709aa1b6cfc7cd26:1"
+      },
+      "relatedLocations" : [ {
+        "id" : 1,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "LambdaFunctions/ImageProcessingResize/lambda_function.py",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 13,
+            "startColumn" : 20,
+            "endColumn" : 25
+          }
+        },
+        "message" : {
+          "text" : "event"
+        }
+      }, {
+        "id" : 2,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "LambdaFunctions/ImageProcessingResize/lambda_function.py",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 34,
+            "startColumn" : 24,
+            "endColumn" : 28
+          }
+        },
+        "message" : {
+          "text" : "imageprocessingbenchmark"
+        }
+      }, {
+        "id" : 3,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "LambdaFunctions/ImageProcessingResize/lambda_function.py",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 34,
+            "startColumn" : 30,
+            "endColumn" : 36
+          }
+        },
+        "message" : {
+          "text" : "imageprocessingbenchmark"
+        }
+      }, {
+        "id" : 4,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "LambdaFunctions/ImageProcessingResize/lambda_function.py",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 24,
+            "startColumn" : 26,
+            "endColumn" : 34
+          }
+        },
+        "message" : {
+          "text" : "imageprocessingbenchmark"
+        }
+      } ]
+    } ],
+    "columnKind" : "unicodeCodePoints",
+    "properties" : {
+      "semmle.formatSpecifier" : "sarifv2.1.0"
+    }
+  } ]
+}
