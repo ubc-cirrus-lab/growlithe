@@ -32,37 +32,9 @@ class Graph:
             G = nx.DiGraph()
             G.add_nodes_from(nodes)
 
-            for node in self.nodes:
-                if node.parent_function is not None:
-                    name = node.parent_function.name
-                else:
-                    name = node.name
-                if node.children == []:
-                    G.add_edge(name, "End", style="solid")
-                for child in node.children:
-                    if (
-                        child.type == Node_Type.RESOURCE
-                        or node.type == Node_Type.RESOURCE
-                    ):
-                        style = "dashed"
-                    else:
-                        style = "solid"
-                    if child.parent_function is not None:
-                        G.add_edge(name, child.parent_function.name, style=style)
-                    else:
-                        G.add_edge(name, child.name, style=style)
+            self.add_edges(G)
 
-            node_sizes = {}
-            node_colors = {}
-            for node in self.nodes:
-                if node.type == Node_Type.RESOURCE:
-                    node_sizes[node.name] = 500
-                    node_colors[node.name] = "blue"
-                else:
-                    node_sizes[node.name] = 1000
-                    node_colors[node.name] = "green"
-            node_sizes["End"] = 1000
-            node_colors["End"] = "red"
+            node_sizes, node_colors = self.customize_nodes()
 
             edge_styles = {edge: G.edges[edge]["style"] for edge in G.edges}
 
@@ -77,51 +49,7 @@ class Graph:
                 style=[edge_styles[edge] for edge in G.edges],
             )
 
-            legend_handles = []
-            legend_handles.append(
-                plt.Line2D(
-                    [],
-                    [],
-                    color="blue",
-                    marker="o",
-                    linestyle="None",
-                    markersize=10,
-                    label="resource",
-                )
-            )
-            legend_handles.append(
-                plt.Line2D(
-                    [],
-                    [],
-                    color="green",
-                    marker="o",
-                    linestyle="None",
-                    markersize=10,
-                    label="function",
-                )
-            )
-            legend_handles.append(
-                plt.Line2D(
-                    [],
-                    [],
-                    color="red",
-                    marker="o",
-                    linestyle="None",
-                    markersize=10,
-                    label="end",
-                )
-            )
-
-            legend_handles.append(
-                plt.Line2D(
-                    [], [], color="black", linestyle="solid", label="Function edge"
-                )
-            )
-            legend_handles.append(
-                plt.Line2D(
-                    [], [], color="black", linestyle="dashed", label="Resource edge"
-                )
-            )
+            legend_handles = self.customize_legends()
             plt.legend(handles=legend_handles, loc="lower right")
             plt.show()
         else:
@@ -134,3 +62,84 @@ class Graph:
                     print(
                         f"{node.name} ({node.parent_function.name if node.parent_function else 'None'}) -> {child.name}"
                     )
+
+    def customize_legends(self):
+        legend_handles = []
+        legend_handles.append(
+                plt.Line2D(
+                    [],
+                    [],
+                    color="blue",
+                    marker="o",
+                    linestyle="None",
+                    markersize=10,
+                    label="resource",
+                )
+            )
+        legend_handles.append(
+                plt.Line2D(
+                    [],
+                    [],
+                    color="green",
+                    marker="o",
+                    linestyle="None",
+                    markersize=10,
+                    label="function",
+                )
+            )
+        legend_handles.append(
+                plt.Line2D(
+                    [],
+                    [],
+                    color="red",
+                    marker="o",
+                    linestyle="None",
+                    markersize=10,
+                    label="end",
+                )
+            )
+
+        legend_handles.append(
+                plt.Line2D(
+                    [], [], color="black", linestyle="solid", label="Function edge"
+                )
+            )
+        legend_handles.append(
+                plt.Line2D(
+                    [], [], color="black", linestyle="dashed", label="Resource edge"
+                )
+            )
+        
+        return legend_handles
+
+    def customize_nodes(self):
+        node_sizes = {}
+        node_colors = {}
+        for node in self.nodes:
+            if node.type == Node_Type.RESOURCE:
+                node_sizes[node.name] = 500
+                node_colors[node.name] = "blue"
+            else:
+                node_sizes[node.name] = 1000
+                node_colors[node.name] = "green"
+        node_sizes["End"] = 1000
+        node_colors["End"] = "red"
+        return node_sizes, node_colors
+
+    def add_edges(self, G):
+        for node in self.nodes:
+            if node.parent_function is not None:
+                name = node.parent_function.name
+            else:
+                name = node.name
+            if node.children == []:
+                G.add_edge(name, "End", style="solid")
+            for child in node.children:
+                if child.type == Node_Type.RESOURCE or node.type == Node_Type.RESOURCE:
+                    style = "dashed"
+                else:
+                    style = "solid"
+                if child.parent_function is not None:
+                    G.add_edge(name, child.parent_function.name, style=style)
+                else:
+                    G.add_edge(name, child.name, style=style)
