@@ -26,4 +26,7 @@ node_modules/
 # Archives, Outputs & Data
 archive/
 output/
+
+# Caches
+__pycache__/
 tmp/
