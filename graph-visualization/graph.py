@@ -1,7 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 from node import Node, Node_Type
-
+import utility
 
 class Graph:
     def __init__(self):
@@ -12,9 +12,18 @@ class Graph:
             if node.name == name:
                 return node
         return None
+    
+    def find_node_by_physicalLocation(self, physicalLocation):
+        for node in self.nodes:
+            if node != None and node.physicalLocation == physicalLocation:
+                return node
+        return None
 
-    def find_node_or_create(self, name):
-        node = self.find_node(name)
+    def find_node_or_create(self, name, physicalLocation=None):
+        if physicalLocation is not None:
+            node = self.find_node_by_physicalLocation(physicalLocation)
+        else:
+            node = self.find_node(name)
         if node is None:
             node = Node(name)
             self.nodes.append(node)
@@ -23,8 +32,16 @@ class Graph:
     @property
     def root(self):
         return self.nodes[0]
+    
+    def print(self):
+        utility.print_line()
+        for node in self.nodes:
+            print(f"{node.name : <10}\
+                  (Parent: {node.parent_function.name if node.parent_function else 'None'})\
+                  (Children: {[child.name for child in node.children]})\
+                  (Internal: {[internal.name for internal in node.internal]})\)")
 
-    def visualize(self, graphic=False):
+    def visualize(self, vis_out_path, graphic=False):
         if graphic:
             nodes = [node.name for node in self.nodes if node.parent_function is None]
             nodes.append("End")
@@ -51,7 +68,8 @@ class Graph:
 
             legend_handles = self.customize_legends()
             plt.legend(handles=legend_handles, loc="lower right")
-            plt.show()
+            plt.show(block=False)
+            plt.savefig(vis_out_path, format="PNG")
         else:
             for node in self.nodes:
                 if node.children == []:
