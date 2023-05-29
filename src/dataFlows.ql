@@ -3,7 +3,7 @@
  * @id py/dataFlows
  */
 
-import utils.TaintTracker
+import TaintTracker
 
 // Query to find possible flows
 from DataFlow::Node source, DataFlow::Node sink, TaintTracker::Tracker config, string source_name, string sink_name

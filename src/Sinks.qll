@@ -18,7 +18,7 @@ module Sinks {
       boto3_calls.getAChildNode().(Attribute).getName().matches("%upload%") and
       result.asCfgNode() = boto3_calls.getAnArg().getAFlowNode()
     )
-  }
+    }
 
   DataFlow::Node get_file_sinks(string name) {
     exists(API::CallNode call |
