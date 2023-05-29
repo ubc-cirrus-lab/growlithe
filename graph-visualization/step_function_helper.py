@@ -1,13 +1,15 @@
 import boto3
 import json
+import os
 from graph import Graph
 from node import Node_Type
 
 
 def get_lambda_handler_name(arn):
-    client = boto3.client("lambda")
-    response = client.get_function(FunctionName=arn)
-    return response["Configuration"]["Handler"]
+    return "lambda_handler"
+    # client = boto3.client("lambda")
+    # response = client.get_function(FunctionName=arn)
+    # return response["Configuration"]["Handler"]
 
 
 def get_children(value):
@@ -29,9 +31,12 @@ def get_children(value):
 
 
 def handler_extractor(state_machine_arn):
-    client = boto3.client("stepfunctions")
-    response = client.describe_state_machine(stateMachineArn=state_machine_arn)
-    states = json.loads(response["definition"])["States"]
+    if os.path.isfile(state_machine_arn):
+        states = json.loads(open(state_machine_arn, "r").read())["States"]
+    else:
+        client = boto3.client("stepfunctions")
+        response = client.describe_state_machine(stateMachineArn=state_machine_arn)
+        states = json.loads(response["definition"])["States"]
     graph = extract_workflow(states)
     return graph
 
@@ -40,6 +45,7 @@ def extract_workflow(states):
     handlers = []
     graph = Graph()
     for key, value in states.items():
+        # Search for lambda functions in the state machine
         if "Resource" in value and "lambda" in value["Resource"]:
             handler, children = get_children(value)
             handlers.append(f"{key}.{get_lambda_handler_name(handler)}.{children}")

@@ -33,3 +33,6 @@ def read_variable(file_name, line_start, offset_start, line_end, offset_end):
                 variable += lines[i]
             variable += lines[line_end - 1][:offset_end]
     return variable
+
+def print_line():
+    print("=======================================================================================================")
