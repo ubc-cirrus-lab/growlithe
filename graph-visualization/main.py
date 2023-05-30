@@ -38,6 +38,7 @@ def main(arn):
     # Stage 5: Annotate nodes with security labels and propagate them
     graph.init_security_labels(f"{QUERY_RESULTS_PATH}{APP_NAME}_security_labels.json")
     graph.traverse_propagate_labels()
+
     # FIXME: Update for new graph representation
     graph.visualize(vis_out_path=f"{QUERY_RESULTS_PATH}Graph.png", graphic=True)
 
