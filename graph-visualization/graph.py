@@ -1,7 +1,8 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from node import Node, Node_Type
+from node import Node, Node_Type, Security_Type, Endpoint_Type
 import utility
+import json
 
 class Graph:
     def __init__(self):
@@ -28,6 +29,47 @@ class Graph:
             node = Node(name)
             self.nodes.append(node)
         return node
+
+    # Returns the node with the given endpoint type, returns first node if multiple nodes have the given endpoint type
+    def find_internal_node_by_endpoint_type(self, function_node, endpoint_type):
+        for node in function_node.internal:
+            if node.endpoint_type == endpoint_type:
+                return node
+        return None
+
+    def init_security_labels(self, security_labels_file):
+        privateLocations = json.load(open(security_labels_file))["private"]
+        for location in privateLocations:
+            node = self.find_node_by_physicalLocation(location)
+            if node is not None:
+                node.security_type = Security_Type.PRIVATE
+            else:
+                print(f"Warning: {location} not found in graph")
+    
+    def traverse_propagate_labels(self):
+        # Internal propagation
+        for node in self.nodes:
+            if node.parent_function is None:
+                for internal in node.internal:
+                    self.propagate_labels(internal)
+
+    # Traverse the graph and propagate private labels
+    def propagate_labels(self, node):
+        if node.security_type == Security_Type.PUBLIC:
+            return
+        for child in node.children:
+            child.security_type = Security_Type.PRIVATE
+            self.propagate_labels(child)
+
+    def connect_nodes_across_functions(self):
+        function_node = self.nodes[0]
+        
+        for next_node in function_node.children:
+            node1 = self.find_internal_node_by_endpoint_type(function_node, Endpoint_Type.RETURN)
+            node2 = self.find_internal_node_by_endpoint_type(next_node, Endpoint_Type.PARAM)
+            if node1 is not None and node2 is not None:
+                node1.add_child(node2)
+            function_node = next_node
 
     @property
     def root(self):

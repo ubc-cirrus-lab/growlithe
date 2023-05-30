@@ -1,6 +1,6 @@
 import re
 import utility
-from node import Node_Type
+from node import Node_Type, Endpoint_Type
 
 def add_internal_nodes(sarif_file_path, function_node, graph, node_type):
     results = utility.get_query_results(sarif_file_path)
@@ -17,7 +17,7 @@ def add_internal_nodes(sarif_file_path, function_node, graph, node_type):
             name, endpoint_type = match.group(1).split(":")
             physicalLocation = result["locations"][int(match.group(2)) - 1]["physicalLocation"]
             node = graph.find_node_or_create(name, physicalLocation)
-            node.endpoint_type = endpoint_type
+            node.endpoint_type = Endpoint_Type[endpoint_type]
             node.physicalLocation = physicalLocation
             node.type = node_type
             node.parent_function = function_node
