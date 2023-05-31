@@ -11,14 +11,14 @@ def main(arn):
     # Stage 1: Extract functions from state machine
     graph = step_function_helper.handler_extractor(arn)
     print("Initial graph from configuration:")
-    graph.print()
+    # graph.print()
 
     # Iterate on a copy of the nodes as they are modified later
     functions = graph.nodes.copy()
 
     # Stage 2, 3: Extract sources and sinks within each function from SARIF files & add internal edges
     for node in functions:
-        print("Extracting sources and sinks for ", node.name)
+        print("Expanding internal graph for ", node.name)
         sarif_extractor.add_internal_nodes(
             f"{QUERY_RESULTS_PATH}{APP_NAME}{node.name}_getSources.sarif",
             node, graph, Node_Type.INTERNAL_SOURCE)
@@ -33,7 +33,7 @@ def main(arn):
     graph.connect_nodes_across_functions(graph.nodes[0])
 
     print("Graph after adding internal nodes and edges:")
-    graph.print()
+    # graph.print()
     
     # Stage 5: Annotate nodes with security labels and propagate them
     graph.init_security_labels(f"{QUERY_RESULTS_PATH}{APP_NAME}_security_labels.json")

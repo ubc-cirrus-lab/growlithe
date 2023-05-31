@@ -20,7 +20,7 @@ class Node:
     def __init__(self, name):
         self.name = name
         # Direct edges to
-        self.children = []
+        self.children = set()
         # Internal nodes
         self.internal = []
         self.type = None
@@ -35,4 +35,4 @@ class Node:
         return self.name
     
     def add_child(self, child):
-        self.children.append(child)
+        self.children.add(child)

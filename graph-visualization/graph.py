@@ -64,6 +64,7 @@ class Graph:
     def connect_nodes_across_functions(self, function_node):
         for next_node in function_node.children:
             node1 = self.find_internal_node_by_endpoint_type(function_node, Endpoint_Type.RETURN)
+            # FIXME: There can be multiple params in next_node
             node2 = self.find_internal_node_by_endpoint_type(next_node, Endpoint_Type.PARAM)
             if node1 is not None and node2 is not None:
                 node1.add_child(node2)
