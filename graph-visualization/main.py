@@ -30,7 +30,7 @@ def main(arn):
 
     # Stage 4: Connect internal nodes to external nodes
     # TODO: Refactor for other kinds of invocations
-    graph.connect_nodes_across_functions()
+    graph.connect_nodes_across_functions(graph.nodes[0])
 
     print("Graph after adding internal nodes and edges:")
     graph.print()
