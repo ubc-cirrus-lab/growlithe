@@ -5,7 +5,7 @@ root_path = '../'
 benchmark_path = f'{root_path}/benchmarks/ImageProcessingStateMachine/'
 functions_path = f'{benchmark_path}/LambdaFunctions/'
 codeql_db_path = f'{benchmark_path}/codeqldb/'
-codeql_src_path = f'{root_path}/src/'
+codeql_src_path = f'{root_path}/static-analysis/'
 
 queries = ['getSources', 'getSinks', 'flowPaths']
 query_file = f'{codeql_src_path}/dataFlows.ql'
