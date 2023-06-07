@@ -26,7 +26,7 @@ module Boto3 {
       resource.getALoad().getParentNode*().(Call) = resource_calls and
       client.getALoad().getParentNode*().(Call) = client_calls and
       result = resource_calls and
-      resource_name = client_calls.getAnArg().getAFlowNode().getNode().(StrConst).getS() + ":BOTO3"
+      resource_name = client_calls.getAnArg().getAFlowNode().getNode().(StrConst).getS() + ":S3_BUCKET"
     )
   }
 }

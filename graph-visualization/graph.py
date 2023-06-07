@@ -1,6 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from node import Node, Node_Type, Security_Type, Endpoint_Type
+from node import Node, NodeType, SecurityType, NodeType
 import utility
 import json
 
@@ -28,47 +28,57 @@ class Graph:
         if node is None:
             node = Node(name)
             self.nodes.append(node)
+            if '/' in name and not node.is_root_node():
+                parentName = name.rsplit("/", 1)[0]
+                parentNode = self.find_node_or_create(parentName)
+                parentNode.add_edge(node)
+                node.add_parent(parentNode)
         return node
 
+
     # Returns the node with the given endpoint type, returns first node if multiple nodes have the given endpoint type
-    def find_internal_node_by_endpoint_type(self, function_node, endpoint_type):
-        for node in function_node.internal:
-            if node.endpoint_type == endpoint_type:
-                return node
-        return None
+    def find_child_node_by_node_type(self, function_node, nodeType):
+        result = []
+        for node in function_node.children:
+            if node.nodeType == nodeType:
+                result.append(node)
+                # print(result)
+        return result
 
     def init_security_labels(self, security_labels_file):
         privateLocations = json.load(open(security_labels_file))["private"]
         for location in privateLocations:
             node = self.find_node_by_physicalLocation(location)
             if node is not None:
-                node.security_type = Security_Type.PRIVATE
+                node.securityType = SecurityType.PRIVATE
             else:
                 print(f"Warning: {location} not found in graph")
     
     def traverse_propagate_labels(self):
-        # Internal propagation
         for node in self.nodes:
-            if node.parent_function is None:
-                for internal in node.internal:
-                    self.propagate_labels(internal)
+            if node.parentFunctionNode is None:
+                for child in node.children:
+                    self.propagate_labels(child)
 
     # Traverse the graph and propagate private labels
     def propagate_labels(self, node):
-        if node.security_type == Security_Type.PUBLIC:
+        if node.securityType == SecurityType.PUBLIC:
             return
-        for child in node.children:
-            child.security_type = Security_Type.PRIVATE
-            self.propagate_labels(child)
+        print(f"Propagating labels for {node.name} {'ParentFunc - ' + node.parentFunctionNode.name if node.parentFunctionNode else ''}")
+        for edge in node.edges:
+            if edge.securityType == SecurityType.PUBLIC:
+                edge.securityType = SecurityType.PRIVATE
+                self.propagate_labels(edge)
 
     def connect_nodes_across_functions(self, function_node):
-        for next_node in function_node.children:
-            node1 = self.find_internal_node_by_endpoint_type(function_node, Endpoint_Type.RETURN)
+        for next_function_node in function_node.edges:
+            rets = self.find_child_node_by_node_type(function_node, NodeType.RETURN)
             # FIXME: There can be multiple params in next_node
-            node2 = self.find_internal_node_by_endpoint_type(next_node, Endpoint_Type.PARAM)
-            if node1 is not None and node2 is not None:
-                node1.add_child(node2)
-            self.connect_nodes_across_functions(next_node)
+            params = self.find_child_node_by_node_type(next_function_node, NodeType.PARAMETER)
+            for ret in rets:
+                for param in params:
+                    ret.add_edge(param)
+            self.connect_nodes_across_functions(next_function_node)
 
     @property
     def root(self):
@@ -78,13 +88,13 @@ class Graph:
         utility.print_line()
         for node in self.nodes:
             print(f"{node.name : <10}\
-                  (Parent: {node.parent_function.name if node.parent_function else 'None'})\
-                  (Children: {[child.name for child in node.children]})\
-                  (Internal: {[internal.name for internal in node.internal]})\)")
+                  (Parent: {node.parentFunctionNode.name if node.parentFunctionNode else 'None'})\
+                  (Edge: {[edge.name for edge in node.edges]})\
+                  (child: {[child.name for child in node.child]})\)")
 
     def visualize(self, vis_out_path, graphic=False):
         if graphic:
-            nodes = [node.name for node in self.nodes if node.parent_function is None]
+            nodes = [node.name for node in self.nodes if node.parentFunctionNode is None]
             nodes.append("End")
 
             G = nx.DiGraph()
@@ -113,13 +123,13 @@ class Graph:
             plt.savefig(vis_out_path, format="PNG")
         else:
             for node in self.nodes:
-                if node.children == []:
+                if node.edgeren == []:
                     print(
-                        f"{node.name} ({node.parent_function.name if node.parent_function else 'None'}) -> End"
+                        f"{node.name} ({node.parentFunctionNode.name if node.parentFunctionNode else 'None'}) -> End"
                     )
-                for child in node.children:
+                for edge in node.edgeren:
                     print(
-                        f"{node.name} ({node.parent_function.name if node.parent_function else 'None'}) -> {child.name}"
+                        f"{node.name} ({node.parentFunctionNode.name if node.parentFunctionNode else 'None'}) -> {edge.name}"
                     )
 
     def customize_legends(self):
@@ -175,7 +185,7 @@ class Graph:
         node_sizes = {}
         node_colors = {}
         for node in self.nodes:
-            if node.type == Node_Type.RESOURCE:
+            if node.type == NodeType.RESOURCE:
                 node_sizes[node.name] = 500
                 node_colors[node.name] = "blue"
             else:
@@ -187,18 +197,18 @@ class Graph:
 
     def add_edges(self, G):
         for node in self.nodes:
-            if node.parent_function is not None:
-                name = node.parent_function.name
+            if node.parentFunctionNode is not None:
+                name = node.parentFunctionNode.name
             else:
                 name = node.name
-            if node.children == []:
+            if node.edgeren == []:
                 G.add_edge(name, "End", style="solid")
-            for child in node.children:
-                if child.type == Node_Type.RESOURCE or node.type == Node_Type.RESOURCE:
+            for edge in node.edgeren:
+                if edge.type == NodeType.RESOURCE or node.type == NodeType.RESOURCE:
                     style = "dashed"
                 else:
                     style = "solid"
-                if child.parent_function is not None:
-                    G.add_edge(name, child.parent_function.name, style=style)
+                if edge.parentFunctionNode is not None:
+                    G.add_edge(name, edge.parentFunctionNode.name, style=style)
                 else:
-                    G.add_edge(name, child.name, style=style)
+                    G.add_edge(name, edge.name, style=style)

@@ -2,7 +2,7 @@ import argparse
 import step_function_helper
 import sarif_extractor
 import os
-from node import Node_Type
+from node import DataflowType
 
 APP_NAME = "ImageProcessing"
 QUERY_RESULTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "output/")
@@ -21,10 +21,10 @@ def main(arn):
         print("Expanding internal graph for ", node.name)
         sarif_extractor.add_internal_nodes(
             f"{QUERY_RESULTS_PATH}{APP_NAME}{node.name}_getSources.sarif",
-            node, graph, Node_Type.INTERNAL_SOURCE)
+            node, graph, DataflowType.SOURCE)
         sarif_extractor.add_internal_nodes(
             f"{QUERY_RESULTS_PATH}{APP_NAME}{node.name}_getSinks.sarif",
-            node, graph, Node_Type.INTERNAL_SINK)
+            node, graph, DataflowType.SINK)
         sarif_extractor.add_internal_edges(
             f"{QUERY_RESULTS_PATH}{APP_NAME}{node.name}_flowPaths.sarif", graph)
 
@@ -40,7 +40,7 @@ def main(arn):
     graph.traverse_propagate_labels()
 
     # FIXME: Update for new graph representation
-    graph.visualize(vis_out_path=f"{QUERY_RESULTS_PATH}Graph.png", graphic=True)
+    # graph.visualize(vis_out_path=f"{QUERY_RESULTS_PATH}Graph.png", graphic=True)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ module File {
         Calls::has_first_level_file_call(API::builtin("open"), main) = call or
         Calls::has_zero_level_file_call(API::builtin("open"), main) = call
       ) and
-      result = call and resource_name = "TBD:FILE"
+      result = call and resource_name = "TBD:LOCAL_FILE"
     )
   }
 }

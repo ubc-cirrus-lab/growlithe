@@ -14,7 +14,7 @@ module Sources {
   }
 
   DataFlow::Node get_parameter_sources(string name) { result instanceof DataFlow::ParameterNode
-    and name =  result.(DataFlow::ParameterNode).getParameter().getName() + ":PARAM"
+    and name =  result.(DataFlow::ParameterNode).getParameter().getName() + ":PARAMETER"
   }
 
   DataFlow::Node get_boto3_sources(string name) {

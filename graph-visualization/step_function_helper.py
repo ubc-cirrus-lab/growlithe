@@ -2,7 +2,7 @@ import boto3
 import json
 import os
 from graph import Graph
-from node import Node_Type
+from node import NodeType
 
 
 def get_lambda_handler_name(arn):
@@ -12,22 +12,22 @@ def get_lambda_handler_name(arn):
     # return response["Configuration"]["Handler"]
 
 
-def get_children(value):
-    children = []
+def get_edges(value):
+    edges = []
     if "Resource" in value and "lambda" in value["Resource"]:
         if value["Resource"] == "arn:aws:states:::lambda:invoke":
             handler = value["Parameters"]["FunctionName"]
         else:
             handler = value["Resource"]
     if "Next" in value:
-        children.append(value["Next"])
+        edges.append(value["Next"])
     if "Choices" in value:
         for choice in value["Choices"]:
-            children.append(choice["Next"])
+            edges.append(choice["Next"])
     if "Catch" in value:
         for catch in value["Catch"]:
-            children.append(catch["Next"])
-    return handler, children
+            edges.append(catch["Next"])
+    return handler, edges
 
 
 def handler_extractor(state_machine_arn):
@@ -47,12 +47,14 @@ def extract_workflow(states):
     for key, value in states.items():
         # Search for lambda functions in the state machine
         if "Resource" in value and "lambda" in value["Resource"]:
-            handler, children = get_children(value)
-            handlers.append(f"{key}.{get_lambda_handler_name(handler)}.{children}")
+            handler, edges = get_edges(value)
+            handlers.append(f"{key}.{get_lambda_handler_name(handler)}.{edges}")
+
+            # FIXME: Update to ensure unique ids instead of just names
             node = graph.find_node_or_create(key)
-            node.type = Node_Type.FUNCTION
-            for child in children:
-                child_node = graph.find_node_or_create(child)
-                child_node.type = Node_Type.FUNCTION
-                node.add_child(child_node)
+            node.nodeType = NodeType.FUNCTION
+            for edge in edges:
+                edgeNode = graph.find_node_or_create(edge)
+                edgeNode.type = NodeType.FUNCTION
+                node.add_edge(edgeNode)
     return graph
