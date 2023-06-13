@@ -10,6 +10,7 @@ class DataflowType(Enum):
 class SecurityType(Enum):
     PUBLIC = 1
     PRIVATE = 2
+    UNKNOWN = 3
 
 
 class NodeType(Enum):
@@ -30,12 +31,13 @@ class Node:
         self.edges: set(Node) = set()  # Set of nodes that this node has an edge to
         self.children: set(Node) = set()  # Set of internal nodes
         self.parents: set(Node) = set()  # Set of parent nodes TODO: Check if we need multiple parents
+        # self.securityDependencies: set(Node) = set() # Set of nodes that this node depends on for it's security label
 
         self.dataflowType: DataflowType = None
         self.nodeType: NodeType = None
         self.parentFunctionNode: Node = None # The function node that this node is an internal node of
         self.physicalLocation = None
-        self.securityType = SecurityType.PUBLIC
+        self.securityType = SecurityType.UNKNOWN
 
 
     def __repr__(self):

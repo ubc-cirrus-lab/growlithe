@@ -7,6 +7,7 @@ import json
 class Graph:
     def __init__(self):
         self.nodes = []
+        self.privateNodes = []
 
     def find_node(self, name):
         for node in self.nodes:
@@ -46,29 +47,46 @@ class Graph:
         return result
 
     def init_security_labels(self, security_labels_file):
-        privateLocations = json.load(open(security_labels_file))["private"]
+        labels = json.load(open(security_labels_file))
+        privateLocations = labels["private"]
         for location in privateLocations:
             node = self.find_node_by_physicalLocation(location)
             if node is not None:
                 node.securityType = SecurityType.PRIVATE
+                self.privateNodes.append(node)
+                print("Private node: ", node.name)
             else:
                 print(f"Warning: {location} not found in graph")
+        
+        publicNodeIds = labels["public"]
+        for publicNodeId in publicNodeIds:
+            node = self.find_node(publicNodeId)
+            if node is not None:
+                node.securityType = SecurityType.PUBLIC
+                print("Public node: ", node.name)
+            else:
+                print(f"Warning: {publicNodeId} not found in graph")
+        
     
-    def traverse_propagate_labels(self):
-        for node in self.nodes:
-            if node.parentFunctionNode is None:
-                for child in node.children:
-                    self.propagate_labels(child)
+    def find_violations(self):
+        for node in self.privateNodes:
+            print(f"Finding publicly reachable nodes from {node.name}")
+            self.dfs(node, [node])
+            # if node.parentFunctionNode is None:
+            #     for edge in node.edges:
+            #         self.propagate_labels(child)
 
     # Traverse the graph and propagate private labels
-    def propagate_labels(self, node):
+    def dfs(self, node, path):
         if node.securityType == SecurityType.PUBLIC:
+            print(f"Violation: Public node {node.name} is reachable via {path}")
+            # TODO: Continue traversing even after public nodes
             return
-        print(f"Propagating labels for {node.name} {'ParentFunc - ' + node.parentFunctionNode.name if node.parentFunctionNode else ''}")
+        # print(f"Propagating labels for {node.name} {'ParentFunc - ' + node.parentFunctionNode.name if node.parentFunctionNode else ''}")
         for edge in node.edges:
-            if edge.securityType == SecurityType.PUBLIC:
-                edge.securityType = SecurityType.PRIVATE
-                self.propagate_labels(edge)
+            # if edge.securityType == SecurityType.UNKNOWN:
+                # edge.securityType = SecurityType.PRIVATE
+            self.dfs(edge, path + [edge])
 
     def connect_nodes_across_functions(self, function_node):
         for next_function_node in function_node.edges:
