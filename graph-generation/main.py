@@ -35,9 +35,11 @@ def main(arn):
     print("Graph after adding internal nodes and edges:")
     # graph.print()
     
-    # Stage 5: Annotate nodes with security labels and propagate them
-    graph.init_security_labels(f"{QUERY_RESULTS_PATH}{APP_NAME}_security_labels.json")
-    graph.find_violations()
+    # Stage 5: Suggest direct policies to developer
+    graph.init_policies()
+    print("Suggested policies")
+    # graph.init_security_labels(f"{QUERY_RESULTS_PATH}{APP_NAME}_security_labels.json")
+    # graph.find_violations()
 
     # FIXME: Update for new graph representation
     # graph.visualize(vis_out_path=f"{QUERY_RESULTS_PATH}Graph.png", graphic=True)

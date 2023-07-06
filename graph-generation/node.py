@@ -12,14 +12,19 @@ class SecurityType(Enum):
     PRIVATE = 2
     UNKNOWN = 3
 
+class BroadType(Enum):
+    IDH_PARAM = 1
+    IDH_OTHER = 2
+    COMPUTE = 3
+    RESOURCE = 4
 
 class NodeType(Enum):
     (
         FUNCTION,
         PARAMETER,
+        RETURN,
         S3_BUCKET,
         LOCAL_FILE,
-        RETURN,
         SNS_TOPIC,
         SQS_QUEUE,
     ) = range(7)
@@ -60,3 +65,25 @@ class Node:
 
     def add_parent(self, node):
         self.parents.add(node)
+
+    def get_broad_node_type(self):
+        if self.nodeType == NodeType.PARAMETER:
+            return BroadType.IDH_PARAM
+        elif self.nodeType == NodeType.FUNCTION:
+            return BroadType.COMPUTE
+        # elif self.nodeType == NodeType.RETURN:
+        #     return BroadType.IDH_OTHER
+        # Handlers for resources
+        elif self.parentFunctionNode is not None:
+            return BroadType.IDH_OTHER
+        else:
+            return BroadType.RESOURCE
+
+    def is_idh(self):
+        return self.nodeType == NodeType.PARAMETER
+
+    def is_compute(self):
+        return self.nodeType == NodeType.FUNCTION
+
+    def is_resource(self):
+        return self.nodeType not in [NodeType.PARAMETER, NodeType.FUNCTION, NodeType.RETURN]

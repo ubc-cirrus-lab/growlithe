@@ -1,13 +1,16 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from node import Node, NodeType, SecurityType, NodeType
+from node import Node, NodeType, SecurityType, NodeType, BroadType
 import utility
 import json
+from policy import Policy, PERM
 
 class Graph:
     def __init__(self):
         self.nodes = []
         self.privateNodes = []
+        self.suggestedPolicies = []
+        self.policies = []
 
     def find_node(self, name):
         for node in self.nodes:
@@ -36,7 +39,6 @@ class Graph:
                 node.add_parent(parentNode)
         return node
 
-
     # Returns the node with the given endpoint type, returns first node if multiple nodes have the given endpoint type
     def find_child_node_by_node_type(self, function_node, nodeType):
         result = []
@@ -45,6 +47,36 @@ class Graph:
                 result.append(node)
                 # print(result)
         return result
+
+    def init_policies(self):
+        self.traverse(self.suggestPolicy)
+
+    def traverse(self, applyFunc):
+        visited = set()
+        for node in self.nodes:
+            if node not in visited:
+                visited.add(node)
+                self.dfs_helper(node, visited, applyFunc)
+
+    def dfs_helper(self, node, visited, applyFunc):
+        for edge in node.edges:
+            if edge not in visited:
+                visited.add(edge)
+                applyFunc(node, edge)
+                self.dfs_helper(edge, visited, applyFunc)
+
+    def suggestPolicy(self, node, edge):
+        match node.get_broad_node_type(), edge.get_broad_node_type():
+            # Reads from a resource
+            case BroadType.RESOURCE, BroadType.IDH_OTHER:
+                self.suggestedPolicies.append(Policy(edge.parentFunctionNode, node, PERM.READ))
+            # Execute Trigger from a resource
+            case BroadType.RESOURCE, BroadType.IDH_PARAM:
+                self.suggestedPolicies.append(Policy(edge.parentFunctionNode, node, PERM.EXECUTE))
+            # Writes to a resource
+            case BroadType.IDH_OTHER, BroadType.RESOURCE:
+                self.suggestedPolicies.append(Policy(node.parentFunctionNode, edge, PERM.WRITE))
+            # TODO: Cover all cases
 
     def init_security_labels(self, security_labels_file):
         labels = json.load(open(security_labels_file))
