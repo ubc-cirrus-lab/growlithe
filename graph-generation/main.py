@@ -8,6 +8,7 @@ APP_NAME = "ImageProcessing"
 QUERY_RESULTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "output/")
 
 def main(arn):
+    # =================================== Build Dependency Graph ========================================== #
     # Stage 1: Extract functions from state machine
     graph = step_function_helper.handler_extractor(arn)
     print("Initial graph from configuration:")
@@ -34,10 +35,17 @@ def main(arn):
 
     print("Graph after adding internal nodes and edges:")
     # graph.print()
-    
+
+    # =================================== Policy Initialization ========================================== #
     # Stage 5: Suggest direct policies to developer
     graph.init_policies()
     print("Suggested policies")
+    # TODO: Allow devs to update and modify selected policies
+
+    # =================================== Taint Set Generation ========================================== #
+    graph.generate_taints()
+    # =================================== Edge Annotation (Static Enforcement) ===================================== #
+    graph.annotate_edges()
     # graph.init_security_labels(f"{QUERY_RESULTS_PATH}{APP_NAME}_security_labels.json")
     # graph.find_violations()
 
