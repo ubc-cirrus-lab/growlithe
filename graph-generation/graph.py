@@ -4,6 +4,7 @@ from node import Node, NodeType, SecurityType, NodeType, BroadType
 import utility
 import json
 from policy import Policy, PERM
+from collections import defaultdict
 
 class Graph:
     def __init__(self):
@@ -11,6 +12,7 @@ class Graph:
         self.privateNodes = []
         self.suggestedPolicies = []
         self.policies = []
+        self.taintSet = defaultdict(set())
 
     def find_node(self, name):
         for node in self.nodes:
@@ -51,6 +53,81 @@ class Graph:
     def init_policies(self):
         self.traverse(self.suggestPolicy)
 
+        # TODO: Change this to use policies modified by developers
+        self.policies = self.suggestedPolicies.copy()
+
+    def annotate_edges(self):
+        self.traverse(self.annotate_edge)
+    
+    def annotate_edge(self, node, nextNode):
+        match node.get_broad_node_type(), nextNode.get_broad_node_type():
+            # Reads from a resource
+            case BroadType.RESOURCE, BroadType.IDH_OTHER:
+                label = self.eval(nextNode.parentFunctionNode, node, PERM.READ)
+
+    def eval(self, sub, obj, perm):
+        policy = self.find_policy(sub, obj, perm)
+        if policy == []:
+            return False
+        elif len(policy.policyGroups) == 0:
+            return True
+        else:
+            # TODO: Update based on interface of allowFilters
+            for policyGroup in policy.policyGroups:
+                policyGroupResult = True
+                for allowFilter in policyGroup.allowFilters:
+                    if not allowFilter[0](*allowFilter[1]):
+                        policyGroupResult = False
+                        break
+                if policyGroupResult:
+                    return True 
+
+    def generate_taints(self):
+        for node in self.topologicalSort()[::-1]:
+            self.traverse(node.propagate_taints)
+
+    def propagate_taints(self, node, nextNode):
+        if node.type == NodeType.RESOURCE:
+            for policy in self.find_policy(sub='*', obj=node, perm=PERM.READ):
+                self.taintSet[nextNode].add(policy)
+
+    def find_policy(self, sub, obj, perm):
+        # TODO: Index policies to optimize lookup
+        # TODO: Use regex with paths to use for lookup. Useful to search for all functions, all S3 resources etc.
+        result = []
+        for policy in self.policies:
+            if (policy.subject == sub or sub == '*') and (policy.object == obj or obj == '*') and (policy.perm == perm or perm == '*'):
+                result.append(policy)
+        return result
+
+    def topologicalSortUtil(self, node, visited, stack):
+        # Mark the current node as visited.
+        visited.add(node)
+ 
+        # Recur for all the vertices adjacent to this vertex
+        for nextNode in node.edges:
+            if nextNode not in visited:
+                self.topologicalSortUtil(nextNode, visited, stack)
+ 
+        # Push current vertex to stack which stores result
+        stack.append(node)
+ 
+    # The function to do Topological Sort. It uses recursive
+    def topologicalSort(self):
+        # Mark all the vertices as not visited
+        visited = set()
+        stack = []
+ 
+        # Call the recursive helper function to store Topological
+        # Sort starting from all vertices one by one
+        for node in self.nodes:
+            if node not in visited:
+                self.topologicalSortUtil(node, visited, stack)
+ 
+        # Print contents of the stack
+        # print(stack[::-1])  # return list in reverse order
+        return stack
+
     def traverse(self, applyFunc):
         visited = set()
         for node in self.nodes:
@@ -59,23 +136,23 @@ class Graph:
                 self.dfs_helper(node, visited, applyFunc)
 
     def dfs_helper(self, node, visited, applyFunc):
-        for edge in node.edges:
-            if edge not in visited:
-                visited.add(edge)
-                applyFunc(node, edge)
-                self.dfs_helper(edge, visited, applyFunc)
+        for nextNode in node.edges:
+            if nextNode not in visited:
+                visited.add(nextNode)
+                applyFunc(node, nextNode)
+                self.dfs_helper(nextNode, visited, applyFunc)
 
-    def suggestPolicy(self, node, edge):
-        match node.get_broad_node_type(), edge.get_broad_node_type():
+    def suggestPolicy(self, node, nextNode):
+        match node.get_broad_node_type(), nextNode.get_broad_node_type():
             # Reads from a resource
             case BroadType.RESOURCE, BroadType.IDH_OTHER:
-                self.suggestedPolicies.append(Policy(edge.parentFunctionNode, node, PERM.READ))
+                self.suggestedPolicies.append(Policy(nextNode.parentFunctionNode, node, PERM.READ))
             # Execute Trigger from a resource
             case BroadType.RESOURCE, BroadType.IDH_PARAM:
-                self.suggestedPolicies.append(Policy(edge.parentFunctionNode, node, PERM.EXECUTE))
+                self.suggestedPolicies.append(Policy(nextNode.parentFunctionNode, node, PERM.EXECUTE))
             # Writes to a resource
             case BroadType.IDH_OTHER, BroadType.RESOURCE:
-                self.suggestedPolicies.append(Policy(node.parentFunctionNode, edge, PERM.WRITE))
+                self.suggestedPolicies.append(Policy(node.parentFunctionNode, nextNode, PERM.WRITE))
             # TODO: Cover all cases
 
     def init_security_labels(self, security_labels_file):
