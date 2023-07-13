@@ -12,7 +12,7 @@ class Graph:
         self.privateNodes = []
         self.suggestedPolicies = []
         self.policies = []
-        self.taintSet = defaultdict(set())
+        self.taintSet = defaultdict(set)
 
     def find_node(self, name):
         for node in self.nodes:
@@ -63,35 +63,40 @@ class Graph:
         match node.get_broad_node_type(), nextNode.get_broad_node_type():
             # Reads from a resource
             case BroadType.RESOURCE, BroadType.IDH_OTHER:
-                label = self.eval(nextNode.parentFunctionNode, node, PERM.READ)
+                subject = nextNode.parentFunctionNode
+                object = node
+                perm = PERM.READ
 
-    def eval(self, sub, obj, perm):
-        policy = self.find_policy(sub, obj, perm)
-        if policy == []:
-            return False
-        elif len(policy.policyGroups) == 0:
-            return True
+        policy = self.get_single_policy(subject, object, perm)
+        if policy is None:
+            pass
         else:
-            # TODO: Update based on interface of allowFilters
-            for policyGroup in policy.policyGroups:
-                policyGroupResult = True
-                for allowFilter in policyGroup.allowFilters:
-                    if not allowFilter[0](*allowFilter[1]):
-                        policyGroupResult = False
-                        break
-                if policyGroupResult:
-                    return True 
+            evalResults = policy.eval()
+            if evalResults == True:
+                # TODO:
+                pass
+            else:
+                missingSubjectAttributes, missingObjectAttributes, environmentAttributes = evalResults
+                print(missingSubjectAttributes)
+                # TODO: 
 
     def generate_taints(self):
-        for node in self.topologicalSort()[::-1]:
-            self.traverse(node.propagate_taints)
+        pass
+        # for node in self.topologicalSort()[::-1]:
+        #     self.traverse(self.propagate_taints)
 
     def propagate_taints(self, node, nextNode):
-        if node.type == NodeType.RESOURCE:
-            for policy in self.find_policy(sub='*', obj=node, perm=PERM.READ):
+        # TODO: Cover other reads and flows
+        if node.get_broad_node_type() == BroadType.RESOURCE\
+            and nextNode.get_broad_node_type() == BroadType.IDH_OTHER:
+            for policy in self.get_policies(sub='*', obj=node, perm=PERM.READ):
+                self.taintSet[nextNode].add(policy)
+        elif node.get_broad_node_type() == BroadType.IDH_OTHER\
+            and nextNode.get_broad_node_type() == BroadType.IDH_OTHER:
+            for policy in self.taintSet[node]:
                 self.taintSet[nextNode].add(policy)
 
-    def find_policy(self, sub, obj, perm):
+    def get_policies(self, sub, obj, perm):
         # TODO: Index policies to optimize lookup
         # TODO: Use regex with paths to use for lookup. Useful to search for all functions, all S3 resources etc.
         result = []
@@ -100,32 +105,28 @@ class Graph:
                 result.append(policy)
         return result
 
+    def get_single_policy(self, sub, obj, perm):
+        for policy in self.policies:
+            if policy.subject == sub and policy.object == obj and policy.perm == perm:
+                return policy
+        return None
+
     def topologicalSortUtil(self, node, visited, stack):
-        # Mark the current node as visited.
         visited.add(node)
- 
-        # Recur for all the vertices adjacent to this vertex
         for nextNode in node.edges:
             if nextNode not in visited:
                 self.topologicalSortUtil(nextNode, visited, stack)
  
-        # Push current vertex to stack which stores result
         stack.append(node)
  
-    # The function to do Topological Sort. It uses recursive
     def topologicalSort(self):
-        # Mark all the vertices as not visited
         visited = set()
         stack = []
- 
-        # Call the recursive helper function to store Topological
-        # Sort starting from all vertices one by one
+
         for node in self.nodes:
             if node not in visited:
                 self.topologicalSortUtil(node, visited, stack)
- 
-        # Print contents of the stack
-        # print(stack[::-1])  # return list in reverse order
+
         return stack
 
     def traverse(self, applyFunc):
@@ -142,17 +143,27 @@ class Graph:
                 applyFunc(node, nextNode)
                 self.dfs_helper(nextNode, visited, applyFunc)
 
+    # Avoid creating duplicate policies
+    def fetchOrSuggestPolicy(self, subject, object, perm):
+        for policy in self.suggestedPolicies:
+            policy = self.get_single_policy(subject, object, perm)
+            if policy is not None:
+                return policy
+        policy = Policy(subject, object, perm)
+        self.suggestedPolicies.append(policy)
+        return policy
+
     def suggestPolicy(self, node, nextNode):
         match node.get_broad_node_type(), nextNode.get_broad_node_type():
             # Reads from a resource
             case BroadType.RESOURCE, BroadType.IDH_OTHER:
-                self.suggestedPolicies.append(Policy(nextNode.parentFunctionNode, node, PERM.READ))
+                self.fetchOrSuggestPolicy(nextNode.parentFunctionNode, node, PERM.READ)
             # Execute Trigger from a resource
             case BroadType.RESOURCE, BroadType.IDH_PARAM:
-                self.suggestedPolicies.append(Policy(nextNode.parentFunctionNode, node, PERM.EXECUTE))
+                self.fetchOrSuggestPolicy(nextNode.parentFunctionNode, node, PERM.EXECUTE)
             # Writes to a resource
             case BroadType.IDH_OTHER, BroadType.RESOURCE:
-                self.suggestedPolicies.append(Policy(node.parentFunctionNode, nextNode, PERM.WRITE))
+                self.fetchOrSuggestPolicy(node.parentFunctionNode, nextNode, PERM.WRITE)
             # TODO: Cover all cases
 
     def init_security_labels(self, security_labels_file):

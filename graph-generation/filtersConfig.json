@@ -1,0 +1,8 @@
+{
+    "isEndUser": {
+        "subject_attributes": ["endUser"],
+        "object_attributes": [],
+        "environment_attributes":[],
+        "policyConstants": ["endUser"]
+    }
+}
