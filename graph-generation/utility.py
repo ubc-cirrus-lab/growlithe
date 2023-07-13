@@ -1,5 +1,5 @@
 import json
-
+import os
 
 def get_query_results(results_file):
     with open(results_file, "r") as f:
@@ -36,3 +36,8 @@ def read_variable(file_name, line_start, offset_start, line_end, offset_end):
 
 def print_line():
     print("=======================================================================================================")
+
+def get_rel_path(file_name):
+    dir = os.path.abspath(os.path.dirname(__file__))
+    path = os.path.join(dir, file_name)
+    return path

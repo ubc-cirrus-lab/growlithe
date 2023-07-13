@@ -6,8 +6,9 @@ codeql/
 codeqldb/
 db/
 
-# test queries
+# test files
 test.ql
+test.py
 
 # query results
 query_results/
