@@ -51,14 +51,15 @@ class Policy:
                     if len(missingSubjectAttributesInPolicyGroup) != 0 and\
                           len(missingObjectAttributesInPolicyGroup) != 0 and\
                               len(environmentAttributesInPolicyGroup) != 0:
-                        if getattr(allowFilters, allowFilter[0])(self.subject.attributes,
+                        if not getattr(allowFilters, allowFilter[0])(self.subject.attributes,
                             self.object.attributes, filtersConfig[allowFilter]['policyConstants']):
-                            policyGroupResult = True
-                            break
+                            policyGroupResult = False
+                            # TODO: Flag if other allowFilters exists
                     else:
                         policyGroupResult = False
                         
                 if policyGroupResult:
+                    # TODO: Flag if other policy groups exists
                     return True
                 else:
                     missingSubjectAttributes.append(missingSubjectAttributesInPolicyGroup)
@@ -69,7 +70,7 @@ class Policy:
     def getMissingNodeAttributes(node, attributeList):
         missingAttributes = []
         for attribute in attributeList:
-            if attribute not in node.attributes:
+            if attribute not in node.attributes.keys():
                 missingAttributes.append(attribute)
         return missingAttributes
 

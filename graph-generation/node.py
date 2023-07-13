@@ -44,6 +44,8 @@ class Node:
         self.physicalLocation = None
         self.securityType = SecurityType.UNKNOWN
 
+        self.attributes = {}
+        self.missingAttributes = set()
 
     def __repr__(self):
         result = f"{self.name} {'[Private]' if self.securityType == SecurityType.PRIVATE else ''}"
