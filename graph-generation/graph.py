@@ -66,19 +66,22 @@ class Graph:
                 subject = nextNode.parentFunctionNode
                 object = node
                 perm = PERM.READ
+            # TODO: Add other cases
 
         policy = self.get_single_policy(subject, object, perm)
         if policy is None:
+            print('Edge is DENY')
             pass
         else:
             evalResults = policy.eval()
             if evalResults == True:
-                # TODO:
+                print('Edge is Allow')
                 pass
             else:
                 missingSubjectAttributes, missingObjectAttributes, environmentAttributes = evalResults
-                print(missingSubjectAttributes)
-                # TODO: 
+                subject.missingAttributes.update(missingSubjectAttributes)
+                object.missingAttributes.update(missingObjectAttributes)
+                # TODO: Add required environment attributes somewhere
 
     def generate_taints(self):
         pass
