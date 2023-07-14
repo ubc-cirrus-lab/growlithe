@@ -12,6 +12,12 @@ class Graph:
         self.privateNodes = []
         self.suggestedPolicies = []
         self.policies = []
+
+        # Maps objects to list of policies defined on them
+        self.objectToPolicyMap = defaultdict(set)
+        # Maps the tuple (subject, object, perm) to the policy
+        self.policyMap = {}
+
         self.taintSet = defaultdict(set)
 
     def find_node(self, name):
@@ -59,78 +65,54 @@ class Graph:
     def annotate_edges(self):
         self.traverse(self.annotate_edge)
     
-    def annotate_edge(self, node, nextNode):
+    def annotate_edge(self, node, nextNode, _):
+        subject, object, perm = None, None, None
         match node.get_broad_node_type(), nextNode.get_broad_node_type():
             # Reads from a resource
             case BroadType.RESOURCE, BroadType.IDH_OTHER:
                 subject = nextNode.parentFunctionNode
                 object = node
                 perm = PERM.READ
-            # TODO: Add other cases
-
-        policy = self.get_single_policy(subject, object, perm)
-        if policy is None:
-            print('Edge is DENY')
-            pass
-        else:
-            evalResults = policy.eval()
-            if evalResults == True:
-                print('Edge is Allow')
-                pass
+            # Execute Trigger from a resource
+            case BroadType.RESOURCE, BroadType.IDH_PARAM:
+                subject = node
+                object = nextNode.parentFunctionNode
+                perm = PERM.EXECUTE
+            # Writes to a resource
+            case BroadType.IDH_OTHER, BroadType.RESOURCE:
+                subject = node.parentFunctionNode
+                object = nextNode
+                perm = PERM.WRITE
+            # TODO: Cover other cases
+        if subject is not None and object is not None and perm is not None:
+            policy = self.get_policy(subject, object, perm)
+            if policy is None:
+                print('Edge is DENY', node.name, nextNode.name)
             else:
-                missingSubjectAttributes, missingObjectAttributes, environmentAttributes = evalResults
-                subject.missingAttributes.update(missingSubjectAttributes)
-                object.missingAttributes.update(missingObjectAttributes)
-                # TODO: Add required environment attributes somewhere
+                evalResults = policy.eval()
+                if evalResults == True:
+                    print('Edge is Allow', node.name, nextNode.name)
+                else:
+                    missingSubjectAttributes, missingObjectAttributes, environmentAttributes = evalResults
+                    subject.missingAttributes.update(missingSubjectAttributes)
+                    object.missingAttributes.update(missingObjectAttributes)
+                    # TODO: Add required environment attributes somewhere
 
     def generate_taints(self):
-        pass
-        # for node in self.topologicalSort()[::-1]:
-        #     self.traverse(self.propagate_taints)
+        # TODO: Move map initilization to where policies are confirmed by developer
+        self.init_policy_maps()
+        for node in self.objectToPolicyMap.keys():
+            self.dfs_helper(node, set(), self.propagate_taints, self.objectToPolicyMap[node])
 
-    def propagate_taints(self, node, nextNode):
-        # TODO: Cover other reads and flows
-        if node.get_broad_node_type() == BroadType.RESOURCE\
-            and nextNode.get_broad_node_type() == BroadType.IDH_OTHER:
-            for policy in self.get_policies(sub='*', obj=node, perm=PERM.READ):
-                self.taintSet[nextNode].add(policy)
-        elif node.get_broad_node_type() == BroadType.IDH_OTHER\
-            and nextNode.get_broad_node_type() == BroadType.IDH_OTHER:
-            for policy in self.taintSet[node]:
-                self.taintSet[nextNode].add(policy)
+    def propagate_taints(self, node, nextNode, policies):
+        # Porpogate taints on a read or flow edge
+        if nextNode.get_broad_node_type() == BroadType.IDH_OTHER:
+            self.taintSet[nextNode].update(policies)
 
-    def get_policies(self, sub, obj, perm):
-        # TODO: Index policies to optimize lookup
-        # TODO: Use regex with paths to use for lookup. Useful to search for all functions, all S3 resources etc.
-        result = []
-        for policy in self.policies:
-            if (policy.subject == sub or sub == '*') and (policy.object == obj or obj == '*') and (policy.perm == perm or perm == '*'):
-                result.append(policy)
-        return result
-
-    def get_single_policy(self, sub, obj, perm):
-        for policy in self.policies:
-            if policy.subject == sub and policy.object == obj and policy.perm == perm:
-                return policy
+    def get_policy(self, sub, obj, perm):
+        if (sub, obj, perm) in self.policyMap:
+            return self.policyMap[(sub, obj, perm)]
         return None
-
-    def topologicalSortUtil(self, node, visited, stack):
-        visited.add(node)
-        for nextNode in node.edges:
-            if nextNode not in visited:
-                self.topologicalSortUtil(nextNode, visited, stack)
- 
-        stack.append(node)
- 
-    def topologicalSort(self):
-        visited = set()
-        stack = []
-
-        for node in self.nodes:
-            if node not in visited:
-                self.topologicalSortUtil(node, visited, stack)
-
-        return stack
 
     def traverse(self, applyFunc):
         visited = set()
@@ -139,24 +121,35 @@ class Graph:
                 visited.add(node)
                 self.dfs_helper(node, visited, applyFunc)
 
-    def dfs_helper(self, node, visited, applyFunc):
+    def dfs_helper(self, node, visited, applyFunc, applyFuncParams=None):
         for nextNode in node.edges:
             if nextNode not in visited:
                 visited.add(nextNode)
-                applyFunc(node, nextNode)
-                self.dfs_helper(nextNode, visited, applyFunc)
+                applyFunc(node, nextNode, applyFuncParams)
+                self.dfs_helper(nextNode, visited, applyFunc, applyFuncParams)
 
     # Avoid creating duplicate policies
     def fetchOrSuggestPolicy(self, subject, object, perm):
         for policy in self.suggestedPolicies:
-            policy = self.get_single_policy(subject, object, perm)
+            policy = self.get_policy(subject, object, perm)
             if policy is not None:
                 return policy
         policy = Policy(subject, object, perm)
         self.suggestedPolicies.append(policy)
+        self.objectToPolicyMap[policy.object].add(policy)
+        self.policyMap[(policy.subject, policy.object, policy.perm)] = policy
         return policy
+    
+    def init_policy_maps(self):
+        self.objectToPolicyMap.clear()
+        self.policyMap.clear()
 
-    def suggestPolicy(self, node, nextNode):
+        for policy in self.policies:
+            self.objectToPolicyMap[policy.object].add(policy)
+            # TODO: Flag duplicate tuple found here?
+            self.policyMap[(policy.subject, policy.object, policy.perm)] = policy
+
+    def suggestPolicy(self, node, nextNode, _):
         match node.get_broad_node_type(), nextNode.get_broad_node_type():
             # Reads from a resource
             case BroadType.RESOURCE, BroadType.IDH_OTHER:
