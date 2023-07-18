@@ -10,6 +10,9 @@ class PERM(Enum):
     WRITE = 2
     EXECUTE = 3
 
+    def __str__(self) -> str:
+        return self.name
+
 filtersConfig = json.loads(open(utility.get_rel_path('filtersConfig.json')).read())
 
 class Policy:
@@ -23,7 +26,13 @@ class Policy:
         self.policyGroups: set(PolicyGroup) = set()
     
     def __repr__(self):
-        return f"{self.subject.name} can {self.perm} {self.object.name} with conditions {self.policyGroups}"
+        msg = f"{self.subject}, {self.object}, {self.perm}: "
+        if len(self.policyGroups) == 0:
+            msg += "ALLOW"
+        else:
+            for policyGroup in self.policyGroups:
+                msg += f"{policyGroup.allow_filters}"
+        return msg
     
     def eval(self):
         if len(self.policyGroups) == 0:

@@ -29,6 +29,9 @@ class NodeType(Enum):
         SQS_QUEUE,
     ) = range(7)
 
+    def __str__(self):
+        return self.name
+
 
 class Node:
     def __init__(self, name):
@@ -48,11 +51,7 @@ class Node:
         self.missingAttributes = set()
 
     def __repr__(self):
-        result = f"{self.name} {'[Private]' if self.securityType == SecurityType.PRIVATE else ''}"
-        if self.parentFunctionNode is not None:
-            result += f"(ParentFunc: {self.parentFunctionNode.name})"
-        if self.parents is not None:
-            result += f"(Parents: {self.parents})"
+        result = f"{self.nodeType}/{self.name}"
         return result
 
     # Has no hierarchy
