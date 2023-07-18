@@ -169,6 +169,8 @@ class Graph:
             # Writes to a resource
             case BroadType.IDH_OTHER, BroadType.RESOURCE:
                 self.fetchOrSuggestPolicy(node.parentFunctionNode, nextNode, PERM.WRITE)
+            case BroadType.IDH_OTHER, BroadType.IDH_PARAM:
+                self.fetchOrSuggestPolicy(node.parentFunctionNode, nextNode.parentFunctionNode, PERM.EXECUTE)
             # TODO: Cover all cases
 
     def init_security_labels(self, security_labels_file):

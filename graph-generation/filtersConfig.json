@@ -4,5 +4,23 @@
         "object_attributes": [],
         "environment_attributes":[],
         "policyConstants": ["endUser"]
+    },
+    "userHasRole": {
+        "subject_attributes": ["role"],
+        "object_attributes": [],
+        "environment_attributes":[],
+        "policyConstants": ["role"]
+    },
+    "hasLocation": {
+        "subject_attributes": [],
+        "object_attributes": [],
+        "environment_attributes":["location"],
+        "policyConstants": ["location"]
+    },
+    "inTimeRange": {
+        "subject_attributes": [],
+        "object_attributes": [],
+        "environment_attributes":["time"],
+        "policyConstants": ["time_lower", "time_upper"]
     }
 }

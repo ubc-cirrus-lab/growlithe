@@ -1,6 +1,7 @@
 import utility
 from node import BroadType
-from policy import Policy, PERM
+from policy import Policy, PERM, PolicyGroup
+import json
 
 class PolicyInterface:
     def __init__(self, graph) -> None:
@@ -23,7 +24,10 @@ class PolicyInterface:
         f.write("# Available allowFilters:\n")
         f.write("#  -  ALLOW\n")
         f.write("#  -  DENY\n")
-        f.write("#  -  isEndUser([subject_attributes], [object_attributes], [environment_attributes], [constants])\n")
+        with open(utility.get_rel_path("filtersConfig.json"), "r") as filters_config:
+            filters_config = json.load(filters_config)
+            for filter in filters_config:
+                f.write(f"#  -  {filter}\n")
         f.write("\n")        
 
     def write_policies(self, path):
@@ -44,6 +48,18 @@ class PolicyInterface:
         if perm is None:
             print(f"Invalid permission: {policy}")
             exit(1)  
+
+    def _extract_and_validate_policy(self, policy, line):
+        subject, object, perm = list(map(str.strip, policy.split(",")))
+        subject = self.graph.find_node_by_repr(subject)
+        object = self.graph.find_node_by_repr(object)
+        try:
+            perm = PERM[perm.upper()]
+        except KeyError:
+            print(f"Invalid permission: {line}")
+            exit(1)
+        self._validate_policy(subject, object, perm, line)
+        return subject, object, perm
     
     def parse_policies(self, path):
         policies = []
@@ -56,21 +72,22 @@ class PolicyInterface:
             if len(policy) != 2:
                 print("Invalid policy format: ", line)
                 exit(1)
-            subject, object, perm = list(map(str.strip, policy[0].split(",")))
-            subject = self.graph.find_node_by_repr(subject)
-            object = self.graph.find_node_by_repr(object)
-            perm = PERM[perm.upper()]
-            self._validate_policy(subject, object, perm, line)
+            subject, object, perm = self._extract_and_validate_policy(policy[0], line)
             policy_groups = list(map(str.strip, policy[1].split("OR")))
             policy = Policy(subject, object, perm)
             for policy_group in policy_groups:
-                policy_group = policy_group.strip()
                 if policy_group == "ALLOW":
                     policy.policyGroups = set()
+                    break
                 elif policy_group == "DENY":
                     is_denied = True
-                else:
-                    policy_group = policy_group.replace("isEndUser", "utility.isEndUser")
+                    break
+                allow_filters = list(map(str.strip, policy_group.split("AND")))
+                for filter in allow_filters:
+                    function = filter.split("(")[0]
+                    params = list(map(str.strip, filter.split("(")[1][:-1].split(",")))
+                    policy_group = PolicyGroup()
+                    policy_group.add_filter(function, params)
                     policy.policyGroups.add(policy_group)
             if not is_denied:
                 policies.append(policy)
