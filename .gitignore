@@ -32,3 +32,5 @@ output/
 # Caches
 __pycache__/
 tmp/
+
+policies.txt

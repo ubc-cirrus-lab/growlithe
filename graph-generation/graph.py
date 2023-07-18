@@ -6,11 +6,13 @@ import json
 from policy import Policy, PERM
 from collections import defaultdict
 
+from policy_interface import PolicyInterface
+
 class Graph:
     def __init__(self):
         self.nodes = []
         self.privateNodes = []
-        self.suggestedPolicies = []
+        self.suggested_policies = []
         self.policies = []
 
         # Maps objects to list of policies defined on them
@@ -23,6 +25,12 @@ class Graph:
     def find_node(self, name):
         for node in self.nodes:
             if node.name == name:
+                return node
+        return None
+
+    def find_node_by_repr(self, name):
+        for node in self.nodes:
+            if node.__repr__() == name:
                 return node
         return None
     
@@ -59,8 +67,9 @@ class Graph:
     def init_policies(self):
         self.traverse(self.suggestPolicy)
 
+        policy_interface = PolicyInterface(self)
         # TODO: Change this to use policies modified by developers
-        self.policies = self.suggestedPolicies.copy()
+        self.policies = policy_interface.get_policies()
 
     def annotate_edges(self):
         self.traverse(self.annotate_edge)
@@ -130,12 +139,12 @@ class Graph:
 
     # Avoid creating duplicate policies
     def fetchOrSuggestPolicy(self, subject, object, perm):
-        for policy in self.suggestedPolicies:
+        for policy in self.suggested_policies:
             policy = self.get_policy(subject, object, perm)
             if policy is not None:
                 return policy
         policy = Policy(subject, object, perm)
-        self.suggestedPolicies.append(policy)
+        self.suggested_policies.append(policy)
         self.objectToPolicyMap[policy.object].add(policy)
         self.policyMap[(policy.subject, policy.object, policy.perm)] = policy
         return policy
