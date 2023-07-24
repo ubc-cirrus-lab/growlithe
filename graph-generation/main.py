@@ -7,6 +7,7 @@ from node import DataflowType
 APP_NAME = "ImageProcessing"
 QUERY_RESULTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "output/")
 
+
 def main(arn):
     # =================================== Build Dependency Graph ========================================== #
     # Stage 1: Extract functions from state machine

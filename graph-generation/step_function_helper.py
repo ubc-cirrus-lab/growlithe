@@ -14,6 +14,7 @@ def get_lambda_handler_name(arn):
 
 def get_edges(value):
     edges = []
+    handler = None
     if "Resource" in value and "lambda" in value["Resource"]:
         if value["Resource"] == "arn:aws:states:::lambda:invoke":
             handler = value["Parameters"]["FunctionName"]
@@ -54,7 +55,7 @@ def extract_workflow(states):
             node = graph.find_node_or_create(key)
             node.nodeType = NodeType.FUNCTION
             for edge in edges:
-                edgeNode = graph.find_node_or_create(edge)
-                edgeNode.type = NodeType.FUNCTION
-                node.add_edge(edgeNode)
+                edge_node = graph.find_node_or_create(edge)
+                edge_node.type = NodeType.FUNCTION
+                node.add_edge(edge_node)
     return graph

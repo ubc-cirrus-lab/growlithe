@@ -5,6 +5,7 @@ import json
 import allowFilters
 import utility
 
+
 class PERM(Enum):
     READ = 1
     WRITE = 2
@@ -13,7 +14,9 @@ class PERM(Enum):
     def __str__(self) -> str:
         return self.name
 
-filtersConfig = json.loads(open(utility.get_rel_path('filtersConfig.json')).read())
+
+filters_config = json.loads(open(utility.get_rel_path('filtersConfig.json')).read())
+
 
 class Policy:
     def __init__(self, subject, object, perm):
@@ -23,8 +26,8 @@ class Policy:
         self.perm: PERM = perm
 
         # OR Separated policy groups, empty set means allow
-        self.policyGroups: set(PolicyGroup) = set()
-    
+        self.policyGroups: set[PolicyGroup] = set()
+
     def __repr__(self):
         msg = f"{self.subject}, {self.object}, {self.perm}: "
         if len(self.policyGroups) == 0:
@@ -33,64 +36,68 @@ class Policy:
             for policyGroup in self.policyGroups:
                 msg += f"{policyGroup.allow_filters}"
         return msg
-    
+
     def eval(self):
         if len(self.policyGroups) == 0:
             return True
         else:
             # TODO: Update based on interface of allowFilters
-            missingSubjectAttributes = set()
-            missingObjectAttributes = set()
-            environmentAttributes = set()
+            missing_subject_attributes = set()
+            missing_object_attributes = set()
+            environment_attributes = set()
 
             for policyGroup in self.policyGroups:
-                policyGroupResult = True
-                missingSubjectAttributesInPolicyGroup = set()
-                missingObjectAttributesInPolicyGroup = set()
-                environmentAttributesInPolicyGroup = set()
+                policy_group_result = True
+                missing_subject_attributes_in_policy_group = set()
+                missing_object_attributes_in_policy_group = set()
+                environment_attributes_in_policy_group = set()
 
                 for allowFilter in policyGroup.allow_filters:
-                    print(filtersConfig[allowFilter[0]]['subject_attributes'])
-                    missingSubjectAttributesInPolicyGroup.update(\
-                        self.getMissingNodeAttributes(self.subject, filtersConfig[allowFilter[0]]['subject_attributes']))
-                    missingObjectAttributesInPolicyGroup.update(\
-                        self.getMissingNodeAttributes(self.object, filtersConfig[allowFilter[0]]['object_attributes']))
-                    # TODO: Check assumption if all environment attributes are avaiable only at runtime
-                    environmentAttributesInPolicyGroup.update(filtersConfig[allowFilter[0]]['environment_attributes'])
+                    print(filters_config[allowFilter[0]]['subject_attributes'])
+                    missing_subject_attributes_in_policy_group.update(
+                        Policy.get_missing_node_attributes(self.subject,
+                                                           filters_config[allowFilter[0]]['subject_attributes']))
+                    missing_object_attributes_in_policy_group.update(
+                        Policy.get_missing_node_attributes(
+                            self.object, filters_config[allowFilter[0]]['object_attributes']))
+                    # TODO: Check assumption if all environment attributes are available only at runtime
+                    environment_attributes_in_policy_group.update(
+                        filters_config[allowFilter[0]]['environment_attributes'])
 
-                    if len(missingSubjectAttributesInPolicyGroup) == 0 and\
-                          len(missingObjectAttributesInPolicyGroup) == 0 and\
-                              len(environmentAttributesInPolicyGroup) == 0:
+                    if len(missing_subject_attributes_in_policy_group) == 0 and \
+                            len(missing_object_attributes_in_policy_group) == 0 and \
+                            len(environment_attributes_in_policy_group) == 0:
                         # TODO: environment attributes
                         if not getattr(allowFilters, allowFilter[0])(self.subject.attributes,
-                            self.object.attributes, [], allowFilter[1]):
-                            policyGroupResult = False
+                                                                     self.object.attributes, [], allowFilter[1]):
+                            policy_group_result = False
                             # TODO: Flag if other allowFilters exists
                     else:
-                        policyGroupResult = False
-                        
-                if policyGroupResult:
+                        policy_group_result = False
+
+                if policy_group_result:
                     # TODO: Flag if other policy groups exists
                     return True
                 else:
-                    missingSubjectAttributes.update(missingSubjectAttributesInPolicyGroup)
-                    missingObjectAttributes.update(missingObjectAttributesInPolicyGroup)
-                    environmentAttributes.update(environmentAttributesInPolicyGroup)
-            return missingSubjectAttributes, missingObjectAttributes, environmentAttributes
+                    missing_subject_attributes.update(missing_subject_attributes_in_policy_group)
+                    missing_object_attributes.update(missing_object_attributes_in_policy_group)
+                    environment_attributes.update(environment_attributes_in_policy_group)
+            return missing_subject_attributes, missing_object_attributes, environment_attributes
 
-    def getMissingNodeAttributes(self, node, attributeList):
-        missingAttributes = []
-        for attribute in attributeList:
+    @staticmethod
+    def get_missing_node_attributes(node, attribute_list):
+        missing_attributes = []
+        for attribute in attribute_list:
             if attribute not in node.attributes.keys():
-                missingAttributes.append(attribute)
-        return missingAttributes
+                missing_attributes.append(attribute)
+        return missing_attributes
+
 
 class PolicyGroup:
     def __init__(self) -> None:
-        # AND Separated filters as typle of (func_name, policy_constants_array)
-        self.allow_filters: List(Tuple(str, List)) = list()
-    
+        # AND Separated filters as tuple of (func_name, policy_constants_array)
+        self.allow_filters: List[Tuple[str, List]] = list()
+
     def add_filter(self, function, params):
         filter = (function, params)
         self.allow_filters.append(filter)
-
