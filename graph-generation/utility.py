@@ -1,6 +1,7 @@
 import json
 import os
 
+
 def get_query_results(results_file):
     with open(results_file, "r") as f:
         sarif_log = json.load(f)
@@ -8,7 +9,7 @@ def get_query_results(results_file):
     return results
 
 
-def get_variable(location):
+def get_string_from_location(location, app_src_path):
     file_name = location["physicalLocation"]["artifactLocation"]["uri"]
     start_line = location["physicalLocation"]["region"]["startLine"]
     start_column = location["physicalLocation"]["region"]["startColumn"]
@@ -17,13 +18,14 @@ def get_variable(location):
     else:
         end_line = start_line
     end_column = location["physicalLocation"]["region"]["endColumn"]
-    variable = read_variable(file_name, start_line, start_column, end_line, end_column)
+    file_path = os.path.join(app_src_path, file_name)
+    variable = read_location(file_path, start_line, start_column, end_line, end_column)
     return variable
 
 
-def read_variable(file_name, line_start, offset_start, line_end, offset_end):
+def read_location(file_path, line_start, offset_start, line_end, offset_end):
     variable = ""
-    with open(f"../src/{file_name}", "r") as f:
+    with open(file_path, "r") as f:
         lines = f.readlines()
         if line_start == line_end:
             variable = lines[line_start - 1][offset_start - 1 : offset_end - 1]
@@ -34,8 +36,12 @@ def read_variable(file_name, line_start, offset_start, line_end, offset_end):
             variable += lines[line_end - 1][:offset_end]
     return variable
 
+
 def print_line():
-    print("=======================================================================================================")
+    print(
+        "======================================================================================================="
+    )
+
 
 def get_rel_path(file_name):
     dir = os.path.abspath(os.path.dirname(__file__))

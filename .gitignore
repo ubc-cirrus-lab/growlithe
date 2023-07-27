@@ -9,6 +9,7 @@ db/
 # test files
 test.ql
 test.py
+*test*
 
 # query results
 query_results/

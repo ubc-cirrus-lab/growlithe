@@ -44,3 +44,16 @@ def add_internal_edges(sarif_file_path, graph):
                 print("Source or destination node not found")
             src_node.add_edge(dst_node)
             print("Adding edge from ", src_node.name, " to ", dst_node.name)
+
+def add_node_conditions(sarif_file_path, graph, app_src_path):
+    results = utility.get_query_results(sarif_file_path)
+    if len(results) <= 0:
+        print("No results found in SARIF file")
+    for result in results:
+        action_pattern = r"\[(\w+:\w+)\]\((\d+)\) requires (\w+) for \[condition\]\((\d+)\)"
+        match = re.search(action_pattern, result["message"]["text"])
+        physicalLocation = result["locations"][int(match.group(2)) - 1]["physicalLocation"]
+        node = graph.find_node_by_physicalLocation(physicalLocation)
+        conditional_boolean = bool(match.group(3))
+        condition = result["relatedLocations"][int(match.group(4)) - 1]
+        node.conditions.add((conditional_boolean, utility.get_string_from_location(condition, app_src_path)))

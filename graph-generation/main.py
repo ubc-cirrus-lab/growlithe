@@ -6,6 +6,7 @@ from node import DataflowType
 
 APP_NAME = "ImageProcessing"
 QUERY_RESULTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "output/")
+APP_SRC_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "benchmarks/ImageProcessingStateMachine/")
 
 def main(arn):
     # =================================== Build Dependency Graph ========================================== #
@@ -28,6 +29,8 @@ def main(arn):
             node, graph, DataflowType.SINK)
         sarif_extractor.add_internal_edges(
             f"{QUERY_RESULTS_PATH}{APP_NAME}{node.name}_flowPaths.sarif", graph)
+        sarif_extractor.add_node_conditions(
+            f"{QUERY_RESULTS_PATH}{APP_NAME}{node.name}_sinkConditions.sarif", graph, APP_SRC_PATH)
 
     # Stage 4: Connect internal nodes to external nodes
     # TODO: Refactor for other kinds of invocations

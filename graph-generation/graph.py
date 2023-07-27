@@ -20,7 +20,7 @@ class Graph:
         # Maps the tuple (subject, object, perm) to the policy
         self.policyMap = {}
 
-        self.taintSet = defaultdict(set)
+        self.taintSources = defaultdict(set)
 
     def find_node(self, name):
         for node in self.nodes:
@@ -92,6 +92,8 @@ class Graph:
                 subject = node.parentFunctionNode
                 object = nextNode
                 perm = PERM.WRITE
+                self.checkIsAsRestrictive(node.parentFunctionNode, nextNode)
+
             # TODO: Cover other cases
         if subject is not None and object is not None and perm is not None:
             policy = self.get_policy(subject, object, perm)
@@ -107,16 +109,35 @@ class Graph:
                     object.missingAttributes.update(missingObjectAttributes)
                     # TODO: Add required environment attributes somewhere
 
+    def checkIsAsRestrictive(self, node, nextNode):
+        policies = self.objectToPolicyMap[nextNode]
+        taintSources = self.taintSources[node]
+        for taintSource in taintSources:
+            sourcePolicies = self.objectToPolicyMap[taintSource]
+            if len(policies) < len(sourcePolicies):
+                print('Policies not defined for all subjects')
+                return False
+            for sourcePolicy in sourcePolicies:
+                # for policy in policies:
+                policy = next((p for p in policies if p.subject == sourcePolicy.subject and p.perm == sourcePolicy.perm), None)
+                if policy is None:
+                    print('No policy found for', sourcePolicy)
+                    return False
+                elif not policy.isAsRestrictive(sourcePolicy):
+                    print('Policy is not as restrictive', policy, sourcePolicy)
+                    return False
+        return True
+
     def generate_taints(self):
         # TODO: Move map initilization to where policies are confirmed by developer
         self.init_policy_maps()
         for node in self.objectToPolicyMap.keys():
-            self.dfs_helper(node, set(), self.propagate_taints, self.objectToPolicyMap[node])
+            self.dfs_helper(node, set(), self.propagate_taints, node)
 
-    def propagate_taints(self, node, nextNode, policies):
-        # Porpogate taints on a read or flow edge
+    def propagate_taints(self, _, nextNode, sourceNode):
+        # Propagate taints on a read or flow edge
         if nextNode.get_broad_node_type() == BroadType.IDH_OTHER:
-            self.taintSet[nextNode].update(policies)
+            self.taintSources[nextNode].add(sourceNode)
 
     def get_policy(self, sub, obj, perm):
         if (sub, obj, perm) in self.policyMap:

@@ -1,5 +1,6 @@
 from enum import Enum
 import uuid
+from typing import Tuple, Set, List
 
 # Represents if data flows from or through a given container node
 class DataflowType(Enum):
@@ -49,6 +50,7 @@ class Node:
 
         self.attributes = {}
         self.missingAttributes = set()
+        self.conditions: Set(Tuple(bool, str)) = set()
 
     def __repr__(self):
         result = f"{self.nodeType}/{self.name}"

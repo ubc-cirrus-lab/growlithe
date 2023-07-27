@@ -85,12 +85,28 @@ class Policy:
                 missingAttributes.append(attribute)
         return missingAttributes
 
+    def isAsRestrictive(self, incomingPolicy):
+        incomingPolicyGroups = incomingPolicy.policyGroups.copy()
+        policyGroups = self.policyGroups.copy()
+        if len(policyGroups) > len(incomingPolicyGroups):
+            return False
+
+        for incomingPolicyGroup in incomingPolicyGroups:
+            for policyGroup in policyGroups:
+                if policyGroup.get_hash() == incomingPolicyGroup.get_hash():
+                    policyGroups.remove(policyGroup)
+                    incomingPolicyGroups.remove(incomingPolicyGroup)
+
+        return policyGroups == set()
+
 class PolicyGroup:
     def __init__(self) -> None:
         # AND Separated filters as typle of (func_name, policy_constants_array)
         self.allow_filters: List(Tuple(str, List)) = list()
     
+    def get_hash(self):
+        return ",".join([filter for (filter, _) in self.allow_filters].sort())
+
     def add_filter(self, function, params):
         filter = (function, params)
         self.allow_filters.append(filter)
-
