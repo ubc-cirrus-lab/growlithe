@@ -7,7 +7,7 @@ functions_path = f'{benchmark_path}/LambdaFunctions/'
 codeql_db_path = f'{benchmark_path}/codeqldb/'
 codeql_src_path = f'{root_path}/static-analysis/'
 
-queries = ['getSources', 'getSinks', 'flowPaths']
+queries = ['getSources', 'getSinks', 'flowPaths', 'sinkConditions']
 query_file = f'{codeql_src_path}/dataFlows.ql'
 
 toReplace = '<FunctionName>'

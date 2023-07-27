@@ -30,8 +30,10 @@ def lambda_handler(event, context):
     upPath = reqID + "rotate-90-" + fileName
     img.save(path)
 
-    # Upload results
-    bucket.upload_file(path, upPath)
+    # Sample sink policy check before dump 
+    if path.contains("rotate-90"):
+        # Upload results
+        bucket.upload_file(path, upPath)
     
     # Clean up
     os.remove("/tmp/rotate-90-" + fileName)
