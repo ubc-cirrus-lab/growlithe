@@ -85,19 +85,26 @@ class Policy:
                 missingAttributes.append(attribute)
         return missingAttributes
 
-    def isAsRestrictive(self, incomingPolicy):
-        incomingPolicyGroups = incomingPolicy.policyGroups.copy()
-        policyGroups = self.policyGroups.copy()
-        if len(policyGroups) > len(incomingPolicyGroups):
+    def isAsRestrictive(self, policy2):
+
+        # If policy1 has more policy groups, it allows in more cases as
+        # policy groups are OR separated
+        if len(self.policyGroups) > len(policy2.policyGroups):
             return False
 
-        for incomingPolicyGroup in incomingPolicyGroups:
-            for policyGroup in policyGroups:
-                if policyGroup.get_hash() == incomingPolicyGroup.get_hash():
-                    policyGroups.remove(policyGroup)
-                    incomingPolicyGroups.remove(incomingPolicyGroup)
+        for pg in self.policyGroups:
+            foundEquivalent = False
+            for pg2 in policy2.policyGroups:
+                if pg.get_hash() == pg2.get_hash():
+                    # policyGroups1.remove(pg)
+                    # policyGroups2.remove(pg2)
+                    foundEquivalent = True
+                    break
+            if not foundEquivalent:
+                print("Did not find equivalent policy group for ", pg)
+                return False
 
-        return policyGroups == set()
+        return True
 
 class PolicyGroup:
     def __init__(self) -> None:
