@@ -115,18 +115,27 @@ class Graph:
         taintSources = self.taintSources[node]
         for taintSource in taintSources:
             sourcePolicies = self.objectToPolicyMap[taintSource]
-            if len(policies) < len(sourcePolicies):
-                print('Policies not defined for all subjects')
-                return False
+            # if len(policies) < len(sourcePolicies):
+            #     print('Policies not defined for all subjects')
+            #     return False
             for sourcePolicy in sourcePolicies:
-                # for policy in policies:
-                policy = next((p for p in policies if p.subject == sourcePolicy.subject and p.perm == sourcePolicy.perm), None)
-                if policy is None:
-                    print('No policy found for', sourcePolicy)
-                    return False
-                elif not policy.isAsRestrictive(sourcePolicy):
-                    print('Policy is not as restrictive', policy, sourcePolicy)
-                    return False
+                if sourcePolicy.perm == PERM.WRITE:
+                    policy = self.get_policy(sourcePolicy.subject, nextNode, PERM.WRITE)
+                    if policy is None:
+                        print('No policy found for', sourcePolicy)
+                        return False
+                    elif not sourcePolicy.isAsRestrictive(policy):
+                        print('Integrity violation: ', sourcePolicy, 'is not as restrictive as', policy)
+                        return False
+            for policy in policies:
+                if policy.perm in [PERM.READ, PERM.EXECUTE]:
+                    sourcePolicy = self.get_policy(taintSource, policy.object, policy.perm)
+                    if sourcePolicy is None:
+                        print('No sourcePolicy found for', policy)
+                        return False
+                    if not policy.isAsRestrictive(sourcePolicy):
+                        print('Confidentiality violation: ', policy, 'is not as restrictive as', sourcePolicy)
+                        return False
         return True
 
     def generate_taints(self):
@@ -140,7 +149,7 @@ class Graph:
         if nextNode.get_broad_node_type() == BroadType.IDH_OTHER:
             self.taintSources[nextNode].add(sourceNode)
 
-    def get_policy(self, sub, obj, perm):
+    def get_policy(self, sub, obj, perm) -> Policy:
         if (sub, obj, perm) in self.policyMap:
             return self.policyMap[(sub, obj, perm)]
         return None
