@@ -31,18 +31,19 @@ def get_edges(value):
     return handler, edges
 
 
-def handler_extractor(state_machine_arn):
+def handler_extractor(state_machine_arn, APP_SRC_PATH):
+    print("Extracting handlers from state machine ", state_machine_arn)
     if os.path.isfile(state_machine_arn):
         states = json.loads(open(state_machine_arn, "r").read())["States"]
     else:
         client = boto3.client("stepfunctions")
         response = client.describe_state_machine(stateMachineArn=state_machine_arn)
         states = json.loads(response["definition"])["States"]
-    graph = extract_workflow(states)
+    graph = extract_workflow(states, APP_SRC_PATH)
     return graph
 
 
-def extract_workflow(states):
+def extract_workflow(states, APP_SRC_PATH):
     handlers = []
     graph = Graph()
     for key, value in states.items():
@@ -54,8 +55,10 @@ def extract_workflow(states):
             # FIXME: Update to ensure unique ids instead of just names
             node = graph.find_node_or_create(key)
             node.nodeType = NodeType.FUNCTION
+            node.file_path = f"{APP_SRC_PATH}/{key}.py"
             for edge in edges:
-                edge_node = graph.find_node_or_create(edge)
-                edge_node.type = NodeType.FUNCTION
-                node.add_edge(edge_node)
+                edgeNode = graph.find_node_or_create(edge)
+                edgeNode.type = NodeType.FUNCTION
+                edgeNode.file_path = f"{APP_SRC_PATH}/{edge}.py"
+                node.add_edge(edgeNode)
     return graph

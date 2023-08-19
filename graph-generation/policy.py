@@ -114,14 +114,23 @@ class Policy:
 
         return True
 
+    def add_runtime_checks(self, idh_node):
+        if self.perm == PERM.READ:
+            # TODO: Replace TEST_CONDITIONAL with actual code version of this policy
+            utility.add_assertion(self.subject.file_path, idh_node.physicalLocation, "TEST_CONDITIONAL")
+
 class PolicyGroup:
     def __init__(self) -> None:
         # AND Separated filters as typle of (func_name, policy_constants_array)
         self.allow_filters: List(Tuple(str, List)) = list()
+        self.hash = None
     
     def get_hash(self):
-        return ",".join([filter for (filter, _) in self.allow_filters].sort())
+        return self.hash
+        # return ",".join([filter for (filter, _) in self.allow_filters].sort())
 
     def add_filter(self, function, params):
         filter = (function, params)
         self.allow_filters.append(filter)
+        # TODO: Fix and set policy hash. Discuss if we should compare prefixes of filters instead
+        # self.hash = utility.get_sorted_array_hash(self.allow_filters)

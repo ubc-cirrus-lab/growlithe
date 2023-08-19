@@ -69,7 +69,6 @@ class Graph:
         self.traverse(self.suggest_policy)
 
         policy_interface = PolicyInterface(self)
-        # TODO: Change this to use policies modified by developers
         self.policies = policy_interface.get_policies()
 
     def annotate_edges(self):
@@ -81,16 +80,19 @@ class Graph:
             # Reads from a resource
             case BroadType.RESOURCE, BroadType.IDH_OTHER:
                 subject = nextNode.parentFunctionNode
+                idh_node = nextNode
                 object = node
                 perm = PERM.READ
             # Execute Trigger from a resource
             case BroadType.RESOURCE, BroadType.IDH_PARAM:
                 subject = node
+                idh_node = None
                 object = nextNode.parentFunctionNode
                 perm = PERM.EXECUTE
             # Writes to a resource
             case BroadType.IDH_OTHER, BroadType.RESOURCE:
                 subject = node.parentFunctionNode
+                idh_node = node
                 object = nextNode
                 perm = PERM.WRITE
                 self.checkIsAsRestrictive(node.parentFunctionNode, nextNode)
@@ -109,6 +111,8 @@ class Graph:
                     subject.missingAttributes.update(missing_subject_attributes)
                     object.missingAttributes.update(missing_object_attributes)
                     # TODO: Add required environment attributes somewhere
+                    print("Static evluation failed, adding runtime checks")
+                    policy.add_runtime_checks(idh_node)
 
     def checkIsAsRestrictive(self, node, nextNode):
         policies = self.objectToPolicyMap[nextNode]
@@ -157,16 +161,19 @@ class Graph:
     def traverse(self, apply_func):
         visited = set()
         for node in self.nodes:
+            # TODO: FIX Missing edges if started from intermediate node
             if node not in visited:
                 visited.add(node)
                 self.dfs_helper(node, visited, apply_func)
 
-    def dfs_helper(self, node, visited, apply_func, apply_func_params=None):
+    def dfs_helper(self, node, visited, applyFunc, applyFuncParams=None):
+        print(node.name)
         for nextNode in node.edges:
+            # For detecting reads if already visited current function
+            applyFunc(node, nextNode, applyFuncParams)
             if nextNode not in visited:
                 visited.add(nextNode)
-                apply_func(node, nextNode, apply_func_params)
-                self.dfs_helper(nextNode, visited, apply_func, apply_func_params)
+                self.dfs_helper(nextNode, visited, applyFunc, applyFuncParams)
 
     # Avoid creating duplicate policies
     def fetch_or_suggest_policy(self, subject, object, perm):
