@@ -1,6 +1,6 @@
 import json
 import os
-
+import hashlib
 
 def get_query_results(results_file):
     with open(results_file, "r") as f:
@@ -47,3 +47,33 @@ def get_rel_path(file_name):
     dir = os.path.abspath(os.path.dirname(__file__))
     path = os.path.join(dir, file_name)
     return path
+
+def get_sorted_array_hash(arr):
+    sorted_arr = sorted(arr)
+    # arr_string = ','.join(sorted_arr)
+    hash_object = hashlib.sha256(sorted_arr.encode())
+    hash_value = hash_object.hexdigest()
+    return hash_value
+
+def add_assertion(input_file, physical_location, policy):
+    with open(input_file, 'r') as file:
+        lines = file.readlines()
+
+    target_line_number = physical_location['region']['startLine']
+
+    target_indent = ""
+    for char in lines[target_line_number - 1]:
+        if char.isspace():
+            target_indent += char
+        else:
+            break
+
+    assert_line = f"{target_indent}# ========== Growlithe ==========\n" + \
+                    f"{target_indent}import policyLib\n" + \
+                    f"{target_indent}assert {policy}, 'Policy Violation'\n" + \
+                    f"{target_indent}# ========== Growlithe ==========\n"
+
+    lines.insert(target_line_number - 1, assert_line)
+
+    with open(input_file + '.annotated', 'w') as file:
+        file.writelines(lines)

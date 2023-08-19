@@ -22,5 +22,17 @@
         "object_attributes": [],
         "environment_attributes":["time"],
         "policyConstants": ["time_lower", "time_upper"]
+    },
+    "isTeacher": {
+        "subject_attributes": ["username", "login_token"],
+        "object_attributes": [],
+        "environment_attributes":[],
+        "policyConstants": []
+    },
+    "isRecordOwner": {
+        "subject_attributes": ["username", "login_token", "requested_username"],
+        "object_attributes": [],
+        "environment_attributes":[],
+        "policyConstants": []
     }
 }
