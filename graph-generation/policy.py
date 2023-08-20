@@ -116,8 +116,31 @@ class Policy:
 
     def add_runtime_checks(self, idh_node):
         if self.perm == PERM.READ:
-            # TODO: Replace TEST_CONDITIONAL with actual code version of this policy
-            utility.add_assertion(self.subject.file_path, idh_node.physicalLocation, "TEST_CONDITIONAL")
+            python_parseable_policy = self.to_python()
+            utility.add_assertion(self.subject.file_path, idh_node.physicalLocation, python_parseable_policy)
+    
+    def to_python(self):
+        # TODO: handle parantheses and order of evaluation
+        policy = ""
+        for group in self.policyGroups:
+            for allow_filter in group.allow_filters:
+                arguments = ""
+                filter = allow_filter[0]
+                constants = allow_filter[1]
+                constant_attributes = filtersConfig[filter]['policyConstants']
+                for carg, arg in zip(constant_attributes, constants):
+                    arguments += f"{carg}={arg}, "
+
+                subject_attributes = filtersConfig[filter]['subject_attributes']
+                for attr in [s for s in subject_attributes if s not in constant_attributes]:
+                    arguments += f"{attr}={attr}, "
+                arguments = arguments[:-2]  # remove the extra " ," at the end
+                policy += f"{filter}({arguments}) or "
+            policy = policy[:-4]    # remove the extra " or " at the end
+            policy += " and "
+        return policy[:-5]
+
+
 
 class PolicyGroup:
     def __init__(self) -> None:
