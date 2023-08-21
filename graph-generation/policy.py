@@ -14,9 +14,7 @@ class PERM(Enum):
     def __str__(self) -> str:
         return self.name
 
-
 filters_config = json.loads(open(utility.get_rel_path('filtersConfig.json')).read())
-
 
 class Policy:
     def __init__(self, subject, object, perm):
@@ -127,17 +125,17 @@ class Policy:
                 arguments = ""
                 filter = allow_filter[0]
                 constants = allow_filter[1]
-                constant_attributes = filtersConfig[filter]['policyConstants']
+                constant_attributes = filters_config[filter]['policyConstants']
                 for carg, arg in zip(constant_attributes, constants):
-                    arguments += f"{carg}={arg}, "
+                    arguments += f"{carg}=event['{arg}'], "
 
-                subject_attributes = filtersConfig[filter]['subject_attributes']
+                subject_attributes = filters_config[filter]['subject_attributes']
                 for attr in [s for s in subject_attributes if s not in constant_attributes]:
-                    arguments += f"{attr}={attr}, "
+                    arguments += f"{attr}=event['{attr}'], "
                 arguments = arguments[:-2]  # remove the extra " ," at the end
-                policy += f"{filter}({arguments}) or "
+                policy += f"{filter}({arguments}) and "
             policy = policy[:-4]    # remove the extra " or " at the end
-            policy += " and "
+            policy += " or "
         return policy[:-5]
 
 

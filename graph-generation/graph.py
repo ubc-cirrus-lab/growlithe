@@ -104,7 +104,7 @@ class Graph:
                 print('Edge is DENY', node.name, nextNode.name)
             else:
                 eval_results = policy.eval()
-                if eval_results:
+                if eval_results == True:
                     print('Edge is Allow', node.name, nextNode.name)
                 else:
                     missing_subject_attributes, missing_object_attributes, environment_attributes = eval_results
