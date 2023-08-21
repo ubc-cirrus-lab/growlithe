@@ -1,5 +1,6 @@
 from enum import Enum
 import uuid
+from typing import Tuple, Set, List
 
 
 # Represents if data flows from or through a given container node
@@ -27,10 +28,11 @@ class NodeType(Enum):
         PARAMETER,
         RETURN,
         S3_BUCKET,
+        DYNAMODB_TABLE,
         LOCAL_FILE,
         SNS_TOPIC,
         SQS_QUEUE,
-    ) = range(7)
+    ) = range(8)
 
     def __str__(self):
         return self.name
@@ -49,12 +51,14 @@ class Node:
         self.parentFunctionNode: Node = None  # The function node that this node is an internal node of
         self.physicalLocation = None
         self.securityType = SecurityType.UNKNOWN
+        self.file_path = None
 
         self.attributes = {}
         self.missingAttributes = set()
+        self.conditions: Set(Tuple(bool, str)) = set()
 
     def __repr__(self):
-        result = f"{self.nodeType}/{self.name}"
+        result = f"{self.name} {self.get_broad_node_type()}"
         return result
 
     # Has no hierarchy

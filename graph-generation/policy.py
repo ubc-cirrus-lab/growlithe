@@ -93,11 +93,67 @@ class Policy:
         return missing_attributes
 
 
+    def isAsRestrictive(self, policy2):
+
+        # If policy1 has more policy groups, it allows in more cases as
+        # policy groups are OR separated
+        if len(self.policyGroups) > len(policy2.policyGroups):
+            return False
+
+        for pg in self.policyGroups:
+            foundEquivalent = False
+            for pg2 in policy2.policyGroups:
+                if pg.get_hash() == pg2.get_hash():
+                    # policyGroups1.remove(pg)
+                    # policyGroups2.remove(pg2)
+                    foundEquivalent = True
+                    break
+            if not foundEquivalent:
+                print("Did not find equivalent policy group for ", pg)
+                return False
+
+        return True
+
+    def add_runtime_checks(self, idh_node):
+        if self.perm == PERM.READ:
+            python_parseable_policy = self.to_python()
+            utility.add_assertion(self.subject.file_path, idh_node.physicalLocation, python_parseable_policy)
+    
+    def to_python(self):
+        # TODO: handle parantheses and order of evaluation
+        policy = ""
+        for group in self.policyGroups:
+            for allow_filter in group.allow_filters:
+                arguments = ""
+                filter = allow_filter[0]
+                constants = allow_filter[1]
+                constant_attributes = filtersConfig[filter]['policyConstants']
+                for carg, arg in zip(constant_attributes, constants):
+                    arguments += f"{carg}={arg}, "
+
+                subject_attributes = filtersConfig[filter]['subject_attributes']
+                for attr in [s for s in subject_attributes if s not in constant_attributes]:
+                    arguments += f"{attr}={attr}, "
+                arguments = arguments[:-2]  # remove the extra " ," at the end
+                policy += f"{filter}({arguments}) or "
+            policy = policy[:-4]    # remove the extra " or " at the end
+            policy += " and "
+        return policy[:-5]
+
+
+
 class PolicyGroup:
     def __init__(self) -> None:
-        # AND Separated filters as tuple of (func_name, policy_constants_array)
-        self.allow_filters: List[Tuple[str, List]] = list()
+        # AND Separated filters as typle of (func_name, policy_constants_array)
+        self.allow_filters: List(Tuple(str, List)) = list()
+        self.hash = None
+    
+    def get_hash(self):
+        return self.hash
+        # return ",".join([filter for (filter, _) in self.allow_filters].sort())
 
     def add_filter(self, function, params):
         filter = (function, params)
         self.allow_filters.append(filter)
+        # TODO: Fix and set policy hash. Discuss if we should compare prefixes of filters instead
+        # self.hash = utility.get_sorted_array_hash(self.allow_filters)

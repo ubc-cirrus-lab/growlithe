@@ -4,14 +4,16 @@ import sarif_extractor
 import os
 from node import DataflowType
 
-APP_NAME = "ImageProcessing"
-QUERY_RESULTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "output/")
+# APP_NAME = "ImageProcessing"
+APP_NAME = "exam"
+QUERY_RESULTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), f"benchmarks/{APP_NAME}/output/")
+APP_SRC_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), f"benchmarks/{APP_NAME}/")
 
 
 def main(arn):
     # =================================== Build Dependency Graph ========================================== #
     # Stage 1: Extract functions from state machine
-    graph = step_function_helper.handler_extractor(arn)
+    graph = step_function_helper.handler_extractor(arn, APP_SRC_PATH)
     print("Initial graph from configuration:")
     # graph.print()
 
@@ -22,13 +24,15 @@ def main(arn):
     for node in functions:
         print("Expanding internal graph for ", node.name)
         sarif_extractor.add_internal_nodes(
-            f"{QUERY_RESULTS_PATH}{APP_NAME}{node.name}_getSources.sarif",
+            f"{QUERY_RESULTS_PATH}\{node.name}_getSources.sarif",
             node, graph, DataflowType.SOURCE)
         sarif_extractor.add_internal_nodes(
-            f"{QUERY_RESULTS_PATH}{APP_NAME}{node.name}_getSinks.sarif",
+            f"{QUERY_RESULTS_PATH}\{node.name}_getSinks.sarif",
             node, graph, DataflowType.SINK)
         sarif_extractor.add_internal_edges(
-            f"{QUERY_RESULTS_PATH}{APP_NAME}{node.name}_flowPaths.sarif", graph)
+            f"{QUERY_RESULTS_PATH}\{node.name}_flowPaths.sarif", graph)
+        sarif_extractor.add_node_conditions(
+            f"{QUERY_RESULTS_PATH}\{node.name}_sinkConditions.sarif", graph, APP_SRC_PATH)
 
     # Stage 4: Connect internal nodes to external nodes
     # TODO: Refactor for other kinds of invocations
@@ -40,9 +44,6 @@ def main(arn):
     # =================================== Policy Initialization ========================================== #
     # Stage 5: Suggest direct policies to developer
     graph.init_policies()
-    print("Suggested policies")
-    # TODO: Allow devs to update and modify selected policies
-
     # =================================== Taint Set Generation ========================================== #
     graph.generate_taints()
     # =================================== Edge Annotation (Static Enforcement) ===================================== #
