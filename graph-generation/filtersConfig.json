@@ -1,23 +1,23 @@
 {
-    "isEndUser": {
+    "is_end_user": {
         "subject_attributes": ["endUser"],
         "object_attributes": [],
         "environment_attributes":[],
-        "policyConstants": ["endUser"]
+        "policy_constants": ["endUser"]
     },
-    "userHasRole": {
+    "user_has_role": {
         "subject_attributes": ["role"],
         "object_attributes": [],
         "environment_attributes":[],
-        "policyConstants": ["role"]
+        "policy_constants": ["role"]
     },
-    "hasLocation": {
+    "has_location": {
         "subject_attributes": [],
         "object_attributes": [],
         "environment_attributes":["location"],
-        "policyConstants": ["location"]
+        "policy_constants": ["location"]
     },
-    "inTimeRange": {
+    "in_time_range": {
         "subject_attributes": [],
         "object_attributes": [],
         "environment_attributes":["time"],

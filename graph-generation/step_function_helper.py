@@ -14,6 +14,7 @@ def get_lambda_handler_name(arn):
 
 def get_edges(value):
     edges = []
+    handler = None
     if "Resource" in value and "lambda" in value["Resource"]:
         if value["Resource"] == "arn:aws:states:::lambda:invoke":
             handler = value["Parameters"]["FunctionName"]

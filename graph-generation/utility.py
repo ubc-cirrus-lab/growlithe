@@ -2,6 +2,7 @@ import json
 import os
 import hashlib
 
+
 def get_query_results(results_file):
     with open(results_file, "r") as f:
         sarif_log = json.load(f)
@@ -28,9 +29,9 @@ def read_location(file_path, line_start, offset_start, line_end, offset_end):
     with open(file_path, "r") as f:
         lines = f.readlines()
         if line_start == line_end:
-            variable = lines[line_start - 1][offset_start - 1 : offset_end - 1]
+            variable = lines[line_start - 1][offset_start - 1: offset_end - 1]
         else:
-            variable = lines[line_start - 1][offset_start - 1 :]
+            variable = lines[line_start - 1][offset_start - 1:]
             for i in range(line_start, line_end - 1):
                 variable += lines[i]
             variable += lines[line_end - 1][:offset_end]
@@ -41,6 +42,7 @@ def print_line():
     print(
         "======================================================================================================="
     )
+
 
 
 def get_rel_path(file_name):

@@ -2,6 +2,7 @@ from enum import Enum
 import uuid
 from typing import Tuple, Set, List
 
+
 # Represents if data flows from or through a given container node
 class DataflowType(Enum):
     SOURCE = 1
@@ -13,11 +14,13 @@ class SecurityType(Enum):
     PRIVATE = 2
     UNKNOWN = 3
 
+
 class BroadType(Enum):
     IDH_PARAM = 1
     IDH_OTHER = 2
     COMPUTE = 3
     RESOURCE = 4
+
 
 class NodeType(Enum):
     (
@@ -38,14 +41,14 @@ class NodeType(Enum):
 class Node:
     def __init__(self, name):
         self.name = name  # Name of the node
-        self.edges: set(Node) = set()  # Set of nodes that this node has an edge to
-        self.children: set(Node) = set()  # Set of internal nodes
-        self.parents: set(Node) = set()  # Set of parent nodes TODO: Check if we need multiple parents
-        # self.securityDependencies: set(Node) = set() # Set of nodes that this node depends on for it's security label
+        self.edges: set[Node] = set()  # Set of nodes that this node has an edge to
+        self.children: set[Node] = set()  # Set of internal nodes
+        self.parents: set[Node] = set()  # Set of parent nodes TODO: Check if we need multiple parents
+        # self.securityDependencies: set(Node) = set() # Set of nodes that this node depends on for its security label
 
         self.dataflowType: DataflowType = None
         self.nodeType: NodeType = None
-        self.parentFunctionNode: Node = None # The function node that this node is an internal node of
+        self.parentFunctionNode: Node = None  # The function node that this node is an internal node of
         self.physicalLocation = None
         self.securityType = SecurityType.UNKNOWN
         self.file_path = None
@@ -64,7 +67,7 @@ class Node:
 
     def add_edge(self, node):
         self.edges.add(node)
-    
+
     def add_child(self, node):
         self.children.add(node)
 

@@ -9,6 +9,7 @@ APP_NAME = "exam"
 QUERY_RESULTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), f"benchmarks/{APP_NAME}/output/")
 APP_SRC_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), f"benchmarks/{APP_NAME}/")
 
+
 def main(arn):
     # =================================== Build Dependency Graph ========================================== #
     # Stage 1: Extract functions from state machine

@@ -3,6 +3,7 @@ from node import BroadType
 from policy import Policy, PERM, PolicyGroup
 import json
 
+
 class PolicyInterface:
     def __init__(self, graph) -> None:
         self.suggested_policies = graph.suggested_policies
@@ -28,7 +29,7 @@ class PolicyInterface:
             filters_config = json.load(filters_config)
             for filter in filters_config:
                 f.write(f"#  -  {filter}\n")
-        f.write("\n")        
+        f.write("\n")
 
     def write_policies(self, path):
         f = open(path, "w")
@@ -38,7 +39,8 @@ class PolicyInterface:
             f.write("\n")
         f.close()
 
-    def _validate_policy(self, subject, object, perm, policy):
+    @staticmethod
+    def _validate_policy(subject, object, perm, policy):
         if subject is None:
             print(f"Invalid subject: {policy}")
             exit(1)
@@ -47,7 +49,7 @@ class PolicyInterface:
             exit(1)
         if perm is None:
             print(f"Invalid permission: {policy}")
-            exit(1)  
+            exit(1)
 
     def _extract_and_validate_policy(self, policy, line):
         subject, object, perm = list(map(str.strip, policy.split(",")))
@@ -58,9 +60,9 @@ class PolicyInterface:
         except KeyError:
             print(f"Invalid permission: {line}")
             exit(1)
-        self._validate_policy(subject, object, perm, line)
+        PolicyInterface._validate_policy(subject, object, perm, line)
         return subject, object, perm
-    
+
     def parse_policies(self, path):
         policies = []
         f = open(path, "r")
