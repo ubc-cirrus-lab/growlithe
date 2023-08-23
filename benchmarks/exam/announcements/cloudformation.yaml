@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Announcements
+Resources:
+  MakeAnnouncementFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: make-announcement
+      Handler: make_announcement.lambda_handler
+      Runtime: python3.11
+      Timeout: 120
+      Policies:
+      - DynamoDBWritePolicy:
+          TableName:
+            Ref: AnnouncementsTable
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: AnnouncementsTable
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-4gdqge14rwhl/22c3dd7aaa6b7717ad61e72ae1077cb3
+    Metadata:
+      SamResourceId: MakeAnnouncementFunction
+  SendMailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: send-mail
+      Handler: send_mail.lambda_handler
+      Runtime: python3.11
+      Timeout: 120
+      Policies:
+      - AWSLambdaDynamoDBExecutionRole
+      Events:
+        Stream:
+          Type: DynamoDB
+          Properties:
+            Stream:
+              Fn::GetAtt:
+              - AnnouncementsTable
+              - StreamArn
+            BatchSize: 1
+            StartingPosition: TRIM_HORIZON
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-4gdqge14rwhl/22c3dd7aaa6b7717ad61e72ae1077cb3
+    Metadata:
+      SamResourceId: SendMailFunction
+  AnnouncementsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: announcements
+      AttributeDefinitions:
+      - AttributeName: announcement
+        AttributeType: S
+      KeySchema:
+      - AttributeName: announcement
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+    Metadata:
+      SamResourceId: AnnouncementsTable

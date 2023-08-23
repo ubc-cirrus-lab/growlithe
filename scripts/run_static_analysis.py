@@ -2,7 +2,7 @@ import os
 import subprocess
 
 root_path = '../'
-benchmark_path = f'{root_path}/benchmarks/exam/'
+benchmark_path = f'{root_path}/benchmarks/exam/announcements/'
 functions_path = f'{benchmark_path}/'
 codeql_db_path = f'{benchmark_path}/codeqldb/'
 codeql_src_path = f'{root_path}/static-analysis/'
@@ -19,7 +19,7 @@ with open(f'{codeql_src_path}/utils/Config_Template.qll', 'r') as file:
     config_template = file.read()
 
 # children = os.scandir(functions_path)
-fns = ['getGrades']
+fns = ['send_mail', 'make_announcement']
 for fn in fns:
     print('Analyzing function', fn)
     config = config_template.replace(toReplace, fn)

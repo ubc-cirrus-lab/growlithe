@@ -21,18 +21,19 @@ def main(arn):
     functions = graph.nodes.copy()
 
     # Stage 2, 3: Extract sources and sinks within each function from SARIF files & add internal edges
-    for node in functions:
+    function_nodes = [node for node in functions if node.nodeType == NodeType.FUNCTION]
+    for node in function_nodes:
         print("Expanding internal graph for ", node.name)
         sarif_extractor.add_internal_nodes(
-            f"{QUERY_RESULTS_PATH}\{node.name}_getSources.sarif",
+            f"{QUERY_RESULTS_PATH}{node.name}_getSources.sarif",
             node, graph, DataflowType.SOURCE)
         sarif_extractor.add_internal_nodes(
-            f"{QUERY_RESULTS_PATH}\{node.name}_getSinks.sarif",
+            f"{QUERY_RESULTS_PATH}{node.name}_getSinks.sarif",
             node, graph, DataflowType.SINK)
         sarif_extractor.add_internal_edges(
-            f"{QUERY_RESULTS_PATH}\{node.name}_flowPaths.sarif", graph)
+            f"{QUERY_RESULTS_PATH}{node.name}_flowPaths.sarif", graph)
         sarif_extractor.add_node_conditions(
-            f"{QUERY_RESULTS_PATH}\{node.name}_sinkConditions.sarif", graph, APP_SRC_PATH)
+            f"{QUERY_RESULTS_PATH}{node.name}_sinkConditions.sarif", graph, APP_SRC_PATH)
 
     # Stage 4: Connect internal nodes to external nodes
     # TODO: Refactor for other kinds of invocations

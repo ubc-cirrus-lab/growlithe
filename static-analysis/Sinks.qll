@@ -8,6 +8,7 @@ module Sinks {
     (
       result = get_boto3_sinks(name) or
       result = get_file_sinks(name) or
+      result = get_dynamodb_table_sinks(name) or
       result = get_return_sinks(name)
     ) and
     Config::restrict_analysis(result)
@@ -27,6 +28,14 @@ module Sinks {
       call.getNumArgument() >= 2 and
       call.getArg(1).asExpr().(Str).getS().regexpMatch(".*(?:[aw]|r\\+).*") and
       result.asCfgNode() = call.asCfgNode()
+    )
+  }
+
+  DataFlow::Node get_dynamodb_table_sinks(string name) {
+    exists(API::Node api_node |
+      api_node = API::moduleImport("boto3").getMember("client").getReturn().getMember("put_item") and
+      result = api_node.getReturn().asSource() and
+      name = api_node.getKeywordParameter("TableName").getAValueReachingSink().getALocalSource().asExpr().(Str).getS() + ":DYNAMODB_TABLE"
     )
   }
 

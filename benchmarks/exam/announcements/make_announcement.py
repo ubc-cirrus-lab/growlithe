@@ -2,13 +2,14 @@ import json
 import boto3
 import os
 
-dynamodb = boto3.resource('dynamodb')
-table_name = os.environ['TABLE_NAME']
-table = dynamodb.Table(table_name)
+dynamodb = boto3.client('dynamodb')
+table_name = 'announcements'
 
 def lambda_handler(event, context):
     announcement = event['body']
-    table.put_item(Item={'announcement': announcement})
+    dynamodb.put_item(
+        TableName=table_name,
+        Item={'announcement': {'S': announcement}})
     return {
         'statusCode': 200,
         'body': json.dumps('Announcement written to db')

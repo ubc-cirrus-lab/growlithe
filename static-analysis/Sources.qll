@@ -8,7 +8,7 @@ module Sources {
     (
       result = get_parameter_sources(name) or
       result = get_boto3_sources(name) or
-      result = get_DYNAMODB_TABLE_sources(name) or
+      result = get_dynamodb_table_sources(name) or
       result = get_file_sources(name)
     ) and
     Config::restrict_analysis(result)
@@ -26,7 +26,7 @@ module Sources {
     )
   }
 
-  DataFlow::Node get_DYNAMODB_TABLE_sources(string name) {
+  DataFlow::Node get_dynamodb_table_sources(string name) {
     exists(API::Node api_node |
       api_node = API::moduleImport("boto3").getMember("client").getReturn().getMember("get_item") and
       result = api_node.getReturn().asSource() and
