@@ -2,6 +2,7 @@ import json
 import os
 import hashlib
 
+
 def get_query_results(results_file):
     with open(results_file, "r") as f:
         sarif_log = json.load(f)
@@ -37,17 +38,11 @@ def read_location(file_path, line_start, offset_start, line_end, offset_end):
     return variable
 
 
-def print_line():
-    print(
-        "======================================================================================================="
-    )
-
-
-
 def get_rel_path(file_name):
     dir = os.path.abspath(os.path.dirname(__file__))
     path = os.path.join(dir, file_name)
     return path
+
 
 def get_sorted_array_hash(arr):
     sorted_arr = sorted(arr)
@@ -55,6 +50,7 @@ def get_sorted_array_hash(arr):
     hash_object = hashlib.sha256(sorted_arr.encode())
     hash_value = hash_object.hexdigest()
     return hash_value
+
 
 def add_assertion(input_file, physical_location, policy):
     with open(input_file, 'r') as file:
@@ -70,9 +66,9 @@ def add_assertion(input_file, physical_location, policy):
             break
 
     assert_line = f"{target_indent}# ========== Growlithe ==========\n" + \
-                    f"{target_indent}import policyLib\n" + \
-                    f"{target_indent}assert {policy}, 'Policy Violation'\n" + \
-                    f"{target_indent}# ========== Growlithe ==========\n"
+                  f"{target_indent}import policyLib\n" + \
+                  f"{target_indent}assert {policy}, 'Policy Violation'\n" + \
+                  f"{target_indent}# ========== Growlithe ==========\n"
 
     lines.insert(target_line_number - 1, assert_line)
 

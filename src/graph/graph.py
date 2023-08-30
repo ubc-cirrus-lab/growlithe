@@ -1,27 +1,30 @@
+import json
+from typing import Any
+
 import networkx as nx
 import matplotlib.pyplot as plt
-from node import Node, NodeType, SecurityType, NodeType, BroadType
-import utility
-import json
-from policy import Policy, PERM
 from collections import defaultdict
 
-from policy_interface import PolicyInterface
+from src.graph.node import Node, SecurityType, NodeType, BroadType
+import src.utility as utility
+from src.logger import logger
+from src.policy.policy import Policy, PERM
+from src.policy.policy_interface import PolicyInterface
 
 
 class Graph:
     def __init__(self):
         self.nodes = []
-        self.privateNodes = []
+        self.private_nodes = []
         self.suggested_policies = []
         self.policies = []
 
         # Maps objects to list of policies defined on them
-        self.objectToPolicyMap = defaultdict(set)
+        self.object_to_policy_map = defaultdict(set)
         # Maps the tuple (subject, object, perm) to the policy
-        self.policyMap = {}
+        self.policy_map = {}
 
-        self.taintSources = defaultdict(set)
+        self.taint_sources = defaultdict(set)
 
     def find_node(self, name):
         for node in self.nodes:
@@ -29,21 +32,21 @@ class Graph:
                 return node
         return None
 
-    def find_node_by_repr(self, name):
+    def find_node_by_policy(self, name):
         for node in self.nodes:
-            if node.__repr__() == name:
+            if node.policy_str == name:
                 return node
         return None
 
-    def find_node_by_physicalLocation(self, physicalLocation):
+    def find_node_by_physical_location(self, physical_location):
         for node in self.nodes:
-            if node is not None and node.physicalLocation == physicalLocation:
+            if node is not None and node.physical_location == physical_location:
                 return node
         return None
 
     def find_node_or_create(self, name, physical_location=None):
         if physical_location is not None:
-            node = self.find_node_by_physicalLocation(physical_location)
+            node = self.find_node_by_physical_location(physical_location)
         else:
             node = self.find_node(name)
         if node is None:
@@ -56,12 +59,11 @@ class Graph:
                 node.add_parent(parent_node)
         return node
 
-    # Returns the node with the given endpoint type, returns first node if multiple nodes have the given endpoint type
     @staticmethod
     def find_child_node_by_node_type(function_node, node_type):
         result = []
         for node in function_node.children:
-            if node.nodeType == node_type:
+            if node.node_type == node_type:
                 result.append(node)
         return result
 
@@ -74,88 +76,95 @@ class Graph:
     def annotate_edges(self):
         self.traverse(self.annotate_edge)
 
-    def annotate_edge(self, node, nextNode, _):
+    def annotate_edge(self, node, next_node, _):
         subject, object, perm = None, None, None
-        match node.get_broad_node_type(), nextNode.get_broad_node_type():
+        match node.broad_node_type, next_node.broad_node_type:
             # Reads from a resource
             case BroadType.RESOURCE, BroadType.IDH_OTHER:
-                subject = nextNode.parentFunctionNode
-                idh_node = nextNode
+                subject = next_node.parent_function_node
+                idh_node = next_node
                 object = node
                 perm = PERM.READ
             # Execute Trigger from a resource
             case BroadType.RESOURCE, BroadType.IDH_PARAM:
                 subject = node
                 idh_node = None
-                object = nextNode.parentFunctionNode
+                object = next_node.parent_function_node
+                perm = PERM.EXECUTE
+            case BroadType.RESOURCE, BroadType.COMPUTE:
+                subject = node
+                idh_node = None
+                object = next_node
                 perm = PERM.EXECUTE
             # Writes to a resource
             case BroadType.IDH_OTHER, BroadType.RESOURCE:
-                subject = node.parentFunctionNode
+                subject = node.parent_function_node
                 idh_node = node
-                object = nextNode
+                object = next_node
                 perm = PERM.WRITE
-                self.checkIsAsRestrictive(node.parentFunctionNode, nextNode)
+                self.check_is_as_restrictive(node.parent_function_node, next_node)
 
             # TODO: Cover other cases
         if subject is not None and object is not None and perm is not None:
             policy = self.get_policy(subject, object, perm)
             if policy is None:
-                print('Edge is DENY', node.name, nextNode.name)
+                print(self.policy_map)
+                print(subject, object, perm)
+                logger.debug(f'Edge is DENY {node.name} {next_node.name}')
             else:
                 eval_results = policy.eval()
-                if eval_results == True:
-                    print('Edge is Allow', node.name, nextNode.name)
+                if eval_results:
+                    logger.debug(f'Edge is Allow {node.name} {next_node.name}')
                 else:
                     missing_subject_attributes, missing_object_attributes, environment_attributes = eval_results
-                    subject.missingAttributes.update(missing_subject_attributes)
-                    object.missingAttributes.update(missing_object_attributes)
+                    subject.missing_attributes.update(missing_subject_attributes)
+                    object.missing_attributes.update(missing_object_attributes)
                     # TODO: Add required environment attributes somewhere
-                    print("Static evluation failed, adding runtime checks")
+                    logger.info("Adding runtime checks...")
                     policy.add_runtime_checks(idh_node)
 
-    def checkIsAsRestrictive(self, node, nextNode):
-        policies = self.objectToPolicyMap[nextNode]
-        taintSources = self.taintSources[node]
-        for taintSource in taintSources:
-            sourcePolicies = self.objectToPolicyMap[taintSource]
-            # if len(policies) < len(sourcePolicies):
-            #     print('Policies not defined for all subjects')
+    def check_is_as_restrictive(self, node, next_node):
+        policies = self.object_to_policy_map[next_node]
+        taint_sources = self.taint_sources[node]
+        for taint_source in taint_sources:
+            source_policies = self.object_to_policy_map[taint_source]
+            # if len(policies) < len(source_policies):
+            #     logger.info('Policies not defined for all subjects')
             #     return False
-            for sourcePolicy in sourcePolicies:
-                if sourcePolicy.perm == PERM.WRITE:
-                    policy = self.get_policy(sourcePolicy.subject, nextNode, PERM.WRITE)
+            for source_policy in source_policies:
+                if source_policy.perm == PERM.WRITE:
+                    policy = self.get_policy(source_policy.subject, next_node, PERM.WRITE)
                     if policy is None:
-                        print('No policy found for', sourcePolicy)
+                        logger.debug(f'No policy found for {source_policy}')
                         return False
-                    elif not sourcePolicy.isAsRestrictive(policy):
-                        print('Integrity violation: ', sourcePolicy, 'is not as restrictive as', policy)
+                    elif not source_policy.is_as_restrictive(policy):
+                        logger.debug(f'Integrity violation: {source_policy} is not as restrictive as {policy}')
                         return False
             for policy in policies:
                 if policy.perm in [PERM.READ, PERM.EXECUTE]:
-                    sourcePolicy = self.get_policy(taintSource, policy.object, policy.perm)
-                    if sourcePolicy is None:
-                        print('No sourcePolicy found for', policy)
+                    source_policy = self.get_policy(taint_source, policy.object, policy.perm)
+                    if source_policy is None:
+                        logger.debug(f'No source_policy found for {policy}')
                         return False
-                    if not policy.isAsRestrictive(sourcePolicy):
-                        print('Confidentiality violation: ', policy, 'is not as restrictive as', sourcePolicy)
+                    if not policy.is_as_restrictive(source_policy):
+                        logger.debug(f'Confidentiality violation: {policy} is not as restrictive as {source_policy}')
                         return False
         return True
 
     def generate_taints(self):
         # TODO: Move map initilization to where policies are confirmed by developer
         self.init_policy_maps()
-        for node in self.objectToPolicyMap.keys():
+        for node in self.object_to_policy_map.keys():
             self.dfs_helper(node, set(), self.propagate_taints, node)
 
-    def propagate_taints(self, _, nextNode, sourceNode):
+    def propagate_taints(self, _, next_node, source_node):
         # Propagate taints on a read or flow edge
-        if nextNode.get_broad_node_type() == BroadType.IDH_OTHER:
-            self.taintSources[nextNode].add(sourceNode)
+        if next_node.broad_node_type == BroadType.IDH_OTHER:
+            self.taint_sources[next_node].add(source_node)
 
-    def get_policy(self, sub, obj, perm) -> Policy:
-        if (sub, obj, perm) in self.policyMap:
-            return self.policyMap[(sub, obj, perm)]
+    def get_policy(self, sub, obj, perm):
+        if (sub, obj, perm) in self.policy_map:
+            return self.policy_map[(sub, obj, perm)]
         return None
 
     def traverse(self, apply_func):
@@ -166,14 +175,14 @@ class Graph:
                 visited.add(node)
                 self.dfs_helper(node, visited, apply_func)
 
-    def dfs_helper(self, node, visited, applyFunc, applyFuncParams=None):
-        print(node.name)
-        for nextNode in node.edges:
+    def dfs_helper(self, node, visited, apply_func, apply_func_params=None):
+        logger.debug(f"Visiting node {node.name}")
+        for next_node in node.edges:
             # For detecting reads if already visited current function
-            applyFunc(node, nextNode, applyFuncParams)
-            if nextNode not in visited:
-                visited.add(nextNode)
-                self.dfs_helper(nextNode, visited, applyFunc, applyFuncParams)
+            apply_func(node, next_node, apply_func_params)
+            if next_node not in visited:
+                visited.add(next_node)
+                self.dfs_helper(next_node, visited, apply_func, apply_func_params)
 
     # Avoid creating duplicate policies
     def fetch_or_suggest_policy(self, subject, object, perm):
@@ -183,72 +192,74 @@ class Graph:
                 return policy
         policy = Policy(subject, object, perm)
         self.suggested_policies.append(policy)
-        self.objectToPolicyMap[policy.object].add(policy)
-        self.policyMap[(policy.subject, policy.object, policy.perm)] = policy
+        self.object_to_policy_map[policy.object].add(policy)
+        self.policy_map[(policy.subject, policy.object, policy.perm)] = policy
         return policy
 
     def init_policy_maps(self):
-        self.objectToPolicyMap.clear()
-        self.policyMap.clear()
+        self.object_to_policy_map.clear()
+        self.policy_map.clear()
 
         for policy in self.policies:
-            self.objectToPolicyMap[policy.object].add(policy)
+            self.object_to_policy_map[policy.object].add(policy)
             # TODO: Flag duplicate tuple found here?
-            self.policyMap[(policy.subject, policy.object, policy.perm)] = policy
+            self.policy_map[(policy.subject, policy.object, policy.perm)] = policy
 
     def suggest_policy(self, node, next_node, _):
-        match node.get_broad_node_type(), next_node.get_broad_node_type():
+        match node.broad_node_type, next_node.broad_node_type:
             # Reads from a resource
             case BroadType.RESOURCE, BroadType.IDH_OTHER:
-                self.fetch_or_suggest_policy(next_node.parentFunctionNode, node, PERM.READ)
+                self.fetch_or_suggest_policy(next_node.parent_function_node, node, PERM.READ)
             # Execute Trigger from a resource
             case BroadType.RESOURCE, BroadType.IDH_PARAM:
-                self.fetch_or_suggest_policy(next_node.parentFunctionNode, node, PERM.EXECUTE)
+                self.fetch_or_suggest_policy(next_node.parent_function_node, node, PERM.EXECUTE)
+            case BroadType.RESOURCE, BroadType.COMPUTE:
+                self.fetch_or_suggest_policy(next_node, node, PERM.EXECUTE)
             # Writes to a resource
             case BroadType.IDH_OTHER, BroadType.RESOURCE:
-                self.fetch_or_suggest_policy(node.parentFunctionNode, next_node, PERM.WRITE)
+                self.fetch_or_suggest_policy(node.parent_function_node, next_node, PERM.WRITE)
             case BroadType.IDH_OTHER, BroadType.IDH_PARAM:
-                self.fetch_or_suggest_policy(node.parentFunctionNode, next_node.parentFunctionNode, PERM.EXECUTE)
+                self.fetch_or_suggest_policy(node.parent_function_node, next_node.parent_function_node, PERM.EXECUTE)
             # TODO: Cover all cases
 
     def init_security_labels(self, security_labels_file):
         labels = json.load(open(security_labels_file))
         private_locations = labels["private"]
         for location in private_locations:
-            node = self.find_node_by_physicalLocation(location)
+            node = self.find_node_by_physical_location(location)
             if node is not None:
-                node.securityType = SecurityType.PRIVATE
-                self.privateNodes.append(node)
-                print("Private node: ", node.name)
+                node.security_type = SecurityType.PRIVATE
+                self.private_nodes.append(node)
+                logger.debug(f"Private node: {node.name}")
             else:
-                print(f"Warning: {location} not found in graph")
+                logger.warning(f"{location} not found in graph")
 
         public_node_ids = labels["public"]
-        for publicNodeId in public_node_ids:
-            node = self.find_node(publicNodeId)
+        for public_node_id in public_node_ids:
+            node = self.find_node(public_node_id)
             if node is not None:
-                node.securityType = SecurityType.PUBLIC
-                print("Public node: ", node.name)
+                node.security_type = SecurityType.PUBLIC
+                logger.debug("Public node: {node.name}")
             else:
-                print(f"Warning: {publicNodeId} not found in graph")
+                logger.warning(f"{public_node_id} not found in graph")
 
     def find_violations(self):
-        for node in self.privateNodes:
-            print(f"Finding publicly reachable nodes from {node.name}")
+        for node in self.private_nodes:
+            logger.debug(f"Finding publicly reachable nodes from {node.name}")
             self.dfs(node, [node])
-            # if node.parentFunctionNode is None:
+            # if node.parent_function_node is None:
             #     for edge in node.edges:
             #         self.propagate_labels(child)
 
     # Traverse the graph and propagate private labels
     def dfs(self, node, path):
-        if node.securityType == SecurityType.PUBLIC:
-            print(f"Violation: Public node {node.name} is reachable via {path}")
+        if node.security_type == SecurityType.PUBLIC:
+            logger.info(f"Violation: Public node {node.name} is reachable via {path}")
             # TODO: Continue traversing even after public nodes
             return
         for edge in node.edges:
-            # if edge.securityType == SecurityType.UNKNOWN:
-            # edge.securityType = SecurityType.PRIVATE
+            # if edge.security_type == SecurityType.UNKNOWN:
+            # edge.security_type = SecurityType.PRIVATE
             self.dfs(edge, path + [edge])
 
     def connect_nodes_across_functions(self, function_node):
@@ -266,16 +277,22 @@ class Graph:
         return self.nodes[0]
 
     def print(self):
-        utility.print_line()
+        logger.debug(
+            "======================================================================================================="
+        )
         for node in self.nodes:
-            print(f"{node.name : <10}\
-                  (Parent: {node.parentFunctionNode.name if node.parentFunctionNode else 'None'})\
-                  (Edge: {[edge.name for edge in node.edges]})\
-                  (child: {[child.name for child in node.child]})\)")
+            logger.debug(
+                f"{node.name} (Type: {node.node_type}) " +
+                f"(Parent: {node.parent_function_node.name if node.parent_function_node else 'None'}) " +
+                f"(Edges: {[edge.name for edge in node.edges]}) " +
+                f"(children: {[child.name for child in node.children]})")
+        logger.debug(
+            "======================================================================================================="
+        )
 
     def visualize(self, vis_out_path, graphic=False):
         if graphic:
-            nodes = [node.name for node in self.nodes if node.parentFunctionNode is None]
+            nodes = [node.name for node in self.nodes if node.parent_function_node is None]
             nodes.append("End")
 
             G = nx.DiGraph()
@@ -305,12 +322,12 @@ class Graph:
         else:
             for node in self.nodes:
                 if not node.edgeren:
-                    print(
-                        f"{node.name} ({node.parentFunctionNode.name if node.parentFunctionNode else 'None'}) -> End"
+                    logger.debug(
+                        f"{node.name} ({node.parent_function_node.name if node.parent_function_node else 'None'}) -> End"
                     )
                 for edge in node.edgeren:
-                    print(
-                        f"{node.name} ({node.parentFunctionNode.name if node.parentFunctionNode else 'None'}) -> {edge.name}"
+                    logger.debug(
+                        f"{node.name} ({node.parent_function_node.name if node.parent_function_node else 'None'}) -> {edge.name}"
                     )
 
     @staticmethod
@@ -363,8 +380,8 @@ class Graph:
 
     def add_edges(self, graph):
         for node in self.nodes:
-            if node.parentFunctionNode is not None:
-                name = node.parentFunctionNode.name
+            if node.parent_function_node is not None:
+                name = node.parent_function_node.name
             else:
                 name = node.name
             if not node.edgeren:
@@ -374,7 +391,7 @@ class Graph:
                     style = "dashed"
                 else:
                     style = "solid"
-                if edge.parentFunctionNode is not None:
-                    graph.add_edge(name, edge.parentFunctionNode.name, style=style)
+                if edge.parent_function_node is not None:
+                    graph.add_edge(name, edge.parent_function_node.name, style=style)
                 else:
                     graph.add_edge(name, edge.name, style=style)
