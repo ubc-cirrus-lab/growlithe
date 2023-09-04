@@ -4,9 +4,7 @@
 *.annotated
 
 # codeql databases
-codeql/
 codeqldb/
-db/
 
 # test files
 test.ql
