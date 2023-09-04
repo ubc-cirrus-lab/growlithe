@@ -1,8 +1,6 @@
 # cache files
 .cache/
 *.zip
-*.annotated
-
 # codeql databases
 codeql/
 codeqldb/
@@ -27,7 +25,6 @@ node_modules/
 .serverless/
 *.lock.yml
 .vscode/
-.idea/
 
 # Archives, Outputs & Data
 archive/
@@ -38,5 +35,3 @@ __pycache__/
 tmp/
 
 policies.txt
-venv/
-growlithe.egg-info/

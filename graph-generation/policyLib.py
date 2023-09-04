@@ -3,7 +3,6 @@ import boto3
 users_db = boto3.client("dynamodb", region_name='us-east-2')
 table_name = "UsersDB"
 
-
 def is_teacher(username, login_token):
     user = users_db.get_item(TableName="UsersDB", Key={"username": {"S": username}})[
         "Item"

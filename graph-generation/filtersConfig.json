@@ -1,0 +1,38 @@
+{
+    "is_end_user": {
+        "subject_attributes": ["endUser"],
+        "object_attributes": [],
+        "environment_attributes":[],
+        "policy_constants": ["endUser"]
+    },
+    "user_has_role": {
+        "subject_attributes": ["role"],
+        "object_attributes": [],
+        "environment_attributes":[],
+        "policy_constants": ["role"]
+    },
+    "has_location": {
+        "subject_attributes": [],
+        "object_attributes": [],
+        "environment_attributes":["location"],
+        "policy_constants": ["location"]
+    },
+    "in_time_range": {
+        "subject_attributes": [],
+        "object_attributes": [],
+        "environment_attributes":["time"],
+        "policyConstants": ["time_lower", "time_upper"]
+    },
+    "isTeacher": {
+        "subject_attributes": ["username", "login_token"],
+        "object_attributes": [],
+        "environment_attributes":[],
+        "policyConstants": []
+    },
+    "isRecordOwner": {
+        "subject_attributes": ["username", "login_token", "requested_username"],
+        "object_attributes": [],
+        "environment_attributes":[],
+        "policyConstants": []
+    }
+}

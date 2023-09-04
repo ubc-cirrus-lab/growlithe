@@ -1,10 +1,7 @@
+import utility
+from node import BroadType
+from policy import Policy, PERM, PolicyGroup
 import json
-import os
-
-from src import utility
-from src.graph.node import BroadType
-from src.logger import logger
-from src.policy.policy import Policy, PERM, PolicyGroup
 
 
 class PolicyInterface:
@@ -18,51 +15,50 @@ class PolicyInterface:
         f.write("#\n")
         f.write("# Available subjects and objects:\n")
         for node in self.graph.nodes:
-            broad_type = node.broad_node_type
+            broad_type = node.get_broad_node_type()
             if broad_type == BroadType.COMPUTE or broad_type == BroadType.RESOURCE:
-                f.write(f"#  -  {node.policy_str}, \n")
+                f.write(f"#  -  {node}, \n")
         f.write("# Available permissions:\n")
-        f.write("#  - READ\n")
-        f.write("#  - WRITE\n")
-        f.write("#  - EXECUTE\n")
+        f.write("#  -  READ\n")
+        f.write("#  -  WRITE\n")
+        f.write("#  -  EXECUTE\n")
         f.write("# Available allowFilters:\n")
-        f.write("#  - ALLOW\n")
-        f.write("#  - DENY\n")
-        current_dir = os.path.dirname(__file__)
-        with open(f"{current_dir}/filtersConfig.json", "r") as filters_config:
+        f.write("#  -  ALLOW\n")
+        f.write("#  -  DENY\n")
+        with open(utility.get_rel_path("filtersConfig.json"), "r") as filters_config:
             filters_config = json.load(filters_config)
             for filter in filters_config:
-                f.write(f"#  - {filter}\n")
+                f.write(f"#  -  {filter}\n")
         f.write("\n")
 
     def write_policies(self, path):
         f = open(path, "w")
         self.write_help(f)
         for policy in self.suggested_policies:
-            f.write(str(policy))
+            f.write(policy.__repr__())
             f.write("\n")
         f.close()
 
     @staticmethod
     def _validate_policy(subject, object, perm, policy):
         if subject is None:
-            logger.critical(f"Invalid subject: {policy}")
+            print(f"Invalid subject: {policy}")
             exit(1)
         if object is None:
-            logger.critical(f"Invalid object: {policy}")
+            print(f"Invalid object: {policy}")
             exit(1)
         if perm is None:
-            logger.critical(f"Invalid permission: {policy}")
+            print(f"Invalid permission: {policy}")
             exit(1)
 
     def _extract_and_validate_policy(self, policy, line):
         subject, object, perm = list(map(str.strip, policy.split(",")))
-        subject = self.graph.find_node_by_policy(subject)
-        object = self.graph.find_node_by_policy(object)
+        subject = self.graph.find_node_by_repr(subject)
+        object = self.graph.find_node_by_repr(object)
         try:
             perm = PERM[perm.upper()]
         except KeyError:
-            logger.critical(f"Invalid permission: {line}")
+            print(f"Invalid permission: {line}")
             exit(1)
         PolicyInterface._validate_policy(subject, object, perm, line)
         return subject, object, perm
@@ -76,14 +72,14 @@ class PolicyInterface:
             is_denied = False
             policy = line.split(":")
             if len(policy) != 2:
-                logger.critical(f"Invalid policy format: {line}")
+                print("Invalid policy format: ", line)
                 exit(1)
             subject, object, perm = self._extract_and_validate_policy(policy[0], line)
             policy_groups = list(map(str.strip, policy[1].split("OR")))
             policy = Policy(subject, object, perm)
             for policy_group in policy_groups:
                 if policy_group == "ALLOW":
-                    policy.policy_groups = set()
+                    policy.policyGroups = set()
                     break
                 elif policy_group == "DENY":
                     is_denied = True
@@ -94,7 +90,7 @@ class PolicyInterface:
                     params = list(map(str.strip, filter.split("(")[1][:-1].split(",")))
                     policy_group = PolicyGroup()
                     policy_group.add_filter(function, params)
-                    policy.policy_groups.add(policy_group)
+                    policy.policyGroups.add(policy_group)
             if not is_denied:
                 policies.append(policy)
         f.close()
@@ -102,8 +98,7 @@ class PolicyInterface:
 
     def get_policies(self):
         self.write_policies(utility.get_rel_path("policies.txt"))
-        logger.info("Suggested policies written to policies.txt.")
-        logger.info("Please update the policies in policies.txt and save the file.")
-        logger.info("Press Enter to continue...")
-        input()
+        print("Suggested policies written to policies.txt.")
+        print("Please update the policies in policies.txt and save the file.")
+        input("Press Enter to continue...")
         return self.parse_policies(utility.get_rel_path("policies.txt"))
