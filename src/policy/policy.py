@@ -3,10 +3,11 @@ import pathlib
 from enum import Enum
 from typing import Tuple, List
 
-from src.graph.node import Node
+from src.graph.node import Node, BroadType
 from src.policy import allow_filters
 from src import utility
 from src.logger import logger
+from src.cloud_utility import aws_helper
 
 
 class PERM(Enum):
@@ -115,7 +116,10 @@ class Policy:
 
         return True
 
-    def add_runtime_checks(self, idh_node):
+    def add_iam_or_runtime_checks(self, idh_node):
+        if self.perm == PERM.WRITE and self.object.broad_node_type == BroadType.RESOURCE:
+            print(f"Adding IAM check for {self}")
+            aws_helper.generate_iam_policy(self)
         if self.perm == PERM.READ:
             python_parseable_policy = self.to_python()
             utility.add_assertion(self.subject.file_path, idh_node.physical_location, python_parseable_policy)

@@ -106,10 +106,8 @@ class Graph:
 
             # TODO: Cover other cases
         if subject is not None and object is not None and perm is not None:
-            policy = self.get_policy(subject, object, perm)
+            policy: Policy = self.get_policy(subject, object, perm)
             if policy is None:
-                print(self.policy_map)
-                print(subject, object, perm)
                 logger.debug(f'Edge is DENY {node.name} {next_node.name}')
             else:
                 eval_results = policy.eval()
@@ -121,7 +119,7 @@ class Graph:
                     object.missing_attributes.update(missing_object_attributes)
                     # TODO: Add required environment attributes somewhere
                     logger.info("Adding runtime checks...")
-                    policy.add_runtime_checks(idh_node)
+                    policy.add_iam_or_runtime_checks(idh_node)
 
     def check_is_as_restrictive(self, node, next_node):
         policies = self.object_to_policy_map[next_node]

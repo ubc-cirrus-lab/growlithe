@@ -5,8 +5,10 @@ from src.logger import logger
 
 
 class Growlithe:
-    def __init__(self, app_path):
+    def __init__(self, app_path, aws_account_id, aws_region):
         self.app_path = app_path
+        self.aws_configuration = {'account_id': aws_account_id, 'region': aws_region}
+        self.aws_region = aws_region
         self.resource_extractor = None
         self.template_path = None
         self.graph = None
