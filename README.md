@@ -6,21 +6,28 @@
 - CodeQL CLI
 
 ### Steps
-1. Create and activate a virtual environment/
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
-2. Install Growlithe as an editable package.
-    ```bash
-    pip install -e .
-    ```
-3. Run Growlithe.
+1. Install dependencies and growlithe
+   ```bash
+    ./install.sh
+   ```
+2. Run Growlithe.
     ```bash
     growlithe
     ```
+   
+## Usage
+### CLI
+```bash
+growlithe -p PATH [--profile PROFILE] [--sfn SFN] [--cfn CFN] [-v]
+```
+- `PATH`: Path to the source code directory.
+- `PROFILE`: AWS profile name.
+- `SFN`: Path for the deployed Step Functions template.
+- `CFN`: Path for the CloudFormation deployment template.
+- `-v`: Verbose mode.
 
 
+# Running CodeQL Queries Manually
 ## Installing CodeQL
 Follow the CodeQL setup guide in [here](https://docs.github.com/en/code-security/codeql-cli/using-the-codeql-cli/getting-started-with-the-codeql-cli).
 
