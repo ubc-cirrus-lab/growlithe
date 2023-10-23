@@ -11,7 +11,8 @@ then
     wget https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.15.0/codeql-bundle.tar.gz
     tar --strip-components=1 -xzf codeql-bundle.tar.gz
     rm codeql-bundle.tar.gz
-    export PATH=~/codeql:$PATH
+    echo 'export PATH=~/codeql:$PATH' >> ~/.bashrc
+    source ~/.bashrc
     cd "$current_dir"
 fi
 
