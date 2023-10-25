@@ -6,11 +6,17 @@
 - CodeQL CLI
 
 ### Steps
-1. Install dependencies and growlithe
+1. Install dependencies
    ```bash
     ./install.sh
    ```
-2. Run Growlithe.
+2. Install Growlithe
+   ```bash
+    source ~/.bashrc
+    source venv/bin/activate
+    pip install -e .
+   ```
+3. Run!
     ```bash
     growlithe
     ```
