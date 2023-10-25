@@ -17,6 +17,13 @@ then
 fi
 
 echo "Installing Growlithe..."
-python -m venv venv
+
+if ! dpkg -s python3.11-venv &> /dev/null
+then
+    echo "python3.11-venv is not installed. Installing python3.11-venv..."
+    sudo apt-get install python3.11-venv
+fi
+
+python3.11 -m venv venv
 source venv/bin/activate
 pip install -e .
