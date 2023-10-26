@@ -16,10 +16,7 @@
     source venv/bin/activate
     pip install -e .
    ```
-3. Run!
-    ```bash
-    growlithe
-    ```
+3. Growlithe is now ready to run as a CLI tool. See Usage guide below. 
    
 ## Usage
 ### CLI
