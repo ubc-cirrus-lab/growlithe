@@ -6,14 +6,17 @@
 - CodeQL CLI
 
 ### Steps
-1. Install dependencies and growlithe
+1. Install dependencies
    ```bash
     ./install.sh
    ```
-2. Run Growlithe.
-    ```bash
-    growlithe
-    ```
+2. Install Growlithe
+   ```bash
+    source ~/.bashrc
+    source venv/bin/activate
+    pip install -e .
+   ```
+3. Growlithe is now ready to run as a CLI tool. See Usage guide below. 
    
 ## Usage
 ### CLI
