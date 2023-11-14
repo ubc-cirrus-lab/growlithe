@@ -30,28 +30,40 @@ class CodeQL:
     @staticmethod
     def _analyze_functions(app_path, codeql_db_path, output_dir):
         current_dir = pathlib.Path(__file__).parent.resolve()
-        queries = ['getSources', 'getSinks', 'flowPaths', 'sinkConditions']
+        # queries = ['getSources', 'getSinks', 'flowPaths', 'sinkConditions']
+        # queries = ['getSources', 'getSinks', 'flowPaths']
+        queries = ['flowPaths']
 
-        logger.info('Creating output directory...')
-        os.mkdir(output_dir)
-        logger.info('Output directory created')
+        if(os.path.exists(output_dir)):
+            logger.info('Deleting existing output files...')
+            for file in glob.glob(f'{output_dir}/*'):
+                os.remove(file)
+            logger.info('Existing output directory deleted')
+        else:
+            logger.info('Creating output directory...')
+            os.mkdir(output_dir)
+            logger.info('Output directory created')
 
         functions = [os.path.splitext(os.path.basename(x))[0] for x in glob.glob(f'{app_path}/*.py')]
 
-        with open(f'{current_dir}/codeql_queries/utils/Config_Template.qll', 'r') as file:
+        logger.info(f"Found {len(functions)} functions to analyze: ")
+        logger.info(functions)
+
+        codeql_config_path = f'{current_dir}/queries/Config.qll'
+        with open(codeql_config_path, 'r') as file:
             config_template = file.read()
-        to_replace = 'LambdaFunctions/<FunctionName>/lambda_function'
+        to_replace = 'test.py'
 
         for function in functions:
             logger.info(f'Analyzing function {function}')
-            config = config_template.replace(to_replace, function)
-            with open(f'{current_dir}/codeql_queries/utils/Config.qll', 'w') as file:
+            config = config_template.replace(to_replace, f"{function}.py")
+            with open(codeql_config_path, 'w') as file:
                 file.write(config)
             for query_file in queries:
                 subprocess.run(
                     ['codeql', 'database', 'analyze', '--output', f'{output_dir}/{function}_{query_file}.sarif',
                      '--format', 'sarifv2.1.0', '--rerun', codeql_db_path,
-                     f'{current_dir}/codeql_queries/{query_file}.ql'], stdout=subprocess.DEVNULL)
+                     f'{current_dir}/queries/{query_file}.ql'], stdout=subprocess.DEVNULL)
 
     @staticmethod
     def _create_database(app_path):
