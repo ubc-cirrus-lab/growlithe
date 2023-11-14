@@ -1,30 +1,40 @@
 import python
 import semmle.python.dataflow.new.DataFlow
+import modules.Growlithe.Utils
 
 module Core {
-  class ShareType extends string {
-    ShareType() { this in ["GLOBAL", "CONTAINER", "INVOCATION"] }
-  }
-
   abstract class Node extends DataFlow::Node {
-    abstract Expr getResource();
-
-    abstract string getResourceType();
+    // Resource string in the form of ResourceType:ExprType:ResourceName. E.g: S3_BUCKET:STATIC:raw_images
+    abstract string getResource();
   }
 
   abstract class Source extends Core::Node {
-    abstract Expr getReferenceExpression();
+    // abstract string getReferenceExpression();
+    // Object path string in the form of ExprType:ResourceName
+    abstract string getObjectPath();
 
-    abstract ShareType getShareType();
+    abstract Utils::ShareType getShareType();
 
-    abstract string getGrowlitheOperationType();
+    Utils::InterfaceType getInterfaceType() { result = "SOURCE" }
+
+    string getFlowState() {
+      result =
+        getInterfaceType() + ", " + getShareType() + ", " + getResource() + ", " + getObjectPath()
+    }
   }
 
   abstract class Sink extends Core::Node {
-    abstract Expr getReferenceExpression();
+    // abstract string getReferenceExpression();
+    // Object path string in the form of ExprType:ResourceName
+    abstract string getObjectPath();
 
-    abstract ShareType getShareType();
+    abstract Utils::ShareType getShareType();
 
-    abstract string getGrowlitheOperationType();
+    Utils::InterfaceType getInterfaceType() { result = "SINK" }
+
+    string getFlowState() {
+      result =
+        getInterfaceType() + ", " + getShareType() + ", " + getResource() + ", " + getObjectPath()
+    }
   }
 }

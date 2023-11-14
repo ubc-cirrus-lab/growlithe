@@ -9,44 +9,30 @@ module Sinks {
       exists(Return ret | this.asCfgNode() = ret.getASubExpression().getAFlowNode())
     }
 
-    // override string toString() { result = "RETURN" }
+    override Utils::ShareType getShareType() { result = "INVOCATION" }
 
-    override string getGrowlitheOperationType() { result = "RETURN" }
+    override string getObjectPath() { result = Utils::strRepr(this) }
 
-    override Core::ShareType getShareType() { result = "INVOCATION" }
-
-    override Expr getReferenceExpression() { result = this.asExpr() }
-
-    override Expr getResource() { result = this.asExpr() }
-
-    override string getResourceType() { result = "RETURN"}
+    override string getResource() { result = "RETURN" }
   }
 
   class S3BucketDownloadSink extends S3Bucket::S3BucketDownload, Core::Sink {
-    // override string toString() { result = getGrowlitheOperationType() }
-    override string getGrowlitheOperationType() { result = "S3BucketDownloadSink" }
+    override Utils::ShareType getShareType() { result = "CONTAINER" }
 
-    override Core::ShareType getShareType() { result = "GLOBAL" }
+    override string getObjectPath() { result = Utils::strRepr(this.getLocalPath()) }
 
-    override Expr getReferenceExpression() { result = this.getLocalPath().asExpr() }
+    override string getResource() { result = Utils::localFileResource() }
   }
 
   class S3BucketUploadSink extends S3Bucket::S3BucketUpload, Core::Sink {
-    // override string toString() { result = getGrowlitheOperationType() }
-    override string getGrowlitheOperationType() { result = "S3BucketUploadSink" }
+    override Utils::ShareType getShareType() { result = "GLOBAL" }
 
-    override Core::ShareType getShareType() { result = "GLOBAL" }
-
-    override Expr getReferenceExpression() { result = this.getRemotePath().asExpr() }
+    override string getObjectPath() { result = Utils::strRepr(this.getRemotePath()) }
   }
 
   class ImageSaveSink extends Image::ImageSave, Core::Sink {
-    override string toString() { result = getGrowlitheOperationType() }
+    override Utils::ShareType getShareType() { result = "CONTAINER" }
 
-    override string getGrowlitheOperationType() { result = "ImageSaveSink" }
-
-    override Core::ShareType getShareType() { result = "GLOBAL" }
-
-    override Expr getReferenceExpression() { result = this.getArg(0).asExpr() }
+    override string getObjectPath() { result = Utils::strRepr(this.getArg(0)) }
   }
 }

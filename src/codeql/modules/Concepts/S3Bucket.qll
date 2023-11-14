@@ -2,6 +2,7 @@ import python
 import semmle.python.dataflow.new.DataFlow
 import semmle.python.ApiGraphs
 import modules.Growlithe.Core
+import modules.Growlithe.Utils
 import modules.Concepts.File
 
 module S3Bucket {
@@ -15,9 +16,11 @@ module S3Bucket {
 
     API::Node getAPIMemberReturn() { result = apiNode.getReturn() }
 
-    Expr getBucketExpr() { result = this.getArg(0).getALocalSource().asExpr() }
+    DataFlow::Node getBucketName() { result = this.getArg(0).getALocalSource() }
 
-    override string toString() { result = "S3Bucket" }
+    string getBucketNameAsResource() { result = "S3_BUCKET:" + Utils::strRepr(getBucketName()) }
+
+    override string toString() { result = getBucketNameAsResource() }
   }
 
   class S3BucketDownload extends DataFlow::CallCfgNode, Core::Node, File::LocalFile {
@@ -25,21 +28,22 @@ module S3Bucket {
     API::Node apiNode;
 
     S3BucketDownload() {
+      bucket = any(S3Bucket b) and
       apiNode = bucket.getAPIMemberReturn().getMember("download_file") and
       this = apiNode.getACall()
     }
+
+    S3Bucket getBucket() { result = bucket }
 
     DataFlow::Node getRemotePath() { result in [this.getArg(0), this.getArgByName("Key")] }
 
     DataFlow::Node getLocalPath() { result in [this.getArg(1), this.getArgByName("Filename")] }
 
-    override Expr getResource() { result = bucket.getBucketExpr() }
-
-    override string getResourceType() { result = "S3_BUCKET" }
-
     override File::LocalFileOperation localFileOperation() { result = "WRITE" }
 
-    override Expr getFilePathExpr() { result = this.getLocalPath().getALocalSource().asExpr() }
+    override DataFlow::Node getFilePath() { result = this.getLocalPath().getALocalSource()}
+
+    override string getResource() { result = bucket.getBucketNameAsResource() }
   }
 
   class S3BucketUpload extends DataFlow::CallCfgNode, Core::Node, File::LocalFile {
@@ -55,12 +59,11 @@ module S3Bucket {
 
     DataFlow::Node getLocalPath() { result in [this.getArg(0), this.getArgByName("Filename")] }
 
-    override Expr getResource() { result = bucket.getBucketExpr() }
-
-    override string getResourceType() { result = "S3_BUCKET" }
-
     override File::LocalFileOperation localFileOperation() { result = "READ" }
 
-    override Expr getFilePathExpr() { result = this.getLocalPath().getALocalSource().asExpr() }
+    override DataFlow::Node getFilePath() { result = this.getLocalPath().getALocalSource() }
+
+    override string getResource() { result = bucket.getBucketNameAsResource() }
+
   }
 }

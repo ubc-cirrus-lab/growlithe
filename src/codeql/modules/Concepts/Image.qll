@@ -1,5 +1,6 @@
 import semmle.python.ApiGraphs
 import modules.Growlithe.Core
+import modules.Growlithe.Utils
 import modules.Concepts.File
 
 module Image {
@@ -25,33 +26,30 @@ module Image {
 
     override API::Node getAPIMemberReturn() { result = apiNode.getReturn() }
 
-    override string toString() { result = "Image" }
-
-    // FIXME: Temp hack, wrong val
-    override Expr getResource() { result = this.getArg(0).getALocalSource().asExpr() }
-
-    override string getResourceType() { result = "LOCAL_FILE" }
+    override string toString() { result = "ImageOpen" }
 
     override File::LocalFileOperation localFileOperation() { result = "READ" }
 
-    override Expr getFilePathExpr() { result = this.getArg(0).getALocalSource().asExpr() }
+    override DataFlow::Node getFilePath() { result = this.getArg(0).getALocalSource() }
+
+    override string getResource() { result = Utils::localFileResource() }
   }
 
-  class ImageTranformMethod extends string {
-    ImageTranformMethod() { this in ["rotate", "resize", "crop", "filter", "convert", "save"] }
+  class ImageTransformMethod extends string {
+    ImageTransformMethod() { this in ["rotate", "resize", "crop", "filter", "convert", "save"] }
   }
 
-  class ImageTranform extends DataFlow::CallCfgNode, Image::Range {
+  class ImageTransform extends DataFlow::CallCfgNode, Image::Range {
     API::Node apiNode;
-    ImageTranformMethod imgTransformMethod;
+    ImageTransformMethod imgTransformMethod;
 
-    ImageTranform() {
-      imgTransformMethod = any(ImageTranformMethod m) and
+    ImageTransform() {
+      imgTransformMethod = any(ImageTransformMethod m) and
       apiNode = any(Image::Range r).getAPIMemberReturn().getMember(imgTransformMethod) and
       this = apiNode.getACall()
     }
 
-    ImageTranformMethod getImageTranformMethod() { result = imgTransformMethod }
+    ImageTransformMethod getImageTransformMethod() { result = imgTransformMethod }
 
     DataFlow::Node getObject() { result = this.(DataFlow::MethodCallNode).getObject() }
 
@@ -66,13 +64,12 @@ module Image {
       this = apiNode.getACall()
     }
 
-    // FIXME: Temp hack, wrong val
-    override Expr getResource() { result = this.getArg(0).getALocalSource().asExpr() }
+    override string toString() { result = "ImageSave" }
 
-    override string getResourceType() { result = "LOCAL_FILE" }
+    override string getResource() { result = Utils::localFileResource() }
 
     override File::LocalFileOperation localFileOperation() { result = "WRITE" }
 
-    override Expr getFilePathExpr() { result = this.getArg(0).getALocalSource().asExpr() }
+    override DataFlow::Node getFilePath() { result = this.getArg(0).getALocalSource() }
   }
 }

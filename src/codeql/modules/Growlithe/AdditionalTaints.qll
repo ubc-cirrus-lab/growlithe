@@ -14,9 +14,9 @@ module AdditionalTaints {
     abstract predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo);
   }
 
-  class ImageTranformAdditionalTaintStep extends AdditionalTaintStep {
+  class ImageTransformAdditionalTaintStep extends AdditionalTaintStep {
     override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
-      exists(Image::ImageTranform imgTransform |
+      exists(Image::ImageTransform imgTransform |
         // nodeFrom = img and
         nodeFrom = imgTransform.getObject() and
         nodeTo = imgTransform
@@ -39,7 +39,7 @@ module AdditionalTaints {
         nodeFrom = write and
         read.localFileOperation() = "READ" and
         write.localFileOperation() = "WRITE" and
-        read.getFilePathExpr() = write.getFilePathExpr()
+        read.getFilePath() = write.getFilePath()
       )
     }
   }

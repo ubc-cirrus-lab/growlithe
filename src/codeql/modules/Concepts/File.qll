@@ -9,7 +9,7 @@ module File {
   }
 
   abstract class LocalFile extends DataFlow::Node {
-    abstract Expr getFilePathExpr();
+    abstract DataFlow::Node getFilePath();
 
     abstract LocalFileOperation localFileOperation();
   }

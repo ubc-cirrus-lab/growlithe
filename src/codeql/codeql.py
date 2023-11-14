@@ -4,7 +4,7 @@ import pathlib
 import glob
 
 from src.logger import logger
-
+import time
 
 class CodeQL:
     @staticmethod
@@ -18,7 +18,11 @@ class CodeQL:
         if os.path.exists(codeql_db_path):
             logger.info(f'CodeQL database already exists at {codeql_db_path} - skipping database creation')
         else:
+            start_time = time.time()
             CodeQL._create_database(app_path)
+            printPattern('*', 75)
+            logger.info(f'CodeQL database created in {time.time() - start_time} seconds')
+            printPattern('*', 75)
 
         if os.path.exists(output_dir):
             logger.info(f'CodeQL analysis output already exists at {output_dir} - skipping analysis')
@@ -30,7 +34,6 @@ class CodeQL:
     @staticmethod
     def _analyze_functions(app_path, codeql_db_path, output_dir):
         current_dir = pathlib.Path(__file__).parent.resolve()
-        # queries = ['getSources', 'getSinks', 'flowPaths', 'sinkConditions']
         # queries = ['getSources', 'getSinks', 'flowPaths']
         queries = ['flowPaths']
 
@@ -55,15 +58,25 @@ class CodeQL:
         to_replace = 'test.py'
 
         for function in functions:
+            printPattern('=', 100)
             logger.info(f'Analyzing function {function}')
+            printPattern('=', 100)
             config = config_template.replace(to_replace, f"{function}.py")
             with open(codeql_config_path, 'w') as file:
                 file.write(config)
             for query_file in queries:
+                printPattern('-', 75)
+                logger.info(f'Running query {query_file}')
+                printPattern('-', 75)
+                start_time = time.time()
                 subprocess.run(
-                    ['codeql', 'database', 'analyze', '--output', f'{output_dir}/{function}_{query_file}.sarif',
+                    ['codeql', 'database', 'analyze', '-q', '--output', f'{output_dir}/{function}_{query_file}.sarif',
                      '--format', 'sarifv2.1.0', '--rerun', codeql_db_path,
                      f'{current_dir}/queries/{query_file}.ql'], stdout=subprocess.DEVNULL)
+
+                printPattern('*', 75)
+                logger.info(f'Query {query_file} for function {function} took {time.time() - start_time} seconds')
+                printPattern('*', 75)
 
     @staticmethod
     def _create_database(app_path):
@@ -72,3 +85,6 @@ class CodeQL:
             f'(cd {app_path} && codeql database create codeqldb --language=python --overwrite)',
             shell=True, stdout=subprocess.DEVNULL)
         logger.info('CodeQL database created')
+
+def printPattern(pattern, length):
+    logger.info(pattern*length)

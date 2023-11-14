@@ -21,8 +21,20 @@ module TaintAnalysis {
       Config::constrainLocation(sink.getLocation())
     }
 
+    override predicate isSource(DataFlow::Node source, string state) {
+      isSource(source) and
+      state = source.(Core::Source).getFlowState()
+    }
+
+    override predicate isSink(DataFlow::Node sink, string state) {
+      isSink(sink) and
+      state = sink.(Core::Sink).getFlowState()
+    }
+
     override predicate isAdditionalTaintStep(DataFlow::Node node1, DataFlow::Node node2) {
-      any(AdditionalTaints::AdditionalTaintStep s).step(node1, node2)
+      any(AdditionalTaints::AdditionalTaintStep s).step(node1, node2) and
+      Config::constrainLocation(node1.getLocation()) and
+      Config::constrainLocation(node2.getLocation())
     }
   }
 }
