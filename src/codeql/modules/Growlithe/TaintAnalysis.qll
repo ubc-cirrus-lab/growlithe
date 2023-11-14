@@ -1,28 +1,24 @@
 import python
 import semmle.python.dataflow.new.DataFlow
 import semmle.python.dataflow.new.TaintTracking
-
 import modules.Growlithe.AdditionalTaints
 import modules.Growlithe.Sources
 import modules.Growlithe.Sinks
 import modules.Growlithe.Core
-
-// module Config {
-//   string pathConstraint() { result = "%/test.py" }
-// }
+import queries.Config
 
 module TaintAnalysis {
   class Tracker extends TaintTracking::Configuration {
     Tracker() { this = "Growlithe::TaintAnalysis" }
 
     override predicate isSource(DataFlow::Node source) {
-      source instanceof Core::Source
-      // and source.getLocation().getFile().getAbsolutePath().matches(Config::pathConstraint())
+      source instanceof Core::Source and
+      Config::constrainLocation(source.getLocation())
     }
 
     override predicate isSink(DataFlow::Node sink) {
-      sink instanceof Core::Sink
-      // and sink.getLocation().getFile().getAbsolutePath().matches(Config::pathConstraint())
+      sink instanceof Core::Sink and
+      Config::constrainLocation(sink.getLocation())
     }
 
     override predicate isAdditionalTaintStep(DataFlow::Node node1, DataFlow::Node node2) {
