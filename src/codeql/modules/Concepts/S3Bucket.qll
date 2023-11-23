@@ -23,7 +23,7 @@ module S3Bucket {
     override string toString() { result = getBucketNameAsResource() }
   }
 
-  class S3BucketDownload extends DataFlow::CallCfgNode, Core::Node, File::LocalFile {
+  class S3BucketDownload extends DataFlow::CallCfgNode, File::LocalFile {
     S3Bucket bucket;
     API::Node apiNode;
 
@@ -41,12 +41,12 @@ module S3Bucket {
 
     override File::LocalFileOperation localFileOperation() { result = "WRITE" }
 
-    override DataFlow::Node getFilePath() { result = this.getLocalPath().getALocalSource()}
+    override DataFlow::Node getFilePath() { result = this.getLocalPath().getALocalSource() }
 
-    override string getResource() { result = bucket.getBucketNameAsResource() }
+    string getBucketNameAsResource() { result = bucket.getBucketNameAsResource() }
   }
 
-  class S3BucketUpload extends DataFlow::CallCfgNode, Core::Node, File::LocalFile {
+  class S3BucketUpload extends DataFlow::CallCfgNode, File::LocalFile {
     S3Bucket bucket;
     API::Node apiNode;
 
@@ -63,7 +63,7 @@ module S3Bucket {
 
     override DataFlow::Node getFilePath() { result = this.getLocalPath().getALocalSource() }
 
-    override string getResource() { result = bucket.getBucketNameAsResource() }
-
+    string getBucketNameAsResource() { result = bucket.getBucketNameAsResource() }
+    // override string toString() { result = "S3BucketUpload" }
   }
 }

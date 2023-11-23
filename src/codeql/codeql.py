@@ -1,90 +1,169 @@
 import subprocess
-import os
+import os, re
 import pathlib
 import glob
 
 from src.logger import logger
-import time
+import time, shutil
+
 
 class CodeQL:
     @staticmethod
-    def analyze(app_path):
-        logger.info("Running CodeQL analysis...")
+    def analyze(app_path, queries, rerun=False, num_runs=1):
+        db_create_time_list = []
+        query_time_list = []
+        for i in range(num_runs):
+            logger.info(f"Running iteration {i+1}/{num_runs} of CodeQL analysis...")
 
-        app_path = f'{pathlib.Path(app_path).resolve()}'
-        codeql_db_path = f'{app_path}/codeqldb/'
-        output_dir = f'{app_path}/output/'
+            app_path = f"{pathlib.Path(app_path).resolve()}"
+            codeql_db_path = f"{app_path}/codeqldb/"
+            output_dir = f"{app_path}/output/"
+            if rerun:
+                logger.info("Deleting existing database...")
+                if os.path.exists(codeql_db_path):
+                    shutil.rmtree(codeql_db_path, ignore_errors=False, onerror=None)
+                logger.info("Existing database deleted")
+                logger.info("Deleting output directory...")
+                if os.path.exists(output_dir):
+                    shutil.rmtree(output_dir, ignore_errors=False, onerror=None)
+                    # for file in glob.glob(f'{output_dir}/*'):
+                    #     os.remove(file)
+                logger.info("Existing output directory deleted")
 
-        if os.path.exists(codeql_db_path):
-            logger.info(f'CodeQL database already exists at {codeql_db_path} - skipping database creation')
-        else:
-            start_time = time.time()
-            CodeQL._create_database(app_path)
-            printPattern('*', 75)
-            logger.info(f'CodeQL database created in {time.time() - start_time} seconds')
-            printPattern('*', 75)
+            if os.path.exists(codeql_db_path):
+                logger.info(
+                    f"CodeQL database already exists at {codeql_db_path} - skipping database creation"
+                )
+            else:
+                start_time = time.time()
+                CodeQL._create_database(app_path)
+                printPattern("*", 75)
+                db_create_time_list.append(time.time() - start_time)
+                logger.info(
+                    f"CodeQL database created in {time.time() - start_time} seconds"
+                )
+                printPattern("*", 75)
 
-        if os.path.exists(output_dir):
-            logger.info(f'CodeQL analysis output already exists at {output_dir} - skipping analysis')
-        else:
-            CodeQL._analyze_functions(app_path, codeql_db_path, output_dir)
+            if os.path.exists(output_dir):
+                logger.info(
+                    f"CodeQL analysis output already exists at {output_dir} - skipping analysis"
+                )
+            else:
+                start_time = time.time()
+                CodeQL._analyze_functions(app_path, codeql_db_path, output_dir, queries)
+                query_time_list.append(time.time() - start_time)
 
-        logger.info('CodeQL analysis complete')
+            logger.info(f"Iteration {i+1}/{num_runs} of CodeQL analysis complete")
+        if len(db_create_time_list) > 0:
+            logger.info(
+                f"Average database creation time over {num_runs} iterations: {sum(db_create_time_list)/len(db_create_time_list)} seconds"
+            )
+        logger.info(
+            f"Average query time over {num_runs} iterations: {sum(query_time_list)/len(query_time_list)} seconds"
+        )
 
     @staticmethod
-    def _analyze_functions(app_path, codeql_db_path, output_dir):
+    def _analyze_functions(app_path, codeql_db_path, output_dir, queries):
         current_dir = pathlib.Path(__file__).parent.resolve()
-        # queries = ['getSources', 'getSinks', 'flowPaths']
-        queries = ['flowPaths']
 
-        if(os.path.exists(output_dir)):
-            logger.info('Deleting existing output files...')
-            for file in glob.glob(f'{output_dir}/*'):
+        if os.path.exists(output_dir):
+            logger.info("Deleting existing output files...")
+            for file in glob.glob(f"{output_dir}/*"):
                 os.remove(file)
-            logger.info('Existing output directory deleted')
+            logger.info("Existing output directory deleted")
         else:
-            logger.info('Creating output directory...')
+            logger.info("Creating output directory...")
             os.mkdir(output_dir)
-            logger.info('Output directory created')
+            logger.info("Output directory created")
 
-        functions = [os.path.splitext(os.path.basename(x))[0] for x in glob.glob(f'{app_path}/*.py')]
+        functions = find_python_files(app_path)
+
+        # Convert the Python list to a string
+        array_string = ", ".join([f'"{item}"' for item in functions])
+        # Create the final string in the desired format
+        result_string = f"result = [{array_string}]"
+
 
         logger.info(f"Found {len(functions)} functions to analyze: ")
         logger.info(functions)
 
-        codeql_config_path = f'{current_dir}/queries/Config.qll'
-        with open(codeql_config_path, 'r') as file:
+        codeql_config_path = f"{current_dir}/queries/Config.qll"
+        with open(codeql_config_path, "r") as file:
             config_template = file.read()
-        to_replace = 'test.py'
+        # to_replace = 'test.py'
 
-        for function in functions:
-            printPattern('=', 100)
-            logger.info(f'Analyzing function {function}')
-            printPattern('=', 100)
-            config = config_template.replace(to_replace, f"{function}.py")
-            with open(codeql_config_path, 'w') as file:
-                file.write(config)
-            for query_file in queries:
-                printPattern('-', 75)
-                logger.info(f'Running query {query_file}')
-                printPattern('-', 75)
-                start_time = time.time()
-                subprocess.run(
-                    ['codeql', 'database', 'analyze', '-q', '--output', f'{output_dir}/{function}_{query_file}.sarif',
-                     '--format', 'sarifv2.1.0', '--rerun', codeql_db_path,
-                     f'{current_dir}/queries/{query_file}.ql'], stdout=subprocess.DEVNULL)
+        # Convert the Python list to a string
+        array_string = ",\n\t\t".join([f'"{item}"' for item in functions])
+        # Create the final string in the desired format
+        result_string = f"result = [{array_string}]"
+        pattern = re.compile(r"result\s*in\s*\[.*?\]", re.DOTALL)
+        content = pattern.sub(result_string, config_template)
 
-                printPattern('*', 75)
-                logger.info(f'Query {query_file} for function {function} took {time.time() - start_time} seconds')
-                printPattern('*', 75)
+        with open(codeql_config_path, "w") as file:
+            file.write(content)
+
+        for query_file in queries:
+            printPattern("-", 75)
+            logger.info(f"Running query {query_file}")
+            printPattern("-", 75)
+            start_time = time.time()
+            subprocess.run(
+                [
+                    "codeql",
+                    "database",
+                    "analyze",
+                    "-q",
+                    "--output",
+                    f"{output_dir}/{query_file}.sarif",
+                    "--format",
+                    "sarifv2.1.0",
+                    "--rerun",
+                    "-M",
+                    "2048",
+                    "--threads",
+                    "0",
+                    "--max-disk-cache",
+                    "0",
+                    codeql_db_path,
+                    f"{current_dir}/queries/{query_file}.ql",
+                ],
+                stdout=subprocess.DEVNULL,
+            )
+
+            printPattern("*", 75)
+            logger.info(
+                f"Query {query_file} with {len(functions)} functions took {time.time() - start_time} seconds"
+            )
+            printPattern("*", 75)
 
     @staticmethod
     def _create_database(app_path):
-        logger.info('Creating CodeQL database...')
+        logger.info("Creating CodeQL database...")
         subprocess.run(
-            f'(cd {app_path} && codeql database create codeqldb --language=python --overwrite)',
-            shell=True, stdout=subprocess.DEVNULL)
-        logger.info('CodeQL database created')
+            f"(cd {app_path} && codeql database create codeqldb --language=python --overwrite -j=0 -M=2048)",
+            shell=True,
+            stdout=subprocess.DEVNULL,
+        )
+        logger.info("CodeQL database created")
+
 
 def printPattern(pattern, length):
-    logger.info(pattern*length)
+    logger.info(pattern * length)
+
+
+def find_python_files(folder_path):
+    python_files = []
+
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(".py"):
+                relative_path = os.path.relpath(os.path.join(root, file), folder_path)
+                relative_path = relative_path.replace(os.path.sep, "/")
+
+                python_files.append(relative_path)
+
+    return python_files
+
+
+def function_path_to_name(function_path):
+    return function_path.replace("/", "_").replace(".", "_")

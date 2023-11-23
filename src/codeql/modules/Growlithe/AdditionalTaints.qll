@@ -17,30 +17,30 @@ module AdditionalTaints {
   class ImageTransformAdditionalTaintStep extends AdditionalTaintStep {
     override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
       exists(Image::ImageTransform imgTransform |
-        // nodeFrom = img and
         nodeFrom = imgTransform.getObject() and
         nodeTo = imgTransform
       )
     }
   }
 
-  class S3BucketDownloadAdditionalTaintStep extends AdditionalTaintStep {
+  class S3BucketOperationAdditionalTaintStep extends AdditionalTaintStep {
     override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
       nodeFrom = any(Core::Source s) and
       nodeTo = any(Core::Sink s) and
       nodeFrom = nodeTo
     }
   }
-
-  class FileReadAfterWrite extends AdditionalTaintStep {
-    override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
-      exists(File::LocalFile read, File::LocalFile write |
-        nodeTo = read and
-        nodeFrom = write and
-        read.localFileOperation() = "READ" and
-        write.localFileOperation() = "WRITE" and
-        read.getFilePath() = write.getFilePath()
-      )
-    }
-  }
+  // Moved out of taint analysis and concatenating with the taint analysis in dataflow.ql
+  // class FileReadAfterWrite extends AdditionalTaintStep {
+  //   override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
+  //     exists(File::LocalFile read, File::LocalFile write |
+  //       nodeTo = read and
+  //       nodeFrom = write and
+  //       read.localFileOperation() = "READ" and
+  //       write.localFileOperation() = "WRITE" and
+  //       read.getFilePath() = write.getFilePath() and
+  //       write.asCfgNode().dominates(read.asCfgNode())
+  //     )
+  //   }
+  // }
 }

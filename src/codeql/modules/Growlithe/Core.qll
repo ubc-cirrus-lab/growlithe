@@ -5,12 +5,12 @@ import modules.Growlithe.Utils
 module Core {
   abstract class Node extends DataFlow::Node {
     // Resource string in the form of ResourceType:ExprType:ResourceName. E.g: S3_BUCKET:STATIC:raw_images
-    abstract string getResource();
+    // abstract string getResource();
   }
 
   abstract class Source extends Core::Node {
-    // abstract string getReferenceExpression();
-    // Object path string in the form of ExprType:ResourceName
+    abstract string getResource();
+
     abstract string getObjectPath();
 
     abstract Utils::ShareType getShareType();
@@ -24,8 +24,8 @@ module Core {
   }
 
   abstract class Sink extends Core::Node {
-    // abstract string getReferenceExpression();
-    // Object path string in the form of ExprType:ResourceName
+    abstract string getResource();
+
     abstract string getObjectPath();
 
     abstract Utils::ShareType getShareType();

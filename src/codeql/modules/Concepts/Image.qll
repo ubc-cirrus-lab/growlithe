@@ -31,12 +31,12 @@ module Image {
     override File::LocalFileOperation localFileOperation() { result = "READ" }
 
     override DataFlow::Node getFilePath() { result = this.getArg(0).getALocalSource() }
-
-    override string getResource() { result = Utils::localFileResource() }
   }
 
   class ImageTransformMethod extends string {
-    ImageTransformMethod() { this in ["rotate", "resize", "crop", "filter", "convert", "save"] }
+    ImageTransformMethod() {
+      this in ["rotate", "resize", "crop", "filter", "convert", "save", "transpose"]
+    }
   }
 
   class ImageTransform extends DataFlow::CallCfgNode, Image::Range {
@@ -65,8 +65,6 @@ module Image {
     }
 
     override string toString() { result = "ImageSave" }
-
-    override string getResource() { result = Utils::localFileResource() }
 
     override File::LocalFileOperation localFileOperation() { result = "WRITE" }
 
