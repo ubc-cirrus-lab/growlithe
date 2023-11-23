@@ -21,8 +21,9 @@ def lambda_handler(event, context):
         reqID = json.loads(event['body'])['data']['reqID']
     
     bucket = s3.Bucket('imageprocessingbenchmark')
-    bucket.download_file(fileName, '/tmp/' + fileName)
-    image = Image.open("/tmp/"+fileName)
+    tempFile = '/tmp/' + fileName
+    bucket.download_file(fileName, tempFile)
+    image = Image.open(tempFile)
    
     # Perform filter
     img = image.convert('L')
@@ -35,7 +36,7 @@ def lambda_handler(event, context):
     
     # Clean up
     os.remove(path)
-    os.remove("/tmp/"+fileName)
+    os.remove(tempFile)
     
     # Return
     return {
