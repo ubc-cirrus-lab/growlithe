@@ -4,20 +4,12 @@ from src.graph.graph import *
 
 
 # Returns a node and its related location to use in edge
-def create_node_from_side(node_str, related_locations, default_function="UNKNOWN"):
+def create_node_from_side(node_str, related_locations, function="UNKNOWN"):
     if "None" in node_str:
         logger.warning("Side is None. Creating a default node")
         # Create a default node with a specific identifier
         # TODO: Can make a helper function for a "default node" to represent
-        default_node = Node(
-            Reference(ReferenceType.STATIC, "DefaultNode"),
-            "DEFAULT_TYPE",
-            Reference(ReferenceType.STATIC, "DefaultDataObject"),
-            Scope.INVOCATION,
-            InterfaceType.SOURCE,
-            default_function,
-            attributes={},
-        )
+        default_node = DefaultNode(function)
         return default_node, None
 
     match = re.match(
@@ -40,7 +32,7 @@ def create_node_from_side(node_str, related_locations, default_function="UNKNOWN
             Reference(data_object_reference_type, data_object_reference_name),
             scope,
             interface_type,
-            default_function,
+            function,
             attributes={},
         )
         code_path = related_locations[int(groups[7]) - 1]

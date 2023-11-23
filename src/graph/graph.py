@@ -116,6 +116,23 @@ class Node:
         )
 
 
+class DefaultNode(Node):
+    """
+    Special class for representing a default or placeholder node.
+    """
+
+    def __init__(self, function):
+        super().__init__(
+            Reference(ReferenceType.STATIC, "DEFAULT"),
+            "DEFAULT",
+            Reference(ReferenceType.STATIC, "DEFAULT"),
+            Scope.INVOCATION,
+            InterfaceType.SOURCE,
+            function,
+            attributes={},
+        )
+
+
 class Edge:
     """
     Class to represent an edge.
