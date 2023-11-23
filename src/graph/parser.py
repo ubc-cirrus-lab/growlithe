@@ -3,10 +3,12 @@ from src.logger import logger
 from src.graph.graph import *
 
 
-def create_node_from_side(side, related_locations, default_function="UNKNOWN"):
-    if "None" in side:
-        logger.warning("Side is None")
+# Returns a node and its related location to use in edge
+def create_node_from_side(node_str, related_locations, default_function="UNKNOWN"):
+    if "None" in node_str:
+        logger.warning("Side is None. Creating a default node")
         # Create a default node with a specific identifier
+        # TODO: Can make a helper function for a "default node" to represent
         default_node = Node(
             Reference(ReferenceType.STATIC, "DefaultNode"),
             "DEFAULT_TYPE",
@@ -20,7 +22,7 @@ def create_node_from_side(side, related_locations, default_function="UNKNOWN"):
 
     match = re.match(
         r"\[([^,]+),\s([^,]+),\s([^:]+):([^:]+):([^,]+),\s([^:]+):([^:]+)\]\((\d+)\)",
-        side,
+        node_str,
     )
     if match:
         groups = match.groups()
@@ -41,20 +43,18 @@ def create_node_from_side(side, related_locations, default_function="UNKNOWN"):
             default_function,
             attributes={},
         )
-
-        # Add properties
-        node.attributes["properties"] = groups[7]
-        return node, related_locations[int(groups[7]) - 1]
+        code_path = related_locations[int(groups[7]) - 1]
+        return node, code_path
     else:
-        logger.error(f"Invalid format in side: {side}")
+        logger.error(f"Invalid format in side: {node_str}")
         return None, None
 
 
 def parse_and_add_flow(flow, graph, related_locations, default_function="UNKNOWN"):
-    sides = flow.split("==>")
+    flow_ends = flow.split("==>")
 
-    if len(sides) == 2:
-        source_side, sink_side = sides
+    if len(flow_ends) == 2:
+        source_side, sink_side = flow_ends
 
         # Parse source side
         source_node, source_location = create_node_from_side(
@@ -66,6 +66,8 @@ def parse_and_add_flow(flow, graph, related_locations, default_function="UNKNOWN
             sink_side, related_locations, default_function
         )
 
+        # This will reuse same default node to prevent isolated nodes
+        # TODO: Check if we need to create a new node for each default node
         if source_node and sink_node and source_node != sink_node:
             # Get or add source node to the graph
             source_node = graph.get_existing_or_add_node(source_node)

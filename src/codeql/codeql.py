@@ -19,16 +19,14 @@ class CodeQL:
             codeql_db_path = f"{app_path}/codeqldb/"
             output_dir = f"{app_path}/output/"
             if rerun:
-                logger.info("Deleting existing database...")
                 if os.path.exists(codeql_db_path):
+                    logger.info("Deleting existing database...")
                     shutil.rmtree(codeql_db_path, ignore_errors=False, onerror=None)
-                logger.info("Existing database deleted")
-                logger.info("Deleting output directory...")
+                    logger.info("Existing database deleted")
                 if os.path.exists(output_dir):
+                    logger.info("Deleting output directory...")
                     shutil.rmtree(output_dir, ignore_errors=False, onerror=None)
-                    # for file in glob.glob(f'{output_dir}/*'):
-                    #     os.remove(file)
-                logger.info("Existing output directory deleted")
+                    logger.info("Existing output directory deleted")
 
             if os.path.exists(codeql_db_path):
                 logger.info(
@@ -90,7 +88,6 @@ class CodeQL:
         codeql_config_path = f"{current_dir}/queries/Config.qll"
         with open(codeql_config_path, "r") as file:
             config_template = file.read()
-        # to_replace = 'test.py'
 
         # Convert the Python list to a string
         array_string = ",\n\t\t".join([f'"{item}"' for item in functions])

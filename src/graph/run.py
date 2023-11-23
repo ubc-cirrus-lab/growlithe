@@ -1,13 +1,11 @@
 from sarif import loader
-from sarif import sarif_file_utils
 from src.graph.graph import Graph
 from src.graph.parser import parse_and_add_flow
+from src.logger import logger
 
-
+# TODO: Move to config and make paths os independent
 benchmarks_root_path = "D:\\Code\\serverless-compliance\\benchmarks"
-# benchmark = "test"
 benchmark = "ImageProcessingStateMachine"
-benchmark_path = f"{benchmarks_root_path}\\{benchmark}\\"
 codeql_db_path = f"{benchmarks_root_path}\\{benchmark}\\codeqldb\\"
 codeql_output_path = f"{benchmarks_root_path}\\{benchmark}\\output\\"
 
@@ -34,4 +32,4 @@ sub_graph = graph.get_sub_graph(
     "LambdaFunctions/ImageProcessingRotate/lambda_function.py"
 )
 
-print("Generated Graph")
+logger.info("Generated Graph Successfully")
