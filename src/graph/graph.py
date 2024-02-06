@@ -73,6 +73,7 @@ class Node:
         scope: Scope,
         interface_type: InterfaceType,
         function,
+        code_path,
         attributes=None,
     ):
         """
@@ -87,7 +88,12 @@ class Node:
         )
         self.scope: Scope = scope
         self.function = function
+        self.code_path = code_path
         self.attributes = attributes or {}
+
+    @property
+    def id(self):
+        return f"{self.resource_id}_{self.resource_name.reference_name}_{self.data_object.reference_name}"
 
     def __str__(self):
         """
@@ -129,6 +135,7 @@ class DefaultNode(Node):
             Scope.INVOCATION,
             InterfaceType.SOURCE,
             function,
+            code_path=None,
             attributes={},
         )
 
@@ -214,3 +221,9 @@ class Graph:
         sub_graph.nodes = nodes
         sub_graph.edges = edges
         return sub_graph
+
+    def has_taint_policies(self):
+        pass
+
+    def get_sub_graphs(self):
+        pass

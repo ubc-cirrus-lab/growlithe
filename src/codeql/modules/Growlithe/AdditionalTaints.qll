@@ -9,7 +9,7 @@ import modules.Growlithe.Core
 
 module AdditionalTaints {
   abstract class AdditionalTaintStep extends Unit {
-    override string toString() { result = "AdditionalTaintStep" }
+    string toString() { result = "AdditionalTaintStep" }
 
     abstract predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo);
   }

@@ -2,6 +2,7 @@ from sarif import loader
 from src.graph.graph import Graph
 from src.graph.parser import parse_and_add_flow
 from src.logger import logger
+from src.taint_tracker.taint_tracker import TaintTracker
 
 # TODO: Move to config and make paths os independent
 benchmarks_root_path = "D:\\Code\\serverless-compliance\\benchmarks"
@@ -33,3 +34,5 @@ sub_graph = graph.get_sub_graph(
 )
 
 logger.info("Generated Graph Successfully")
+
+TaintTracker(graph).run()

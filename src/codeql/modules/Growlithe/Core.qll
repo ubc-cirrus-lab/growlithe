@@ -37,4 +37,5 @@ module Core {
         getInterfaceType() + ", " + getShareType() + ", " + getResource() + ", " + getObjectPath()
     }
   }
+
 }
