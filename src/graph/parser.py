@@ -26,6 +26,7 @@ def create_node_from_side(node_str, related_locations, function="UNKNOWN"):
         data_object_reference_type = ReferenceType[groups[5]]
         data_object_reference_name = groups[6]
 
+        code_path = related_locations[int(groups[7]) - 1]
         node = Node(
             Reference(reference_type, reference_name),
             resource_type,
@@ -33,16 +34,19 @@ def create_node_from_side(node_str, related_locations, function="UNKNOWN"):
             scope,
             interface_type,
             function,
+            code_path,
             attributes={},
         )
-        code_path = related_locations[int(groups[7]) - 1]
         return node, code_path
     else:
         logger.error(f"Invalid format in side: {node_str}")
         return None, None
 
 
-def parse_and_add_flow(flow, graph, related_locations, default_function="UNKNOWN"):
+def parse_and_add_flow(flow, graph: Graph, related_locations, default_function="UNKNOWN"):
+    if default_function != "UNKNOWN":
+        graph.add_function(default_function)
+
     flow_ends = flow.split("==>")
 
     if len(flow_ends) == 2:
