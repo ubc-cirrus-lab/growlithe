@@ -50,10 +50,7 @@ class TaintTracker:
             self.add_sink_taint(sink_node, source_node)
 
     def add_source_taint(self, source_node: Node):
-        if (
-            source_node.resource_type == "PARAM"
-            or source_node.resource_type == "RETURN"
-        ):
+        if source_node.resource_type == "RETURN":
             return
         file = source_node.code_path["physicalLocation"]["artifactLocation"]["uri"]
         tree = self.function_codes[file]
@@ -75,7 +72,7 @@ class TaintTracker:
                         tree.body.insert(
                             i + 1,
                             ast.parse(
-                                f'GROWLITHE_TAINTS["{source_node.id}"] = GROWLITHE_TAINTS["{source_node.id}"].union(set(bucket.Object("{source_node.data_object.reference_name}").metadata[\'GROWLITHE_TAINTS\'].split(",")))'
+                                f'GROWLITHE_TAINTS["{source_node.id}"] = GROWLITHE_TAINTS["{source_node.id}"].union(set(bucket.Object("{source_node.data_object.reference_name}").metadata[\'growlithe_taints\'].split(",")))'
                             ),
                         )
                     tree.body.insert(
@@ -194,7 +191,7 @@ class TaintTracker:
                         ),
                     )
                     if sink_node.resource_type == "RETURN":
-                        # modify return statement to return GROWLITHE_TAINTS[sink_node.id]
+                        # modify return statement to return GROWLITHE_TAINTS: {','.join(GROWLITHE_TAINTS[sink_node.id])}
                         if isinstance(ast_node, ast.Return):
                             if isinstance(ast_node.value, ast.Dict):
                                 # Add new field to existing dictionary
@@ -202,9 +199,19 @@ class TaintTracker:
                                     ast.Constant(value="GROWLITHE_TAINTS")
                                 )
                                 ast_node.value.values.append(
-                                    ast.Name(
-                                        id=f"GROWLITHE_TAINTS['{sink_node.id}']",
-                                        ctx=ast.Load(),
+                                    ast.Call(
+                                        func=ast.Attribute(
+                                            value=ast.Str(s=","),
+                                            attr="join",
+                                            ctx=ast.Load(),
+                                        ),
+                                        args=[
+                                            ast.Name(
+                                                id=f"GROWLITHE_TAINTS['{sink_node.id}']",
+                                                ctx=ast.Load(),
+                                            )
+                                        ],
+                                        keywords=[],
                                     )
                                 )
                     return
@@ -237,28 +244,12 @@ class TaintTracker:
                     # "taint_set_{node.id} = event.get('GROWLITHE_TAINTS', set())"
                     tree_node.body.insert(
                         0,
-                        ast.Assign(
-                            targets=[
-                                ast.Name(
-                                    id=f"GROWLITHE_TAINTS['{node.id}']", ctx=ast.Store()
-                                )
-                            ],
-                            value=ast.Call(
-                                func=ast.Attribute(
-                                    value=ast.Name(id="event", ctx=ast.Load()),
-                                    attr="get",
-                                    ctx=ast.Load(),
-                                ),
-                                args=[
-                                    ast.Str(s="GROWLITHE_TAINTS"),
-                                    ast.Call(
-                                        func=ast.Name(id="set", ctx=ast.Load()),
-                                        args=[],
-                                        keywords=[],
-                                    ),
-                                ],
-                                keywords=[],
-                            ),
+                        ast.parse(f"GROWLITHE_TAINTS['{node.id}'].add('{node.id}')"),
+                    )
+                    tree_node.body.insert(
+                        0,
+                        ast.parse(
+                            f"GROWLITHE_TAINTS['{node.id}'] = set(event.get('GROWLITHE_TAINTS', '').split(','))"
                         ),
                     )
                     break
