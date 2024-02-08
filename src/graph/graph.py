@@ -1,5 +1,7 @@
 from enum import Enum
 
+from src.graph.policy.policy import EdgePolicy
+
 
 class ReferenceType(Enum):
     """
@@ -90,6 +92,8 @@ class Node:
         self.function = function
         self.code_path = code_path
         self.attributes = attributes or {}
+        # TODO: Quick add to check for policy eval
+        self.attributes["PropDataObjectName"] = self.data_object
 
     @property
     def id(self):
@@ -108,10 +112,15 @@ class Node:
     def __repr__(self):
         return f"{self.resource_type}:{self.resource_name.reference_name}.{self.data_object.reference_name}"
 
+    def policy_id(self):
+        return f"RESOURCE:{self.resource_type}:{self.resource_name.reference_name}"
+
     def __eq__(self, other):
         """
         Return True if the two nodes are equal.
         """
+        if type(other) == str:
+            return self.__repr__() == other
         return (
             self.resource_name == other.resource_name
             and self.resource_type == other.resource_type
@@ -155,6 +164,7 @@ class Edge:
         self.sink_node = sink_node
         self.source_properties = source_properties or {}
         self.sink_properties = sink_properties or {}
+        self.edge_policy: EdgePolicy = None
 
     def __str__(self):
         """
@@ -180,6 +190,7 @@ class Graph:
         """
         self.nodes = []
         self.edges = []
+        self.functions = set()
 
     def add_node(self, node):
         """
@@ -192,6 +203,12 @@ class Graph:
         Add an edge to the graph.
         """
         self.edges.append(edge)
+
+    def add_function(self, function):
+        """
+        Add a function to the graph.
+        """
+        self.functions.add(function)
 
     def get_existing_or_add_node(self, new_node):
         # Check if a node with the same properties already exists in the graph
@@ -220,10 +237,12 @@ class Graph:
         sub_graph = Graph()
         sub_graph.nodes = nodes
         sub_graph.edges = edges
+        sub_graph.add_function(function)
         return sub_graph
 
-    def has_taint_policies(self):
-        pass
-
-    def get_sub_graphs(self):
-        pass
+    def apply_edges(self, apply_func):
+        """
+        Apply the specified function to each edge in the graph.
+        """
+        for edge in self.edges:
+            apply_func(edge)
