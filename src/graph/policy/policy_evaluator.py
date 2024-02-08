@@ -50,5 +50,5 @@ def try_policy_eval(policy_str, node):
             logger.info(f"Static eval pass: {policy_str}")
         return True
 
-    return f"assert pyDatalog.ask(f'{policy_str}') != None, 'Policy evaluated to be false'"
+    return f"assert pyDatalog.ask(f\"{policy_str}\") != None, 'Policy evaluated to be false'"
     

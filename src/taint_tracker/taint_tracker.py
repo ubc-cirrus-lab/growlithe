@@ -2,7 +2,7 @@ import ast
 
 from src.graph.graph import Graph, Node, Edge
 from src.logger import logger
-from src.tmp_config import app_path
+from src.benchmark_config import app_path
 
 
 class TaintTracker:
@@ -40,7 +40,7 @@ class TaintTracker:
 
         for edge in self.graph.edges:
             self.track_taints(edge)
-        self.write_files_back()
+        return self.function_codes
 
     def track_taints(self, edge: Edge):
         source_node = edge.source_node

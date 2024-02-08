@@ -26,13 +26,13 @@ class EdgePolicy:
         """
         Initialize an EdgePolicy instance.
         """
-        self.start = policy_json["flow_from"]
-        self.read_policy = policy_json["flow_from_policy"]
-        self.end = policy_json["flow_to"]
-        self.write_policy = policy_json["flow_to_policy"]
+        self.source = policy_json["source"]
+        self.read_policy = policy_json["read_policy"]
+        self.sink = policy_json["sink"]
+        self.write_policy = policy_json["write_policy"]
 
     def __str__(self) -> str:
-        return f"EdgePolicy({self.start}, {self.read_policy}, {self.end}, {self.write_policy})"
+        return f"EdgePolicy({self.source}, {self.read_policy}, {self.sink}, {self.write_policy})"
     
     def __repr__(self) -> str:
-        return f"EdgePolicy({self.start}, {self.read_policy}, {self.end}, {self.write_policy})"
+        return f"EdgePolicy({self.source}, {self.read_policy}, {self.sink}, {self.write_policy})"

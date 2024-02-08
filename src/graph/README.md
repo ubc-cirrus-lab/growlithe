@@ -3,16 +3,16 @@
 ```policies.json
 [
     {
-        "flow_from": "RESOURCE:LOCAL_FILE:tempfs",
-        "flow_from_policy": "allow",
-        "flow_to": "RESOURCE:S3_BUCKET:imageprocessingbenchmark",
-        "flow_to_policy": "taintSetContains('RESOURCE:S3_BUCKET:imageprocessingbenchmark')"
+        "source": "RESOURCE:LOCAL_FILE:tempfs",
+        "read_policy": "allow",
+        "sink": "RESOURCE:S3_BUCKET:imageprocessingbenchmark",
+        "write_policy": "taintSetContains('RESOURCE:S3_BUCKET:imageprocessingbenchmark')"
     },
     {
-        "flow_from": "RESOURCE:S3_BUCKET:imageprocessingbenchmark",
-        "flow_from_policy": "isSuffix(PropDataObjectName, '.jpg')",
-        "flow_to": "RESOURCE:LOCAL_FILE:tempfs",
-        "flow_to_policy": "isSuffix(PropDataObjectName, '.jpg')"
+        "source": "RESOURCE:S3_BUCKET:imageprocessingbenchmark",
+        "read_policy": "isSuffix(PropDataObjectName, '.jpg')",
+        "sink": "RESOURCE:LOCAL_FILE:tempfs",
+        "write_policy": "isSuffix(PropDataObjectName, '.jpg')"
     }
 ]
 ```

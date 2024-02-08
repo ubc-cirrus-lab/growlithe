@@ -112,6 +112,8 @@ class Node:
     def __repr__(self):
         return f"{self.resource_type}:{self.resource_name.reference_name}.{self.data_object.reference_name}"
 
+    # TODO: Should we add function in the id as well?
+    @property
     def policy_id(self):
         return f"RESOURCE:{self.resource_type}:{self.resource_name.reference_name}"
 
