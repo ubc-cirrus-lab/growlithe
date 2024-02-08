@@ -93,7 +93,7 @@ class Node:
 
     @property
     def id(self):
-        return f"{self.resource_id}_{self.resource_name.reference_name}_{self.data_object.reference_name}"
+        return f"{self.resource_name.reference_name}_{self.data_object.reference_name}"
 
     def __str__(self):
         """

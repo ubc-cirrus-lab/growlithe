@@ -28,42 +28,160 @@ class TaintTracker:
                     self.add_param_taint_extraction(node)
                 else:
                     self.initialize_taints(node)
+
+        for tree in self.function_codes.values():
+            tree.body.insert(
+                0,
+                ast.ImportFrom(
+                    module="growlithe_utils",
+                    names=[ast.alias(name="TAINTS", asname=None)],
+                ),
+            )
+
         for edge in self.graph.edges:
             self.track_taints(edge)
-        # self.write_files_back()
+        self.write_files_back()
 
     def track_taints(self, edge: Edge):
         source_node = edge.source_node
         sink_node = edge.sink_node
         self.add_source_taint(source_node)
-        self.add_sink_taint(sink_node)
+        if sink_node.code_path:  # TODO: remove
+            self.add_sink_taint(sink_node, source_node)
 
     def add_source_taint(self, source_node: Node):
+        if (
+            source_node.resource_type == "PARAM"
+            or source_node.resource_type == "RETURN"
+        ):
+            return
         file = source_node.code_path["physicalLocation"]["artifactLocation"]["uri"]
-        node_line = source_node.code_path["physicalLocation"]["region"]["startLine"]
         tree = self.function_codes[file]
-        for tree_node in ast.walk(tree):
-            if getattr(tree_node, "lineno", None) == node_line:
-                # "taint_set_{node.id}.add("test")"
-                tree_node.body.append(
-                    ast.Expr(
-                        value=ast.Call(
-                            func=ast.Attribute(
-                                value=ast.Name(
-                                    id=f"taint_set_{source_node.id}", ctx=ast.Load()
-                                ),
-                                attr="add",
-                                ctx=ast.Load(),
-                            ),
-                            args=[ast.Str(s=source_node.id)],
-                            keywords=[],
-                        )
-                    )
-                )
-                break
+        self.add_taint_to_line(tree, source_node)
 
-    def add_sink_taint(self, sink_node):
-        pass
+    def add_taint_to_line(self, tree, source_node: Node):
+        start_line = source_node.code_path["physicalLocation"]["region"]["startLine"]
+        end_line = source_node.code_path["physicalLocation"]["region"].get(
+            "endLine", start_line
+        )
+        if getattr(tree, "body", None):
+            for i, ast_node in enumerate(tree.body):
+                if (
+                    getattr(ast_node, "lineno", None) == start_line
+                    and getattr(ast_node, "end_lineno", None) == end_line
+                ):
+                    # if source_node.resource_type == "S3_BUCKET":
+                    #     # add metadata = bucket.Object(fileName).metadata['taints']
+                    #     tree.body.insert(
+                    #         i + 1,
+                    #         ast.Assign(
+                    #             targets=[ast.Name(id="metadata", ctx=ast.Store())],
+                    #             value=ast.Attribute(
+                    #                 value=ast.Attribute(
+                    #                     value=ast.Name(id="bucket", ctx=ast.Load()),
+                    #                     attr="Object",
+                    #                     ctx=ast.Load(),
+                    #                 ),
+                    #                 attr="metadata",
+                    #                 ctx=ast.Load(),
+                    #             ),
+                    #         ),
+                    #     )
+                    tree.body.insert(
+                        i + 1,
+                        ast.Expr(
+                            value=ast.Call(
+                                func=ast.Attribute(
+                                    value=ast.Name(
+                                        id=f"TAINTS['{source_node.id}']", ctx=ast.Load()
+                                    ),
+                                    attr="add",
+                                    ctx=ast.Load(),
+                                ),
+                                args=[ast.Str(s=source_node.id)],
+                                keywords=[],
+                            ),
+                        ),
+                    )
+                    return
+                self.add_taint_to_line(ast_node, source_node)
+        return
+
+    def add_sink_taint(self, sink_node, source_node):
+        if sink_node.resource_type == "PARAM":
+            return
+        file = sink_node.code_path["physicalLocation"]["artifactLocation"]["uri"]
+        tree = self.function_codes[file]
+        self.add_sink_taint_to_line(tree, sink_node, source_node)
+
+    def add_sink_taint_to_line(self, tree, sink_node: Node, source_node: Node):
+        start_line = sink_node.code_path["physicalLocation"]["region"]["startLine"]
+        end_line = sink_node.code_path["physicalLocation"]["region"].get(
+            "endLine", start_line
+        )
+        if getattr(tree, "body", None):
+            for i, ast_node in enumerate(tree.body):
+                if (
+                    getattr(ast_node, "lineno", None) == start_line
+                    and getattr(ast_node, "end_lineno", None) == end_line
+                ):
+                    tree.body.insert(
+                        i,
+                        ast.Expr(
+                            value=ast.Call(
+                                func=ast.Attribute(
+                                    value=ast.Name(
+                                        id=f"TAINTS['{sink_node.id}']", ctx=ast.Load()
+                                    ),
+                                    attr="add",
+                                    ctx=ast.Load(),
+                                ),
+                                args=[ast.Str(s=sink_node.id)],
+                                keywords=[],
+                            ),
+                        ),
+                    )
+                    tree.body.insert(
+                        i,
+                        ast.Assign(
+                            targets=[
+                                ast.Name(
+                                    id=f"TAINTS['{sink_node.id}']", ctx=ast.Store()
+                                )
+                            ],
+                            value=ast.Call(
+                                func=ast.Attribute(
+                                    value=ast.Name(
+                                        id=f"TAINTS['{sink_node.id}']", ctx=ast.Load()
+                                    ),
+                                    attr="union",
+                                    ctx=ast.Load(),
+                                ),
+                                args=[
+                                    ast.Name(
+                                        id=f"TAINTS['{source_node.id}']", ctx=ast.Load()
+                                    )
+                                ],
+                                keywords=[],
+                            ),
+                        ),
+                    )
+                    if sink_node.resource_type == "RETURN":
+                        # modify return statement to return TAINTS[sink_node.id]
+                        if isinstance(ast_node, ast.Return):
+                            if isinstance(ast_node.value, ast.Dict):
+                                # Add new field to existing dictionary
+                                ast_node.value.keys.append(
+                                    ast.Constant(value="GROWLITHE_TAINTS")
+                                )
+                                ast_node.value.values.append(
+                                    ast.Name(
+                                        id=f"TAINTS['{sink_node.id}']", ctx=ast.Load()
+                                    )
+                                )
+                    return
+                self.add_sink_taint_to_line(ast_node, sink_node, source_node)
+        return
 
     def write_files_back(self):
         for file, tree in self.function_codes.items():
@@ -73,9 +191,9 @@ class TaintTracker:
     def initialize_taints(self, node: Node):
         file = node.code_path["physicalLocation"]["artifactLocation"]["uri"]
         tree = self.function_codes[file]
-        # "taint_set_{node.id} = set()"
+        # "TAINTS['{node.id}'] = set()"
         assignment = ast.Assign(
-            targets=[ast.Name(id=f"taint_set_{node.id}", ctx=ast.Store())],
+            targets=[ast.Name(id=f"TAINTS['{node.id}']", ctx=ast.Store())],
             value=ast.Call(
                 func=ast.Name(id="set", ctx=ast.Load()), args=[], keywords=[]
             ),
@@ -93,7 +211,7 @@ class TaintTracker:
                         0,
                         ast.Assign(
                             targets=[
-                                ast.Name(id=f"taint_set_{node.id}", ctx=ast.Store())
+                                ast.Name(id=f"TAINTS['{node.id}']", ctx=ast.Store())
                             ],
                             value=ast.Call(
                                 func=ast.Attribute(
