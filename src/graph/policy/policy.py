@@ -26,8 +26,10 @@ class EdgePolicy:
         """
         Initialize an EdgePolicy instance.
         """
+        self.source_function = policy_json["source_function"]
         self.source = policy_json["source"]
         self.read_policy = policy_json["read_policy"]
+        self.sink_function = policy_json["sink_function"]
         self.sink = policy_json["sink"]
         self.write_policy = policy_json["write_policy"]
 

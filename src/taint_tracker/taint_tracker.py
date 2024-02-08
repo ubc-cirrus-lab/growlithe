@@ -26,17 +26,17 @@ class TaintTracker:
             if node.code_path:  # TODO: remove this check
                 if node.resource_type == "PARAM":
                     self.add_param_taint_extraction(node)
-                else:
-                    self.initialize_taints(node)
+                # else:
+                #     self.initialize_taints(node)
 
-        for tree in self.function_codes.values():
-            tree.body.insert(
-                0,
-                ast.ImportFrom(
-                    module="growlithe_utils",
-                    names=[ast.alias(name="TAINTS", asname=None)],
-                ),
-            )
+        # for tree in self.function_codes.values():
+        #     tree.body.insert(
+        #         0,
+        #         ast.ImportFrom(
+        #             module="growlithe_utils",
+        #             names=[ast.alias(name="GROWLITHE_TAINTS", asname=None)],
+        #         ),
+        #     )
 
         for edge in self.graph.edges:
             self.track_taints(edge)
@@ -93,7 +93,7 @@ class TaintTracker:
                             value=ast.Call(
                                 func=ast.Attribute(
                                     value=ast.Name(
-                                        id=f"TAINTS['{source_node.id}']", ctx=ast.Load()
+                                        id=f"GROWLITHE_TAINTS['{source_node.id}']", ctx=ast.Load()
                                     ),
                                     attr="add",
                                     ctx=ast.Load(),
@@ -131,7 +131,7 @@ class TaintTracker:
                             value=ast.Call(
                                 func=ast.Attribute(
                                     value=ast.Name(
-                                        id=f"TAINTS['{sink_node.id}']", ctx=ast.Load()
+                                        id=f"GROWLITHE_TAINTS['{sink_node.id}']", ctx=ast.Load()
                                     ),
                                     attr="add",
                                     ctx=ast.Load(),
@@ -146,20 +146,20 @@ class TaintTracker:
                         ast.Assign(
                             targets=[
                                 ast.Name(
-                                    id=f"TAINTS['{sink_node.id}']", ctx=ast.Store()
+                                    id=f"GROWLITHE_TAINTS['{sink_node.id}']", ctx=ast.Store()
                                 )
                             ],
                             value=ast.Call(
                                 func=ast.Attribute(
                                     value=ast.Name(
-                                        id=f"TAINTS['{sink_node.id}']", ctx=ast.Load()
+                                        id=f"GROWLITHE_TAINTS['{sink_node.id}']", ctx=ast.Load()
                                     ),
                                     attr="union",
                                     ctx=ast.Load(),
                                 ),
                                 args=[
                                     ast.Name(
-                                        id=f"TAINTS['{source_node.id}']", ctx=ast.Load()
+                                        id=f"GROWLITHE_TAINTS['{source_node.id}']", ctx=ast.Load()
                                     )
                                 ],
                                 keywords=[],
@@ -167,7 +167,7 @@ class TaintTracker:
                         ),
                     )
                     if sink_node.resource_type == "RETURN":
-                        # modify return statement to return TAINTS[sink_node.id]
+                        # modify return statement to return GROWLITHE_TAINTS[sink_node.id]
                         if isinstance(ast_node, ast.Return):
                             if isinstance(ast_node.value, ast.Dict):
                                 # Add new field to existing dictionary
@@ -176,7 +176,7 @@ class TaintTracker:
                                 )
                                 ast_node.value.values.append(
                                     ast.Name(
-                                        id=f"TAINTS['{sink_node.id}']", ctx=ast.Load()
+                                        id=f"GROWLITHE_TAINTS['{sink_node.id}']", ctx=ast.Load()
                                     )
                                 )
                     return
@@ -188,17 +188,17 @@ class TaintTracker:
             with open(f"{app_path}/{file}", "w") as f:
                 f.write(ast.unparse(ast.fix_missing_locations(tree)))
 
-    def initialize_taints(self, node: Node):
-        file = node.code_path["physicalLocation"]["artifactLocation"]["uri"]
-        tree = self.function_codes[file]
-        # "TAINTS['{node.id}'] = set()"
-        assignment = ast.Assign(
-            targets=[ast.Name(id=f"TAINTS['{node.id}']", ctx=ast.Store())],
-            value=ast.Call(
-                func=ast.Name(id="set", ctx=ast.Load()), args=[], keywords=[]
-            ),
-        )
-        tree.body.insert(0, assignment)
+    # def initialize_taints(self, node: Node):
+    #     file = node.code_path["physicalLocation"]["artifactLocation"]["uri"]
+    #     tree = self.function_codes[file]
+    #     # "GROWLITHE_TAINTS['{node.id}'] = set()"
+    #     assignment = ast.Assign(
+    #         targets=[ast.Name(id=f"GROWLITHE_TAINTS['{node.id}']", ctx=ast.Store())],
+    #         value=ast.Call(
+    #             func=ast.Name(id="set", ctx=ast.Load()), args=[], keywords=[]
+    #         ),
+    #     )
+    #     tree.body.insert(0, assignment)
 
     def add_param_taint_extraction(self, node):
         file = node.code_path["physicalLocation"]["artifactLocation"]["uri"]
@@ -211,7 +211,7 @@ class TaintTracker:
                         0,
                         ast.Assign(
                             targets=[
-                                ast.Name(id=f"TAINTS['{node.id}']", ctx=ast.Store())
+                                ast.Name(id=f"GROWLITHE_TAINTS['{node.id}']", ctx=ast.Store())
                             ],
                             value=ast.Call(
                                 func=ast.Attribute(

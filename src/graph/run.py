@@ -1,5 +1,7 @@
 import ast
 import json
+import os
+import shutil
 
 from sarif import loader
 from src.logger import logger
@@ -32,9 +34,9 @@ for result in results:
 
 # Temporary variable to debug intra-function graph
 # TODO: Integrate stitcher again and remove selection for smaller part
-graph = graph.get_sub_graph(
-    "LambdaFunctions/ImageProcessingRotate/lambda_function.py"
-)
+# graph = graph.get_sub_graph(
+#     "LambdaFunctions/ImageProcessingRotate/lambda_function.py"
+# )
 logger.info("Generated Graph Successfully")
 
 tainted_file_trees = TaintTracker(graph).run()
@@ -45,38 +47,38 @@ edge_policies = json.load(open(f"{app_growlithe_path}\\edge_policies.json"))
 edge_policies = [EdgePolicy(policy) for policy in edge_policies]
 # Create a map of from, to to edge policy
 edge_policy_map = {}
-source_instrumentation_map = defaultdict(set)
+# source_instrumentation_map = defaultdict(set)
 
 
 for policy in edge_policies:
-    edge_policy_map[(policy.source, policy.sink)] = policy
+    edge_policy_map[(policy.source_function, policy.source, policy.sink_function, policy.sink)] = policy
 
-def update_instrumentation_map(codePath, eval_results):
-    if (eval_results == True):
-            pass
-    elif (eval_results == False):
-        # TODO: Collect all errors for developers to see separately
-        pass
-    else:
-        logger.info("TODO: Add to source code")
-        logger.info("=================================")
-        logger.info(eval_results)
-        logger.info("=================================")
+# def update_instrumentation_map(codePath, eval_results):
+#     if (eval_results == True):
+#             pass
+#     elif (eval_results == False):
+#         # TODO: Collect all errors for developers to see separately
+#         pass
+#     else:
+#         logger.info("TODO: Add to source code")
+#         logger.info("=================================")
+#         logger.info(eval_results)
+#         logger.info("=================================")
 
-        # source_instrumentation_map[codePath] += eval_results
-        # TODO: Either add to source code or collect and add all assertions
-        # relevant to the read/write in one go
+#         # source_instrumentation_map[codePath] += eval_results
+#         # TODO: Either add to source code or collect and add all assertions
+#         # relevant to the read/write in one go
 
-def add_policy_instrumentation(policy_result, codePath):
+def add_policy_instrumentation(policy_result, code_path):
     if (policy_result == True):
         pass
     elif (policy_result == False):
         pass
     else:
         policy_check = ast.parse(policy_result)
-        file_tree = tainted_file_trees[codePath["physicalLocation"]["artifactLocation"]["uri"]]
-        start_line = codePath["physicalLocation"]["region"]["startLine"]
-        end_line = getattr(codePath["physicalLocation"]["region"], "endLine", start_line)
+        file_tree = tainted_file_trees[code_path["physicalLocation"]["artifactLocation"]["uri"]]
+        start_line = code_path["physicalLocation"]["region"]["startLine"]
+        end_line = getattr(code_path["physicalLocation"]["region"], "endLine", start_line)
         add_policy_check_to_line(file_tree, start_line, end_line, policy_check)
 
 def add_policy_check_to_line(tree, start_line, end_line, policy_check):
@@ -93,7 +95,7 @@ def add_policy_check_to_line(tree, start_line, end_line, policy_check):
 
 
 def taint_generation_and_policy_instrumentation(edge: Edge):
-    from_to_policy_key = (edge.source_node.policy_id, edge.sink_node.policy_id)
+    from_to_policy_key = (edge.source_node.function, edge.source_node.policy_id, edge.sink_node.function, edge.sink_node.policy_id)
 
     if from_to_policy_key in edge_policy_map:
         edge.edge_policy = edge_policy_map[from_to_policy_key]
@@ -108,10 +110,16 @@ def taint_generation_and_policy_instrumentation(edge: Edge):
 
 # Go through all edges and assign edge policies
 graph.apply_edges(taint_generation_and_policy_instrumentation)
+for tree in tainted_file_trees.values():
+    tree.body.insert(0, ast.ImportFrom(module="growlithe_predicates", names=[ast.alias(name='*', asname=None)]),)
 
 for file, tree in tainted_file_trees.items():
-    with open(f"{app_growlithe_path}/{file}", "w") as f:
+    directory = os.path.split(f"{app_growlithe_path}\\{file}")[0]
+    os.makedirs(directory, exist_ok=True)
+    shutil.copy(f'{os.path.join(os.path.dirname(os.path.abspath(__file__)), "policy/policy_predicates.py")}', f"{directory}\\growlithe_predicates.py")
+    with open(f"{app_growlithe_path}\\{file}", "w") as f:
         f.write(ast.unparse(ast.fix_missing_locations(tree)))
+
 
 # # Insert required imports in lambda functions
 # # TODO: Ensure that policy_predicates is in the same directory, or update statement according to relative path

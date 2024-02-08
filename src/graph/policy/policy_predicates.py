@@ -1,4 +1,5 @@
 from pyDatalog import pyDatalog
+from collections import defaultdict
 
 # """
 # Arithmetic/Relational predicates
@@ -43,3 +44,13 @@ def taintSetContains(node_id, label):
     if node_id.id in taints:
         if label.id in taints[node_id.id]:
             yield True
+
+# Session properties are retrieved at runtime
+# Retrieved values are set for the required datalog variable
+# in the policy assertion at runtime
+def getSessionProp(prop):
+    import time
+    if prop == "SessionTime":
+        return round(time.time())
+
+GROWLITHE_TAINTS = defaultdict(set)
