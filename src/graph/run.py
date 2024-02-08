@@ -1,11 +1,14 @@
+import json
+
 from sarif import loader
 from src.logger import logger
+from src.taint_tracker.taint_tracker import TaintTracker
 from src.graph.graph import Graph, InterfaceType, Edge
 from src.graph.parser import parse_and_add_flow
 from src.graph.policy.policy import Policy, EdgePolicy
 from src.graph.policy.policy_evaluator import try_policy_eval
-import json
 from collections import defaultdict
+
 
 # TODO: Move to config and make paths os independent
 benchmarks_root_path = "D:\\Code\\serverless-compliance\\benchmarks"
@@ -37,6 +40,9 @@ graph = graph.get_sub_graph(
     "LambdaFunctions/ImageProcessingRotate/lambda_function.py"
 )
 logger.info("Generated Graph Successfully")
+
+TaintTracker(graph).run()
+
 
 # Load edge policies from json containing policy predicates as strings
 edge_policies = json.load(open(f"{codeql_output_path}\\edge_policies.json"))

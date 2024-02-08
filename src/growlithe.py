@@ -2,12 +2,13 @@ from src import sarif_extractor
 from src.codeql.codeql import CodeQL
 from src.graph.node import NodeType, DataflowType
 from src.logger import logger
+from src.taint_tracker.taint_tracker import TaintTracker
 
 
 class Growlithe:
     def __init__(self, app_path, aws_account_id, aws_region):
         self.app_path = app_path
-        self.aws_configuration = {'account_id': aws_account_id, 'region': aws_region}
+        self.aws_configuration = {"account_id": aws_account_id, "region": aws_region}
         self.aws_region = aws_region
         self.resource_extractor = None
         self.template_path = None
@@ -43,6 +44,8 @@ class Growlithe:
         # graph.init_security_labels(f"{QUERY_RESULTS_PATH}{APP_NAME}_security_labels.json")
         # graph.find_violations()
 
+        TaintTracker(self.graph).run()
+
         logger.debug("Final graph:")
         self.graph.print()
 
@@ -53,17 +56,28 @@ class Growlithe:
         # Iterate on a copy of the nodes as they are modified later
         functions = self.graph.nodes.copy()
         sarif_output = f"{self.app_path}/output"
-        function_nodes = [node for node in functions if node.node_type == NodeType.FUNCTION]
+        function_nodes = [
+            node for node in functions if node.node_type == NodeType.FUNCTION
+        ]
         for node in function_nodes:
             logger.debug(f"Expanding internal graph for {node.name}")
             sarif_extractor.add_internal_nodes(
                 f"{sarif_output}/{node.name}_getSources.sarif",
-                node, self.graph, DataflowType.SOURCE)
+                node,
+                self.graph,
+                DataflowType.SOURCE,
+            )
             sarif_extractor.add_internal_nodes(
                 f"{sarif_output}/{node.name}_getSinks.sarif",
-                node, self.graph, DataflowType.SINK)
+                node,
+                self.graph,
+                DataflowType.SINK,
+            )
             sarif_extractor.add_internal_edges(
-                f"{sarif_output}/{node.name}_flowPaths.sarif", self.graph)
+                f"{sarif_output}/{node.name}_flowPaths.sarif", self.graph
+            )
             sarif_extractor.add_node_conditions(
-                f"{sarif_output}/{node.name}_sinkConditions.sarif", self.graph, self.app_path)
-
+                f"{sarif_output}/{node.name}_sinkConditions.sarif",
+                self.graph,
+                self.app_path,
+            )
