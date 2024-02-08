@@ -36,23 +36,7 @@ for result in results:
 graph = graph.get_sub_graph(
     "LambdaFunctions/ImageProcessingRotate/lambda_function.py"
 )
-
 logger.info("Generated Graph Successfully")
-
-# An example of a dev-specified policy
-# str_policies = [
-#     # Policy that can be resolved statically
-#     "RESOURCE:S3_BUCKET:imageprocessingbenchmark => FUNCTION:LambdaFunctions/ImageProcessingRotate/lambda_function.py ? isSuffix(PropDataObjectName, '.jpg')",
-#     # Policy that requires run time checks
-#     # "FUNCTION:LambdaFunctions/ImageProcessingRotate/lambda_function.py => RESOURCE:S3_BUCKET:imageprocessingbenchmark ? gt(SessionTime, 1704810019) & lt(SessionTime, 1707810019)",
-
-#     "FUNCTION:LambdaFunctions/ImageProcessingRotate/lambda_function.py => RESOURCE:S3_BUCKET:imageprocessingbenchmark ? taintSetContains('RESOURCE:S3_BUCKET:imageprocessingbenchmark')",
-
-#     # "FUNCTION:LambdaFunctions/ImageProcessingRotate/lambda_function.py => LOCAL_FILE:tempfs ? isVar(PropDataObjectName)",
-#     # "FUNCTION:LambdaFunctions/ImageProcessingRotate/lambda_function.py => LOCAL_FILE:tempfs ? isVar(PropDataObjectName)",
-# ]
-
-# policies = [Policy(policy) for policy in str_policies]
 
 # Load edge policies from json containing policy predicates as strings
 edge_policies = json.load(open(f"{codeql_output_path}\\edge_policies.json"))
@@ -76,8 +60,8 @@ def update_instrumentation_map(codePath, eval_results):
         logger.info("=================================")
 
         # source_instrumentation_map[codePath] += eval_results
-        # TODO: Either add to source code or collect and add all assertions relevant to the
-        # read/write together
+        # TODO: Either add to source code or collect and add all assertions
+        # relevant to the read/write in one go
 
 def assign_policy(edge: Edge):
     from_to_policy_key = (edge.source_node.policy_id(), edge.sink_node.policy_id())
@@ -98,23 +82,5 @@ graph.apply_edges(assign_policy)
 
 # Insert required imports in lambda functions
 # TODO: Ensure that policy_predicates is in the same directory, or update statement according to relative path
-
 for function in graph.functions:
     imports = ['from pyDatalog import pyDatalog', 'from policy_predicates import *']
-
-# # For each node in the graph, check if it matches any policy
-# for node in graph.nodes:
-#     node_function = f"FUNCTION:{node.function}"
-
-#     # How should it be represented for a dynamic one?
-#     node_resource = f"RESOURCE:{node.resource_type}:{node.resource_name.reference_name}"
-#     # print('Node Resource is ', node_resource)
-#     for policy in policies:
-#         if node_function == policy.start and node_resource == policy.end and node.interface_type == InterfaceType.SINK:
-#             logger.info(f"Found write policy {policy.rhs}")
-#             evaluate_policy(policy.rhs, node, "")
-
-#         elif node_resource == policy.start and node_function == policy.end and node.interface_type == InterfaceType.SOURCE:
-#             logger.info(f"Found read policy {policy.rhs}")
-#             evaluate_policy(policy.rhs, node, "")
-
