@@ -3,15 +3,19 @@
 ```policies.json
 [
     {
-        "source": "RESOURCE:LOCAL_FILE:tempfs",
+        "source_function": "LambdaFunctions/ImageProcessingRotate/lambda_function.py",
+        "source": "LOCAL_FILE:tempfs",
         "read_policy": "allow",
-        "sink": "RESOURCE:S3_BUCKET:imageprocessingbenchmark",
-        "write_policy": "taintSetContains('RESOURCE:S3_BUCKET:imageprocessingbenchmark')"
+        "sink_function": "LambdaFunctions/ImageProcessingRotate/lambda_function.py",
+        "sink": "S3_BUCKET:imageprocessingbenchmark",
+        "write_policy": "taintSetContains('imageprocessingbenchmark_sample_3.jpg')"
     },
     {
-        "source": "RESOURCE:S3_BUCKET:imageprocessingbenchmark",
+        "source_function": "LambdaFunctions/ImageProcessingRotate/lambda_function.py",
+        "source": "S3_BUCKET:imageprocessingbenchmark",
         "read_policy": "isSuffix(PropDataObjectName, '.jpg')",
-        "sink": "RESOURCE:LOCAL_FILE:tempfs",
+        "sink_function": "LambdaFunctions/ImageProcessingRotate/lambda_function.py",
+        "sink": "LOCAL_FILE:tempfs",
         "write_policy": "isSuffix(PropDataObjectName, '.jpg')"
     }
 ]

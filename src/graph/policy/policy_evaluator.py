@@ -15,6 +15,12 @@ def try_policy_eval(policy_str, node):
 
     if 'taintSetContains' in policy_str:
         dynamic_eval = True
+        pattern = r"taintSetContains\('([^']+)'\)"
+        def repl(m):
+            argument = m.group(1)  # Get the captured argument
+            return f"taintSetContains('{node.id}', '{argument}')"
+        policy_str = re.sub(pattern, repl, policy_str)
+
 
     # Replace DataConduit Variables
     required_props = re.findall(r'\bProp\w+', policy_str)
@@ -22,7 +28,7 @@ def try_policy_eval(policy_str, node):
         if prop in node.attributes:
             if node.attributes[prop].reference_type == ReferenceType.DYNAMIC:
                 dynamic_eval = True
-                policy_str = f"({prop}=={{{node.attributes[prop].reference_name}}}) & " + policy_str
+                policy_str = f"({prop}=='{{{node.attributes[prop].reference_name}}}') & " + policy_str
             else:
                 policy_str = policy_str.replace(prop, f'"{node.attributes[prop].reference_name}"')
             # TODO: Handle case of dynamic properties
@@ -34,7 +40,7 @@ def try_policy_eval(policy_str, node):
         dynamic_eval = True
         # Generate inline assertion
         for prop in required_session_props:
-            policy_str = f"({prop}=={getSessionProp(prop)}) & " + policy_str
+            policy_str = f"({prop}=={{getSessionProp('{prop}')}}) & " + policy_str
 
         # Simulate runtime check
         # print(pyDatalog.ask(policy_rhs))

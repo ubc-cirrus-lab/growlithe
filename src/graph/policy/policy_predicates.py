@@ -1,5 +1,6 @@
 from pyDatalog import pyDatalog
 from collections import defaultdict
+GROWLITHE_TAINTS = defaultdict(set)
 
 # """
 # Arithmetic/Relational predicates
@@ -40,9 +41,9 @@ def isSuffix(x, y):
 # """Taint predicates"""
 @pyDatalog.predicate()
 def taintSetContains(node_id, label):
-    global taints
-    if node_id.id in taints:
-        if label.id in taints[node_id.id]:
+    global GROWLITHE_TAINTS
+    if node_id.id in GROWLITHE_TAINTS:
+        if label.id in GROWLITHE_TAINTS[node_id.id]:
             yield True
 
 # Session properties are retrieved at runtime
@@ -52,5 +53,3 @@ def getSessionProp(prop):
     import time
     if prop == "SessionTime":
         return round(time.time())
-
-GROWLITHE_TAINTS = defaultdict(set)
