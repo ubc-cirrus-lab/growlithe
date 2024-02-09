@@ -34,7 +34,6 @@ def create_node_from_side(node_str, related_locations, function="UNKNOWN"):
             scope,
             interface_type,
             function,
-            code_path,
             attributes={},
         )
         return node, code_path
@@ -43,7 +42,9 @@ def create_node_from_side(node_str, related_locations, function="UNKNOWN"):
         return None, None
 
 
-def parse_and_add_flow(flow, graph: Graph, related_locations, default_function="UNKNOWN"):
+def parse_and_add_flow(
+    flow, graph: Graph, related_locations, default_function="UNKNOWN"
+):
     if default_function != "UNKNOWN":
         graph.add_function(default_function)
 

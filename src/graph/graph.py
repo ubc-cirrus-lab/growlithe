@@ -76,7 +76,6 @@ class Node:
         scope: Scope,
         interface_type: InterfaceType,
         function,
-        code_path,
         attributes=None,
     ):
         """
@@ -91,7 +90,6 @@ class Node:
         )
         self.scope: Scope = scope
         self.function = function
-        self.code_path = code_path
         self.attributes = attributes or {}
         # TODO: Quick add to check for policy eval
         self.attributes["PropDataObjectName"] = self.data_object
@@ -148,7 +146,6 @@ class DefaultNode(Node):
             Scope.INVOCATION,
             InterfaceType.SOURCE,
             function,
-            code_path=None,
             attributes={},
         )
 
