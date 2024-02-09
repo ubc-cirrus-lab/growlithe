@@ -1,3 +1,4 @@
+import uuid
 from enum import Enum
 
 from src.graph.policy.policy import EdgePolicy
@@ -94,10 +95,11 @@ class Node:
         self.attributes = attributes or {}
         # TODO: Quick add to check for policy eval
         self.attributes["PropDataObjectName"] = self.data_object
+        self.uid = uuid.uuid4()
 
     @property
     def id(self):
-        return f"{self.resource_name.reference_name}_{self.data_object.reference_name}"
+        return f"{self.function}:{self.resource_type}:{self.resource_name.reference_name}_{self.uid}"
 
     def __str__(self):
         """

@@ -70,7 +70,7 @@ class TaintTracker:
                     if source_node.resource_type == "S3_BUCKET":
                         # add metadata = bucket.Object(fileName).metadata['taints']
                         tree.body.insert(
-                            i + 1,
+                            i,
                             ast.parse(
                                 f'GROWLITHE_TAINTS["{source_node.id}"] = GROWLITHE_TAINTS["{source_node.id}"].union(set(bucket.Object("{source_node.data_object.reference_name}").metadata[\'growlithe_taints\'].split(",")))'
                             ),
