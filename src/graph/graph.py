@@ -2,6 +2,7 @@ import uuid
 from enum import Enum
 
 from src.graph.policy.policy import EdgePolicy
+from src.utility import IDGenerator
 
 
 class ReferenceType(Enum):
@@ -93,7 +94,7 @@ class Node:
         self.attributes = attributes or {}
         # TODO: Quick add to check for policy eval
         self.attributes["PropDataObjectName"] = self.data_object
-        self.uid = uuid.uuid4()
+        self.uid = IDGenerator.get_id()
 
     @property
     def id(self):

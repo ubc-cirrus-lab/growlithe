@@ -52,9 +52,9 @@ class TaintTracker:
             return
         file = code_path["physicalLocation"]["artifactLocation"]["uri"]
         tree = self.function_codes[file]
-        self.add_taint_to_line(tree, source_node, code_path)
+        self.add_source_taint_to_line(tree, source_node, code_path)
 
-    def add_taint_to_line(self, tree, source_node: Node, code_path):
+    def add_source_taint_to_line(self, tree, source_node: Node, code_path):
         start_line = code_path["physicalLocation"]["region"]["startLine"]
         end_line = code_path["physicalLocation"]["region"].get("endLine", start_line)
         if getattr(tree, "body", None):
@@ -73,23 +73,12 @@ class TaintTracker:
                         )
                     tree.body.insert(
                         i,
-                        ast.Expr(
-                            value=ast.Call(
-                                func=ast.Attribute(
-                                    value=ast.Name(
-                                        id=f"GROWLITHE_TAINTS['{source_node.id}']",
-                                        ctx=ast.Load(),
-                                    ),
-                                    attr="add",
-                                    ctx=ast.Load(),
-                                ),
-                                args=[ast.Str(s=source_node.id)],
-                                keywords=[],
-                            ),
+                        ast.parse(
+                            f"GROWLITHE_TAINTS['{source_node.id}'].add('{source_node.id}')"
                         ),
                     )
                     return
-                self.add_taint_to_line(ast_node, source_node, code_path)
+                self.add_source_taint_to_line(ast_node, source_node, code_path)
         return
 
     def add_sink_taint(self, sink_node, source_node, code_path):

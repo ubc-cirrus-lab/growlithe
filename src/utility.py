@@ -3,6 +3,15 @@ import os
 import hashlib
 
 
+class IDGenerator:
+    id = 0
+
+    @staticmethod
+    def get_id():
+        IDGenerator.id += 1
+        return IDGenerator.id
+
+
 def get_query_results(results_file):
     with open(results_file, "r") as f:
         sarif_log = json.load(f)
@@ -29,9 +38,9 @@ def read_location(file_path, line_start, offset_start, line_end, offset_end):
     with open(file_path, "r") as f:
         lines = f.readlines()
         if line_start == line_end:
-            variable = lines[line_start - 1][offset_start - 1: offset_end - 1]
+            variable = lines[line_start - 1][offset_start - 1 : offset_end - 1]
         else:
-            variable = lines[line_start - 1][offset_start - 1:]
+            variable = lines[line_start - 1][offset_start - 1 :]
             for i in range(line_start, line_end - 1):
                 variable += lines[i]
             variable += lines[line_end - 1][:offset_end]
@@ -53,10 +62,10 @@ def get_sorted_array_hash(arr):
 
 
 def add_assertion(input_file, physical_location, policy):
-    with open(input_file, 'r') as file:
+    with open(input_file, "r") as file:
         lines = file.readlines()
 
-    target_line_number = physical_location['region']['startLine']
+    target_line_number = physical_location["region"]["startLine"]
 
     target_indent = ""
     for char in lines[target_line_number - 1]:
@@ -65,12 +74,14 @@ def add_assertion(input_file, physical_location, policy):
         else:
             break
 
-    assert_line = f"{target_indent}# ========== Growlithe ==========\n" + \
-                  f"{target_indent}import policyLib\n" + \
-                  f"{target_indent}assert {policy}, 'Policy Violation'\n" + \
-                  f"{target_indent}# ========== Growlithe ==========\n"
+    assert_line = (
+        f"{target_indent}# ========== Growlithe ==========\n"
+        + f"{target_indent}import policyLib\n"
+        + f"{target_indent}assert {policy}, 'Policy Violation'\n"
+        + f"{target_indent}# ========== Growlithe ==========\n"
+    )
 
     lines.insert(target_line_number - 1, assert_line)
 
-    with open(input_file + '.annotated', 'w') as file:
+    with open(input_file + ".annotated", "w") as file:
         file.writelines(lines)
