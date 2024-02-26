@@ -4,6 +4,8 @@ import os
 import shutil
 
 from sarif import loader
+
+from src.iam_generator.iam_generator import IAMGenerator
 from src.logger import logger
 
 from src.taint_tracker.taint_tracker import TaintTracker
@@ -119,6 +121,9 @@ for file, tree in tainted_file_trees.items():
     shutil.copy(f'{os.path.join(os.path.dirname(os.path.abspath(__file__)), "policy/policy_predicates.py")}', f"{directory}\\growlithe_predicates.py")
     with open(f"{app_growlithe_path}\\{file}", "w") as f:
         f.write(ast.unparse(ast.fix_missing_locations(tree)))
+
+# Generate IAM policies
+IAMGenerator(graph).run()
 
 
 # # Insert required imports in lambda functions
