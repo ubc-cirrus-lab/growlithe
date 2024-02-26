@@ -1,6 +1,8 @@
+import uuid
 from enum import Enum
 
 from src.graph.policy.policy import EdgePolicy
+from src.utility import IDGenerator
 
 
 class ReferenceType(Enum):
@@ -75,7 +77,6 @@ class Node:
         scope: Scope,
         interface_type: InterfaceType,
         function,
-        code_path,
         attributes=None,
     ):
         """
@@ -90,14 +91,14 @@ class Node:
         )
         self.scope: Scope = scope
         self.function = function
-        self.code_path = code_path
         self.attributes = attributes or {}
         # TODO: Quick add to check for policy eval
         self.attributes["PropDataObjectName"] = self.data_object
+        self.uid = IDGenerator.get_id()
 
     @property
     def id(self):
-        return f"{self.resource_name.reference_name}_{self.data_object.reference_name}"
+        return f"{self.function}:{self.resource_type}:{self.resource_name.reference_name}_{self.uid}"
 
     def __str__(self):
         """
@@ -146,7 +147,6 @@ class DefaultNode(Node):
             Scope.INVOCATION,
             InterfaceType.SOURCE,
             function,
-            code_path=None,
             attributes={},
         )
 

@@ -7,24 +7,24 @@ import base64
 import logging
 from PIL import Image, ImageFilter
 
-s3 = boto3.resource('s3')
-bucket = s3.Bucket('imageprocessingbenchmark')
+s3 = boto3.resource("s3")
+bucket = s3.Bucket("imageprocessingbenchmarktest")
+
 
 def lambda_handler(event, context):
-    
     # Get input
     print("Resize function")
     if event == {}:
-        fileName = 'sample_2.png'
-        reqID = '111'
+        fileName = "sample_3.jpg"
+        reqID = "111"
     else:
-        fileName = json.loads(event['body'])['data']['imageName']
-        reqID = json.loads(event['body'])['data']['reqID']
-    
-    tempFile = '/tmp/' + fileName
+        fileName = json.loads(event["body"])["data"]["imageName"]
+        reqID = json.loads(event["body"])["data"]["reqID"]
+
+    tempFile = "/tmp/" + fileName
     bucket.download_file(fileName, tempFile)
     image = Image.open(tempFile)
-   
+
     # Perform filter
     path = "/tmp/" + "resized-" + fileName
     upPath = "Final-" + fileName
@@ -33,21 +33,24 @@ def lambda_handler(event, context):
 
     # Upload results
     bucket.upload_file(path, upPath)
-    
+
     # Clean up
     os.remove(path)
     os.remove(tempFile)
-    garbage(reqID,'imageprocessingbenchmark')
-    
+    garbage(reqID, "imageprocessingbenchmarktest")
+
     # Return
     return {
-        'statusCode': 200,
-        'timestamp': datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
-        'body': json.dumps({
-            'data': {'imageName': upPath, 'reqID': reqID},
-        })
+        "statusCode": 200,
+        "timestamp": datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+        "body": json.dumps(
+            {
+                "data": {"imageName": upPath, "reqID": reqID},
+            }
+        ),
     }
-    
+
+
 def garbage(reqID, bucketName):
     for object_summary in bucket.objects.filter(Prefix=reqID):
         s3.Object(bucketName, object_summary.key).delete()
