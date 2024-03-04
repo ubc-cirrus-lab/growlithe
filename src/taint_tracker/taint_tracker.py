@@ -2,7 +2,7 @@ import ast
 
 from src.graph.graph import Graph, Node, Edge
 from src.logger import logger
-from src.benchmark_config import app_path
+from src.benchmark_config import app_path, initial_function
 
 
 class TaintTracker:
@@ -33,7 +33,10 @@ class TaintTracker:
 
     def run(self):
         for edge in self.graph.edges:
-            if edge.source_node.resource_type == "PARAM":
+            if (
+                edge.source_node.resource_type == "PARAM"
+                and "context" not in edge.source_node.data_object.reference_name
+            ):
                 self.add_param_taint_extraction(
                     edge.source_node, edge.source_properties["CodePath"]
                 )
@@ -183,6 +186,10 @@ class TaintTracker:
                                 ast_node.value.keys.append(
                                     ast.Constant(value="GROWLITHE_TAINTS")
                                 )
+                                # add invocation ID
+                                ast_node.value.keys.append(
+                                    ast.Constant(value="GROWLITHE_INVOCATION_ID")
+                                )
                                 ast_node.value.values.append(
                                     ast.Call(
                                         func=ast.Attribute(
@@ -197,6 +204,12 @@ class TaintTracker:
                                             )
                                         ],
                                         keywords=[],
+                                    )
+                                )
+                                ast_node.value.values.append(
+                                    ast.Name(
+                                        id="GROWLITHE_INVOCATION_ID",
+                                        ctx=ast.Load(),
                                     )
                                 )
                     return
@@ -224,4 +237,19 @@ class TaintTracker:
                             f"GROWLITHE_TAINTS['{node.id}'] = set(event.get('GROWLITHE_TAINTS', '').split(','))"
                         ),
                     )
+                    # add invocation ID
+                    if node.function == initial_function:
+                        tree_node.body.insert(
+                            0,
+                            ast.parse(
+                                f"GROWLITHE_INVOCATION_ID = context.aws_request_id"
+                            ),
+                        )
+                    else:
+                        tree_node.body.insert(
+                            0,
+                            ast.parse(
+                                f"GROWLITHE_INVOCATION_ID = event.get('GROWLITHE_INVOCATION_ID', '')"
+                            ),
+                        )
                     break
