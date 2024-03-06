@@ -2,10 +2,16 @@
 
 - Follow main README.md to setup codeql and create a database using codeql.py
 
+#### Configuration
 - Understand `modules/Growlithe` for abstractions for the analysis
 - Model new libraries in `modules/Concepts` following structures defined in `modules/Core` for modelling
 - Add new data sources/sinks in `modules/Sources` or `modules/Sinks`
 - Modify `queries/Config` to restrict to required files
+
+#### Running static analysis
+- Run `codeql pack install` in this directory
+- Run 'python run.py`
+
 - Configure run.py to recreate_database, paths and queries to run
 
 #### Code Standard Practices

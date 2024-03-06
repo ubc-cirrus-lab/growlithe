@@ -16,7 +16,7 @@ from src.graph.policy.policy_evaluator import try_policy_eval
 from collections import defaultdict
 from src.benchmark_config import *
 
-sarif_data = loader.load_sarif_file(f"{app_growlithe_path}\\dataflows.sarif")
+sarif_data = loader.load_sarif_file(f"{app_growlithe_path}\\output\\dataflows.sarif")
 results = sarif_data.get_results()
 
 # Generate the graph structure
@@ -36,9 +36,9 @@ for result in results:
 
 # Temporary variable to debug intra-function graph
 # TODO: Integrate stitcher again and remove selection for smaller part
-# graph = graph.get_sub_graph(
-#     "LambdaFunctions/ImageProcessingRotate/lambda_function.py"
-# )
+graph = graph.get_sub_graph(
+    "transform_image.py"
+)
 logger.info("Generated Graph Successfully")
 
 tainted_file_trees = TaintTracker(graph).run()

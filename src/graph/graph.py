@@ -1,9 +1,9 @@
 import uuid
 from enum import Enum
 
-from src.graph.policy.policy import EdgePolicy
 from src.utility import IDGenerator
-
+from src.graph.policy.policy import EdgePolicy, generate_default_edge_policy
+import json
 
 class ReferenceType(Enum):
     """
@@ -248,3 +248,23 @@ class Graph:
         """
         for edge in self.edges:
             apply_func(edge)
+
+    # def traverse(self, apply_func):
+    #     visited = set()
+    #     for node in self.nodes:
+    #         # TODO: FIX Missing edges if started from intermediate node
+    #         if node not in visited:
+    #             visited.add(node)
+    #             self.dfs_helper(node, visited, apply_func)
+
+    # Store the accumulated policy json in a file
+    def init_policies(self, policy_path):
+        self.apply_edges(generate_default_edge_policy)
+        edge_policies = []
+        for edge in self.edges:
+            if edge.edge_policy:
+                edge_policies.append(edge.edge_policy.to_json())
+
+        # Store the accumulated policy json in a file
+        with open(policy_path, "w") as f:
+            json.dump(edge_policies, f, indent=4)
