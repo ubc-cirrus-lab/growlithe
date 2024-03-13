@@ -5,7 +5,7 @@ from src.logger import logger
 
 queries = ['dataflows']
 num_runs = 1
-app_path = "D:\\Code\\growlithe\\benchmarks\\monitored-image-processing"
+app_path = "D:\\Code\\growlithe-results\\Benchmark-2\\claim-processing\\"
 rerun_db_create = False
 rerun_queries = True
 

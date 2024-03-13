@@ -48,7 +48,7 @@ class TaintTracker:
             )
 
     def add_source_taint(self, source_node: Node, code_path):
-        if source_node.resource_type == "RETURN":
+        if source_node.resource_type in ["RETURN", "DEFAULT"]:
             return
         file = code_path["physicalLocation"]["artifactLocation"]["uri"]
         tree = self.function_codes[file]
@@ -68,13 +68,13 @@ class TaintTracker:
                         tree.body.insert(
                             i,
                             ast.parse(
-                                f'GROWLITHE_TAINTS["{source_node.id}"] = GROWLITHE_TAINTS["{source_node.id}"].union(set(bucket.Object("{source_node.data_object.reference_name}").metadata[\'growlithe_taints\'].split(",")))'
+                                f'GROWLITHE_TAINTS[f"{source_node.id}"] = GROWLITHE_TAINTS[f"{source_node.id}"].union(set(bucket.Object("{source_node.data_object.reference_name}").metadata[\'growlithe_taints\'].split(",")))'
                             ),
                         )
                     tree.body.insert(
                         i,
                         ast.parse(
-                            f"GROWLITHE_TAINTS['{source_node.id}'].add('{source_node.id}')"
+                            f"GROWLITHE_TAINTS[f'{source_node.id}'].add(f'{source_node.id}')"
                         ),
                     )
                     return
@@ -117,7 +117,7 @@ class TaintTracker:
                                                     ),
                                                     args=[
                                                         ast.Name(
-                                                            id=f"GROWLITHE_TAINTS['{sink_node.id}']",
+                                                            id=f"GROWLITHE_TAINTS[f'{sink_node.id}']",
                                                             ctx=ast.Load(),
                                                         )
                                                     ],
@@ -130,36 +130,20 @@ class TaintTracker:
                             )
                         )
 
-                    tree.body.insert(
-                        i,
-                        ast.Expr(
-                            value=ast.Call(
-                                func=ast.Attribute(
-                                    value=ast.Name(
-                                        id=f"GROWLITHE_TAINTS['{sink_node.id}']",
-                                        ctx=ast.Load(),
-                                    ),
-                                    attr="add",
-                                    ctx=ast.Load(),
-                                ),
-                                args=[ast.Str(s=sink_node.id)],
-                                keywords=[],
-                            ),
-                        ),
-                    )
+                    tree.body.insert(i, ast.parse(f"GROWLITHE_TAINTS[f'{sink_node.id}'].add(f'{sink_node.id}')"))
                     tree.body.insert(
                         i,
                         ast.Assign(
                             targets=[
                                 ast.Name(
-                                    id=f"GROWLITHE_TAINTS['{sink_node.id}']",
+                                    id=f"GROWLITHE_TAINTS[f'{sink_node.id}']",
                                     ctx=ast.Store(),
                                 )
                             ],
                             value=ast.Call(
                                 func=ast.Attribute(
                                     value=ast.Name(
-                                        id=f"GROWLITHE_TAINTS['{sink_node.id}']",
+                                        id=f"GROWLITHE_TAINTS[f'{sink_node.id}']",
                                         ctx=ast.Load(),
                                     ),
                                     attr="union",
@@ -167,7 +151,7 @@ class TaintTracker:
                                 ),
                                 args=[
                                     ast.Name(
-                                        id=f"GROWLITHE_TAINTS['{source_node.id}']",
+                                        id=f"GROWLITHE_TAINTS[f'{source_node.id}']",
                                         ctx=ast.Load(),
                                     )
                                 ],
@@ -192,7 +176,7 @@ class TaintTracker:
                                         ),
                                         args=[
                                             ast.Name(
-                                                id=f"GROWLITHE_TAINTS['{sink_node.id}']",
+                                                id=f"GROWLITHE_TAINTS[f'{sink_node.id}']",
                                                 ctx=ast.Load(),
                                             )
                                         ],
@@ -216,12 +200,12 @@ class TaintTracker:
                 if getattr(tree_node, "lineno", None) == param_line:
                     tree_node.body.insert(
                         0,
-                        ast.parse(f"GROWLITHE_TAINTS['{node.id}'].add('{node.id}')"),
+                        ast.parse(f"GROWLITHE_TAINTS[f'{node.id}'].add('{node.id}')"),
                     )
                     tree_node.body.insert(
                         0,
                         ast.parse(
-                            f"GROWLITHE_TAINTS['{node.id}'] = set(event.get('GROWLITHE_TAINTS', '').split(','))"
+                            f"GROWLITHE_TAINTS[f'{node.id}'] = set(event.get('GROWLITHE_TAINTS', '').split(','))"
                         ),
                     )
                     break

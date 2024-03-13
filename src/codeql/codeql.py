@@ -17,7 +17,7 @@ class CodeQL:
             logger.info(f"Running iteration {i+1}/{num_runs} of CodeQL analysis...")
 
             app_path = f"{pathlib.Path(app_path).resolve()}"
-            growlithe_path = f"{app_path}/growlithe/"
+            growlithe_path = f"{app_path}/../growlithe/"
             codeql_db_path = f"{growlithe_path}/codeqldb/"
             output_path = f"{growlithe_path}/output/"
             if rerun_db_create and os.path.exists(codeql_db_path):

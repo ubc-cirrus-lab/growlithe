@@ -1,6 +1,9 @@
 from pyDatalog import pyDatalog
 from collections import defaultdict
-GROWLITHE_TAINTS = defaultdict(set)
+import os
+
+default_value = lambda: {os.environ['AWS_LAMBDA_FUNCTION_NAME']}
+GROWLITHE_TAINTS = defaultdict(default_value)
 
 # """
 # Arithmetic/Relational predicates
@@ -50,6 +53,15 @@ def taintSetContains(node_id, label):
 # Retrieved values are set for the required datalog variable
 # in the policy assertion at runtime
 def getSessionProp(prop):
-    import time
     if prop == "SessionTime":
+        import time
         return round(time.time())
+    elif prop == "SessionRegion":
+        import os
+        return os.environ['AWS_REGION']
+
+def getMetaProp(prop, resource_type, resource_name):
+    if resource_type == "S3_BUCKET":
+        import boto3
+        client = boto3.client('s3')
+        return client.get_bucket_location(Bucket=resource_name)['LocationConstraint']

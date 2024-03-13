@@ -1,5 +1,6 @@
 import uuid
 from enum import Enum
+from functools import partial
 
 from src.utility import IDGenerator
 from src.graph.policy.policy import EdgePolicy, generate_default_edge_policy
@@ -98,7 +99,10 @@ class Node:
 
     @property
     def id(self):
-        return f"{self.function}:{self.resource_type}:{self.resource_name.reference_name}_{self.uid}"
+        if self.resource_name.reference_type == ReferenceType.STATIC:
+            return f"{self.function}:{self.resource_type}:{self.resource_name.reference_name}_{self.uid}"
+
+        return f"{self.function}:{self.resource_type}:{{{self.resource_name.reference_name}}}_{self.uid}"
 
     def __str__(self):
         """
@@ -242,12 +246,13 @@ class Graph:
         sub_graph.add_function(function)
         return sub_graph
 
-    def apply_edges(self, apply_func):
+    def apply_edges(self, apply_func, *args, **kwargs):
         """
         Apply the specified function to each edge in the graph.
         """
         for edge in self.edges:
-            apply_func(edge)
+            partial_apply_func = partial(apply_func, edge, *args, **kwargs)
+            partial_apply_func()
 
     # def traverse(self, apply_func):
     #     visited = set()

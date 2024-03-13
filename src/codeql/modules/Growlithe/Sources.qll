@@ -2,6 +2,7 @@ import python
 import modules.Growlithe.Core
 import modules.Growlithe.Utils
 import modules.Concepts.S3Bucket
+import modules.Concepts.DynamoDB
 import modules.Concepts.Image
 
 module Sources {
@@ -29,6 +30,22 @@ module Sources {
     override string getObjectPath() { result = Utils::strRepr(super.getLocalPath()) }
 
     override string getResource() { result = Utils::localFileResource() }
+  }
+
+  class DynamoDBTableGetItemSource extends Core::Source, DynamoDBTable::DynamoDBTableGetItem {
+    override Utils::ShareType getShareType() { result = "CONTAINER" }
+
+    override string getObjectPath() { result = Utils::strRepr(super.getKey()) }
+
+    override string getResource() { result = super.getTableNameAsResource() }
+  }
+
+  class DynamoDBTableScanSource extends Core::Source, DynamoDBTable::DynamoDBTableScan {
+    override Utils::ShareType getShareType() { result = "CONTAINER" }
+
+    override string getObjectPath() { result = "STATIC:ALL_RECORDS" }
+
+    override string getResource() { result = super.getTableNameAsResource() }
   }
 
   class ImageOpenSource extends Core::Source, Image::ImageOpen {

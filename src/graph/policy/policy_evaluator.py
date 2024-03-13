@@ -21,8 +21,16 @@ def try_policy_eval(policy_str, node):
             return f"taintSetContains('{node.id}', '{argument}')"
         policy_str = re.sub(pattern, repl, policy_str)
 
-
     # Replace DataConduit Variables
+    required_meta_props = re.findall(r'\bMeta\w+', policy_str)
+    if required_meta_props:
+        for prop in required_meta_props:
+            if node.resource_name.reference_type == ReferenceType.DYNAMIC:
+                dynamic_eval = True
+                policy_str = f"({prop}=='{{getMetaProp('{prop}', '{node.resource_type}', {node.resource_name.reference_name})}}') & " + policy_str
+        logger.info(required_meta_props)
+        logger.info(policy_str)
+
     required_props = re.findall(r'\bProp\w+', policy_str)
     for prop in required_props:
         if prop in node.attributes:
@@ -40,7 +48,7 @@ def try_policy_eval(policy_str, node):
         dynamic_eval = True
         # Generate inline assertion
         for prop in required_session_props:
-            policy_str = f"({prop}=={{getSessionProp('{prop}')}}) & " + policy_str
+            policy_str = f"({prop}=='{{getSessionProp('{prop}')}}') & " + policy_str
 
         # Simulate runtime check
         # print(pyDatalog.ask(policy_rhs))

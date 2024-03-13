@@ -1,6 +1,8 @@
 import python
 import modules.Growlithe.Core
 import modules.Concepts.S3Bucket
+import modules.Concepts.DynamoDB
+import modules.Concepts.Lambda
 import modules.Concepts.Image
 
 module Sinks {
@@ -30,6 +32,22 @@ module Sinks {
     override string getObjectPath() { result = Utils::strRepr(super.getRemotePath()) }
 
     override string getResource() { result = super.getBucketNameAsResource() }
+  }
+
+  class DynamoDBTableUpdateItemSink extends Core::Sink, DynamoDBTable::DynamoDBTableUpdateItem {
+    override Utils::ShareType getShareType() { result = "GLOBAL" }
+
+    override string getObjectPath() { result = Utils::strRepr(super.getKey()) }
+
+    override string getResource() { result = super.getTableNameAsResource() }
+  }
+
+  class LambdaInvoke extends Core::Sink, LambdaInvoke::LambdaInvoke {
+    override Utils::ShareType getShareType() { result = "GLOBAL" }
+
+    override string getObjectPath() { result = Utils::strRepr(super.getPayload()) }
+
+    override string getResource() { result = super.getFunctionNameAsResource() }
   }
 
   class ImageSaveSink extends Core::Sink, Image::ImageSave {
