@@ -16,7 +16,7 @@ module S3Bucket {
 
     API::Node getAPIMemberReturn() { result = apiNode.getReturn() }
 
-    DataFlow::Node getBucketName() { result = this.getArg(0).getALocalSource() }
+    DataFlow::Node getBucketName() { result = this.getArg(0) }
 
     string getBucketNameAsResource() { result = "S3_BUCKET:" + Utils::strRepr(getBucketName()) }
 
@@ -64,6 +64,5 @@ module S3Bucket {
     override DataFlow::Node getFilePath() { result = this.getLocalPath().getALocalSource() }
 
     string getBucketNameAsResource() { result = bucket.getBucketNameAsResource() }
-    // override string toString() { result = "S3BucketUpload" }
   }
 }

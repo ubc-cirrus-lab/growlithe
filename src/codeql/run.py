@@ -1,14 +1,13 @@
-from src.codeql.codeql import CodeQL
+from codeql import CodeQL
 import os
 from src.logger import logger
-
-benchmarks_root_path = "D:\\Code\\serverless-compliance\\benchmarks"
-benchmark = "ImageProcessingStateMachine"
-benchmark_path = f'{benchmarks_root_path}\\{benchmark}\\'
+# from src.config import app_path, rerun_db_create, rerun_queries
 
 queries = ['dataflows']
 num_runs = 1
-rerun = False
+app_path = "D:\\Code\\growlithe-results\\Benchmark-2\\claim-processing\\"
+rerun_db_create = False
+rerun_queries = True
 
-logger.info(f'Running {num_runs} CodeQL analyses on {benchmark}')
-CodeQL.analyze(benchmark_path, queries, rerun=rerun, num_runs=num_runs)
+logger.info(f'Running {num_runs} CodeQL analyses on {app_path}')
+CodeQL.analyze(app_path, queries, rerun_db_create, rerun_queries, num_runs=num_runs)
