@@ -61,7 +61,10 @@ def getSessionProp(prop):
         return os.environ['AWS_REGION']
 
 def getMetaProp(prop, resource_type, resource_name):
-    if resource_type == "S3_BUCKET":
-        import boto3
-        client = boto3.client('s3')
-        return client.get_bucket_location(Bucket=resource_name)['LocationConstraint']
+    if prop == "MetaConduitRegion":
+        if resource_type == "S3_BUCKET":
+            import boto3
+            client = boto3.client('s3')
+            return client.get_bucket_location(Bucket=resource_name)['LocationConstraint']
+    elif prop == "MetaConduitResourceName":
+        return resource_name
