@@ -41,8 +41,11 @@ logger.info("Generated Graph Successfully and stored default policies")
 
 #########################################################
 # Generate initial policies for the graph
-# logger.warning("=== Using previously generated policy ===")
-graph.init_policies(edge_policy_path)
+if regenerate_edge_policy:
+    logger.warning("=== Regenerating policy ===")
+    graph.init_policies(edge_policy_path)
+else:
+    logger.warning("=== Using previously generated policy ===")
 #########################################################
 tainted_file_trees = TaintTracker(graph).run()
 

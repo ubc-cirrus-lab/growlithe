@@ -11,57 +11,65 @@ from src.graph.graph import ReferenceType
 def try_policy_eval(policy_str, node):
     if policy_str == 'allow':
         return True
-    dynamic_eval = False
+    if ' or ' in policy_str:
+        clauses = policy_str.split(' or ')
+    else:
+        clauses = [policy_str]
 
-    if 'taintSetContains' in policy_str:
-        dynamic_eval = True
-        pattern = r"taintSetContains\('([^']+)'\)"
-        def repl(m):
-            argument = m.group(1)  # Get the captured argument
-            return f"taintSetContains('{node.id}', '{argument}')"
-        policy_str = re.sub(pattern, repl, policy_str)
+    assertions = []
+    for clause in clauses:
+        dynamic_eval = False            
+        if 'taintSetContains' in clause:
+            dynamic_eval = True
+            pattern = r"taintSetContains\('([^']+)'\)"
+            def repl(m):
+                argument = m.group(1)  # Get the captured argument
+                return f"taintSetContains('{node.id}', '{argument}')"
+            clause = re.sub(pattern, repl, clause)
 
-    # Replace DataConduit Variables
-    required_meta_props = re.findall(r'\bMeta\w+', policy_str)
-    if required_meta_props:
-        for prop in required_meta_props:
-            if node.resource_name.reference_type == ReferenceType.DYNAMIC:
-                dynamic_eval = True
-                policy_str = f"({prop}=='{{getMetaProp('{prop}', '{node.resource_type}', {node.resource_name.reference_name})}}') & " + policy_str
-        logger.info(required_meta_props)
-        logger.info(policy_str)
+        # Replace DataConduit Variables
+        required_meta_props = re.findall(r'\bMeta\w+', clause)
+        if required_meta_props:
+            for prop in required_meta_props:
+                if node.resource_name.reference_type == ReferenceType.DYNAMIC:
+                    dynamic_eval = True
+                    clause = f"({prop}=='{{getMetaProp('{prop}', '{node.resource_type}', {node.resource_name.reference_name})}}') & " + clause
+            logger.info(required_meta_props)
+            logger.info(clause)
 
-    required_props = re.findall(r'\bProp\w+', policy_str)
-    for prop in required_props:
-        if prop in node.attributes:
-            if node.attributes[prop].reference_type == ReferenceType.DYNAMIC:
-                dynamic_eval = True
-                policy_str = f"({prop}=='{{{node.attributes[prop].reference_name}}}') & " + policy_str
+        required_props = re.findall(r'\bProp\w+', clause)
+        for prop in required_props:
+            if prop in node.attributes:
+                if node.attributes[prop].reference_type == ReferenceType.DYNAMIC:
+                    dynamic_eval = True
+                    clause = f"({prop}=='{{{node.attributes[prop].reference_name}}}') & " + clause
+                else:
+                    clause = clause.replace(prop, f'"{node.attributes[prop].reference_name}"')
+
+        
+        # Replace Session Variables
+        required_session_props = set(re.findall(r'\bSession\w+', clause))
+        if required_session_props:
+            dynamic_eval = True
+            # Generate inline assertion
+            for prop in required_session_props:
+                clause = f"({prop}=='{{getSessionProp('{prop}')}}') & " + clause
+
+            # Simulate runtime check
+            # print(pyDatalog.ask(policy_rhs))
+            # assert pyDatalog.ask(clause) != None, 'Simulated Policy evaluated to be false'
+
+        if not dynamic_eval:
+            if pyDatalog.ask(clause) == None:
+                logger.warn(f"==POLICY CLAUSE FAILED STATICALLY==: {clause}")
+                return False
             else:
-                policy_str = policy_str.replace(prop, f'"{node.attributes[prop].reference_name}"')
-            # TODO: Handle case of dynamic properties
-
+                logger.info(f"Static eval pass: {clause}")
+            return True
+        assertions.append(clause)
     
-    # Replace Session Variables
-    required_session_props = set(re.findall(r'\bSession\w+', policy_str))
-    if required_session_props:
-        dynamic_eval = True
-        # Generate inline assertion
-        for prop in required_session_props:
-            policy_str = f"({prop}=='{{getSessionProp('{prop}')}}') & " + policy_str
-
-        # Simulate runtime check
-        # print(pyDatalog.ask(policy_rhs))
-        # assert pyDatalog.ask(policy_str) != None, 'Simulated Policy evaluated to be false'
-
-    if not dynamic_eval:
-        # logger.info(f"Evaluation Result {pyDatalog.ask(policy_str)}")
-        if pyDatalog.ask(policy_str) == None:
-            logger.warn(f"Policy cannot be satisfied {policy_str}")
-            return False
-        else:
-            logger.info(f"Static eval pass: {policy_str}")
-        return True
-
-    return f"assert pyDatalog.ask(f\"{policy_str}\") != None, 'Policy evaluated to be false'"
+    # Tranform assertions to pyDatalog.ask() format
+    assertions = [f"pyDatalog.ask(f\"{clause}\") != None" for clause in assertions]
+    # Get assert pyDatalog.ask(c1)!=None or pyDatalog.ask(c2)!=None or ... , "Policy evaluated to be false"
+    return f"assert {' or '.join(assertions)}, 'Policy evaluated to be false'"
     

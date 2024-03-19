@@ -68,7 +68,7 @@ class TaintTracker:
                         tree.body.insert(
                             i,
                             ast.parse(
-                                f'GROWLITHE_TAINTS[f"{source_node.id}"] = GROWLITHE_TAINTS[f"{source_node.id}"].union(set(bucket.Object("{source_node.data_object.reference_name}").metadata[\'growlithe_taints\'].split(",")))'
+                                f'GROWLITHE_TAINTS[f"{source_node.id}"] = GROWLITHE_TAINTS[f"{source_node.id}"].union(set(bucket.Object({source_node.data_object.reference_name}).metadata.get(\'growlithe_taints\', "").split(",")))'
                             ),
                         )
                     tree.body.insert(

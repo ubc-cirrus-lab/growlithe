@@ -2,7 +2,8 @@ import ast
 from src.graph.graph import Graph, InterfaceType, Edge
 from src.graph.policy.policy_evaluator import try_policy_eval
 
-def add_policy_instrumentation(policy_result, code_path, tainted_file_trees):
+# TODO: Remove edge after debugging
+def add_policy_instrumentation(edge, policy_result, code_path, tainted_file_trees):
     if (policy_result == True):
         pass
     elif (policy_result == False):
@@ -33,9 +34,9 @@ def taint_generation_and_policy_instrumentation(edge: Edge, edge_policy_map, tai
     if from_to_policy_key in edge_policy_map:
         edge.edge_policy = edge_policy_map[from_to_policy_key]
         read_pol_eval = try_policy_eval(edge.edge_policy.read_policy, edge.source_node)
-        add_policy_instrumentation(read_pol_eval, edge.source_properties['CodePath'], tainted_file_trees)
+        add_policy_instrumentation(edge, read_pol_eval, edge.source_properties['CodePath'], tainted_file_trees)
         write_pol_eval = try_policy_eval(edge.edge_policy.write_policy, edge.sink_node)
-        add_policy_instrumentation(write_pol_eval, edge.sink_properties['CodePath'], tainted_file_trees)
+        add_policy_instrumentation(edge, write_pol_eval, edge.sink_properties['CodePath'], tainted_file_trees)
     else:
         # TODO: This should be an error as we expect all edges to have a policy in the json
         # logger.warn(f"No policy found for edge {edge.source_node} -> {edge.sink_node}")
