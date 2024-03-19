@@ -6,6 +6,9 @@ import glob
 from src.logger import logger
 import time, shutil
 
+def create_dir_if_not_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 class CodeQL:
     @staticmethod
@@ -18,6 +21,8 @@ class CodeQL:
 
             app_path = f"{pathlib.Path(app_path).resolve()}"
             growlithe_path = f"{app_path}/../growlithe/"
+            create_dir_if_not_exists(growlithe_path)
+
             codeql_db_path = f"{growlithe_path}/codeqldb/"
             output_path = f"{growlithe_path}/output/"
             if rerun_db_create and os.path.exists(codeql_db_path):
