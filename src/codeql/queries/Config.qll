@@ -3,8 +3,10 @@ import semmle.python.dataflow.new.DataFlow
 
 module Config {
   string getFileEndingPattern() {
-    result = ["assignAdjuster.py",
-		"checkCoverage.py"]
+    result = ["blur_image.py",
+		"enhance_image.py",
+		"tag_store_image.py",
+		"transform_image.py"]
   }
 
   string getFunctionName() { result = "lambda_handler" }
