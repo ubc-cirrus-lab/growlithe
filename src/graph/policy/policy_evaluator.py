@@ -35,7 +35,7 @@ def try_policy_eval(policy_str, node):
             def repl(m):
                 dict_name = m.group(1)
                 key = m.group(2)
-                return f"{{{get_node_attribute(node, dict_name)}[{key}]}}"
+                return f"'{{{get_node_attribute(node, dict_name)}[{key}]}}'"
             matches = re.findall(pattern, clause)
             clause = re.sub(pattern, repl, clause)
             print(clause)
