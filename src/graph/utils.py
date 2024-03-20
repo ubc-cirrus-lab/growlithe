@@ -12,7 +12,7 @@ def add_policy_instrumentation(edge, policy_result, code_path, tainted_file_tree
         policy_check = ast.parse(policy_result)
         file_tree = tainted_file_trees[code_path["physicalLocation"]["artifactLocation"]["uri"]]
         start_line = code_path["physicalLocation"]["region"]["startLine"]
-        end_line = getattr(code_path["physicalLocation"]["region"], "endLine", start_line)
+        end_line = code_path["physicalLocation"]["region"].get("endLine", start_line)
         add_policy_check_to_line(file_tree, start_line, end_line, policy_check)
 
 def add_policy_check_to_line(tree, start_line, end_line, policy_check):

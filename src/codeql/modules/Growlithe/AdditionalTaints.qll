@@ -34,6 +34,15 @@ module AdditionalTaints {
     }
   }
 
+  class DynamoDBKeyToCall extends AdditionalTaintStep {
+    override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
+      exists(DynamoDBTable::DynamoDBTableUpdateItem dynamoDBUpdate |
+        nodeFrom = dynamoDBUpdate.getKey() and
+        nodeTo = dynamoDBUpdate
+      )
+    }
+  }
+
   class DynamoDBPayloadToCall extends AdditionalTaintStep {
     override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
       exists(DynamoDBTable::DynamoDBTableUpdateItem dynamoDBUpdate |
