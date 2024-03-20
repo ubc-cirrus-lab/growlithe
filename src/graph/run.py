@@ -13,7 +13,9 @@ from src.graph.utils import *
 from collections import defaultdict
 from src.benchmark_config import *
 
-sarif_data = loader.load_sarif_file(f"{app_growlithe_path}\\output\\dataflows.sarif")
+sarif_data = loader.load_sarif_file(
+    os.path.join(app_growlithe_path, "output", "dataflows.sarif")
+)
 results = sarif_data.get_results()
 
 #########################################################
@@ -55,28 +57,37 @@ edge_policies = [EdgePolicy(policy) for policy in edge_policies]
 edge_policy_map = {}
 
 for policy in edge_policies:
-    edge_policy_map[(policy.source_function, policy.source, policy.sink_function, policy.sink)] = policy
+    edge_policy_map[
+        (policy.source_function, policy.source, policy.sink_function, policy.sink)
+    ] = policy
 
 #########################################################
 # Go through all edges and assign edge policies
-graph.apply_edges(taint_generation_and_policy_instrumentation, edge_policy_map, tainted_file_trees)
+graph.apply_edges(
+    taint_generation_and_policy_instrumentation, edge_policy_map, tainted_file_trees
+)
 
 #########################################################
 # Add required import statements
 for tree in tainted_file_trees.values():
-    tree.body.insert(0, ast.ImportFrom(module="growlithe_predicates", names=[ast.alias(name='*', asname=None)]),)
+    tree.body.insert(
+        0,
+        ast.ImportFrom(
+            module="growlithe_predicates", names=[ast.alias(name="*", asname=None)]
+        ),
+    )
 
 # Write the tainted trees to the file system
 for file, tree in tainted_file_trees.items():
-    directory = os.path.split(f"{app_growlithe_path}\\{file}")[0]
+    directory = os.path.split(f"{app_growlithe_path}/{file}")[0]
     os.makedirs(directory, exist_ok=True)
     shutil.copy(
         f'{os.path.join(os.path.dirname(os.path.abspath(__file__)),"policy/policy_predicates.py")}',
-        f"{directory}\\growlithe_predicates.py"
+        os.path.join(directory, "growlithe_predicates.py"),
     )
-    with open(f"{app_growlithe_path}\\{file}", "w") as f:
+    with open(os.path.join(app_growlithe_path, file), "w") as f:
         f.write(ast.unparse(ast.fix_missing_locations(tree)))
 
 #########################################################
 # Generate IAM policies
-IAMGenerator(graph).run()
+# IAMGenerator(graph).run()

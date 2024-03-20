@@ -33,7 +33,10 @@ class TaintTracker:
 
     def run(self):
         for edge in self.graph.edges:
-            if edge.source_node.resource_type == "PARAM":
+            if (
+                edge.source_node.resource_type == "PARAM"
+                and "context" not in edge.source_node.data_object.reference_name
+            ):
                 self.add_param_taint_extraction(
                     edge.source_node, edge.source_properties["CodePath"]
                 )
@@ -130,7 +133,12 @@ class TaintTracker:
                             )
                         )
 
-                    tree.body.insert(i, ast.parse(f"GROWLITHE_TAINTS[f'{sink_node.id}'].add(f'{sink_node.id}')"))
+                    tree.body.insert(
+                        i,
+                        ast.parse(
+                            f"GROWLITHE_TAINTS[f'{sink_node.id}'].add(f'{sink_node.id}')"
+                        ),
+                    )
                     tree.body.insert(
                         i,
                         ast.Assign(
@@ -198,6 +206,20 @@ class TaintTracker:
         for tree_node in ast.walk(self.function_codes[file]):
             if isinstance(tree_node, ast.FunctionDef):
                 if getattr(tree_node, "lineno", None) == param_line:
+                    tree_node.body.insert(
+                        0,
+                        ast.parse(
+                            "if 'detail' in event and 'bucket' in event['detail']:"
+                            f"    GROWLITHE_TAINTS[f'{node.id}'].add(f\"trigger:S3_BUCKET:{{event['detail']['bucket']['name']}}:{{event['detail']['object']['key']}}_0\")"
+                        ),
+                    )
+                    tree_node.body.insert(
+                        0,
+                        ast.parse(
+                            "if 'Records' in event and 'dynamodb' in event['Records'][0]:"
+                            f"    GROWLITHE_TAINTS[f'{node.id}'].add(f\"trigger:DYNAMODB_TABLE:{{event['Records'][0]['dynamodb']['Keys'][list(event['Records'][0]['dynamodb']['Keys'].keys())[0]]['S']}}_0\")"
+                        ),
+                    )
                     tree_node.body.insert(
                         0,
                         ast.parse(f"GROWLITHE_TAINTS[f'{node.id}'].add('{node.id}')"),
