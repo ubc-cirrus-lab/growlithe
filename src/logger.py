@@ -1,5 +1,8 @@
 import logging.config
 from src.benchmark_config import *
+from src.utility import create_dir_if_not_exists
+
+create_dir_if_not_exists(app_growlithe_output_path)
 
 logging.config.dictConfig({
     "version": 1,

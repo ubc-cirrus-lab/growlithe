@@ -17,7 +17,8 @@ elif system_platform == 'Darwin':
 
 # App Path
 # app_path =  os.path.join(growlithe_results_path, "Benchmark-1", "moderated-image-processing")
-app_path =  os.path.join(growlithe_results_path, "Benchmark-2", "claim-processing")
+# app_path =  os.path.join(growlithe_results_path, "Benchmark-2", "claim-processing")
+app_path =  os.path.join(growlithe_results_path, "Benchmark-3", "shopping-cart")
 # Directory to store updated app, and intermediate growlithe files like codeql db, edge policies, etc.
 app_growlithe_path = os.path.join(app_path, "..", "growlithe")
 app_growlithe_output_path = os.path.join(app_growlithe_path, "output")
