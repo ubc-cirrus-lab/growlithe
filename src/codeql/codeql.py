@@ -1,14 +1,11 @@
 import subprocess
 import os, re
 import pathlib
-import glob
 
+from src.utility import create_dir_if_not_exists
 from src.logger import logger, profiler_logger
 import time, shutil
 
-def create_dir_if_not_exists(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
 
 class CodeQL:
     @staticmethod
@@ -25,20 +22,13 @@ class CodeQL:
 
             codeql_db_path = f"{growlithe_path}/codeqldb/"
             output_path = f"{growlithe_path}/output/"
-            if rerun_db_create and os.path.exists(codeql_db_path):
-                logger.info("Deleting existing database...")
-                shutil.rmtree(codeql_db_path, ignore_errors=False, onerror=None)
-                logger.info("Existing database deleted")
-            if rerun_queries and os.path.exists(output_path):
-                logger.info("Deleting output directory...")
-                shutil.rmtree(output_path, ignore_errors=False, onerror=None)
-                logger.info("Existing output directory deleted")
 
-            if os.path.exists(codeql_db_path):
-                logger.info(
-                    f"CodeQL database already exists at {codeql_db_path} - skipping database creation"
-                )
-            else:
+            if rerun_db_create:
+                if os.path.exists(codeql_db_path):
+                    logger.info("Deleting existing database...")
+                    shutil.rmtree(codeql_db_path, ignore_errors=False, onerror=None)
+                    logger.info("Existing database deleted")
+
                 start_time = time.time()
                 CodeQL._create_database(app_path, growlithe_path)
                 printPattern("*", 75)
@@ -47,16 +37,20 @@ class CodeQL:
                     f"CodeQL database created in {time.time() - start_time} seconds"
                 )
                 printPattern("*", 75)
-
-            if os.path.exists(output_path):
-                logger.info(
-                    f"CodeQL analysis output already exists at {output_path} - skipping analysis"
-                )
             else:
+                logger.info(
+                    f"CodeQL database already exists at {codeql_db_path} - skipping database creation"
+                )
+
+            if rerun_queries:
                 start_time = time.time()
                 CodeQL._analyze_functions(app_path, codeql_db_path, output_path, queries)
                 query_time_list.append(time.time() - start_time)
-
+            else:
+                logger.info(
+                    f"CodeQL analysis output already exists at {output_path} - skipping analysis"
+                )
+                
             logger.info(f"Iteration {i+1}/{num_runs} of CodeQL analysis complete")
         if len(db_create_time_list) > 0:
             logger.info(
@@ -70,16 +64,6 @@ class CodeQL:
     @staticmethod
     def _analyze_functions(app_path, codeql_db_path, output_path, queries):
         current_dir = pathlib.Path(__file__).parent.resolve()
-
-        if os.path.exists(output_path):
-            logger.info("Deleting existing output files...")
-            for file in glob.glob(f"{output_path}/*"):
-                os.remove(file)
-            logger.info("Existing output directory deleted")
-        else:
-            logger.info("Creating output directory...")
-            os.mkdir(output_path)
-            logger.info("Output directory created")
 
         functions = find_python_files(app_path)
         logger.info(f"Found {len(functions)} functions to analyze: ")

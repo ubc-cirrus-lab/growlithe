@@ -85,3 +85,7 @@ def add_assertion(input_file, physical_location, policy):
 
     with open(input_file + ".annotated", "w") as file:
         file.writelines(lines)
+
+def create_dir_if_not_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
