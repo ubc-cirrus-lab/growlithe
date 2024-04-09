@@ -3,7 +3,7 @@ import os, re
 import pathlib
 import glob
 
-from src.logger import logger
+from src.logger import logger, profiler_logger
 import time, shutil
 
 def create_dir_if_not_exists(path):
@@ -17,7 +17,7 @@ class CodeQL:
         db_create_time_list = []
         query_time_list = []
         for i in range(num_runs):
-            logger.info(f"Running iteration {i+1}/{num_runs} of CodeQL analysis...")
+            profiler_logger.info(f"Running iteration {i+1}/{num_runs} of CodeQL analysis...")
 
             app_path = f"{pathlib.Path(app_path).resolve()}"
             growlithe_path = f"{app_path}/../growlithe/"
@@ -43,7 +43,7 @@ class CodeQL:
                 CodeQL._create_database(app_path, growlithe_path)
                 printPattern("*", 75)
                 db_create_time_list.append(time.time() - start_time)
-                logger.info(
+                profiler_logger.info(
                     f"CodeQL database created in {time.time() - start_time} seconds"
                 )
                 printPattern("*", 75)
@@ -60,11 +60,12 @@ class CodeQL:
             logger.info(f"Iteration {i+1}/{num_runs} of CodeQL analysis complete")
         if len(db_create_time_list) > 0:
             logger.info(
-                f"Average database creation time over {num_runs} iterations: {sum(db_create_time_list)/len(db_create_time_list)} seconds"
+                f"profiler_logger database creation time over {num_runs} iterations: {sum(db_create_time_list)/len(db_create_time_list)} seconds"
             )
-        logger.info(
-            f"Average query time over {num_runs} iterations: {sum(query_time_list)/len(query_time_list)} seconds"
-        )
+        if len(query_time_list) > 0:
+            profiler_logger.info(
+                f"Average query time over {num_runs} iterations: {sum(query_time_list)/len(query_time_list)} seconds"
+            )
 
     @staticmethod
     def _analyze_functions(app_path, codeql_db_path, output_path, queries):
@@ -132,7 +133,7 @@ class CodeQL:
             )
 
             printPattern("*", 75)
-            logger.info(
+            profiler_logger.info(
                 f"Query {query_file} with {len(functions)} functions took {time.time() - start_time} seconds"
             )
             printPattern("*", 75)

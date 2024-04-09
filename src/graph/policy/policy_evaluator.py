@@ -3,6 +3,10 @@ from src.graph.policy.policy_predicates import *
 from src.logger import logger
 from src.graph.graph import ReferenceType
 
+def get_node_attribute(node, attribute):
+    if attribute == 'MetaConduitObjectName':
+        return node.data_object.reference_name
+
 # Tries to evaluate a policy using pyDatalog
 # Returns:
     # False if the policy evaluation fails statically
@@ -18,14 +22,23 @@ def try_policy_eval(policy_str, node):
 
     assertions = []
     for clause in clauses:
-        dynamic_eval = False            
-        if 'taintSetContains' in clause:
+        dynamic_eval = False
+
+        ########## Check for predicate functions ##########
+        clause = clause.replace("taintSetContains(", f"taintSetContains('{node.id}', ")
+
+        if 'getValueFromDict' in clause:
             dynamic_eval = True
-            pattern = r"taintSetContains\('([^']+)'\)"
+            # pattern = r"getValueFromDict\(([^,]+),([^)]+)\)"
+            pattern = r"getValueFromDict\s*\(\s*([^,\s]+)\s*,\s*([^)]+)\s*\)"
+
             def repl(m):
-                argument = m.group(1)  # Get the captured argument
-                return f"taintSetContains('{node.id}', '{argument}')"
+                dict_name = m.group(1)
+                key = m.group(2)
+                return f"'{{{get_node_attribute(node, dict_name)}[{key}]}}'"
+            matches = re.findall(pattern, clause)
             clause = re.sub(pattern, repl, clause)
+            print(clause)
 
         # Replace DataConduit Variables
         required_meta_props = re.findall(r'\bMeta\w+', clause)
