@@ -74,4 +74,22 @@ module DynamoDBTable {
 
     string getTableNameAsResource() { result = table.getTableNameAsResource() }
   }
+    
+  class DynamoDBTableQuery extends DataFlow::CallCfgNode {
+    DynamoDBTable table;
+    API::Node apiNode;
+
+    DynamoDBTableQuery() {
+      table = any(DynamoDBTable b) and
+      apiNode = table.getAPIMemberReturn().getMember("query") and
+      this = apiNode.getACall()
+    }
+
+    DynamoDBTable getTable() { result = table }
+
+    DataFlow::Node getKeyConditionExpression() { result in [this.getArg(0), this.getArgByName("KeyConditionExpression")] }
+
+    // DataFlow::Node getUpdateExpression() { result in [this.getArg(2), this.getArgByName("ExpressionAttributeValues")] }
+    string getTableNameAsResource() { result = table.getTableNameAsResource() }
+  }
 }
