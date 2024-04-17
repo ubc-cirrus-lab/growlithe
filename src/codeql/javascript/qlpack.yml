@@ -1,0 +1,6 @@
+name: growlithe-js
+version: 0.0.0
+dependencies:
+  codeql/javascript-all: "*"
+# defaultSuiteFile: queries/python-code-scanning.qls
+extractor: javascript

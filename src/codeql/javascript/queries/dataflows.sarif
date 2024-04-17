@@ -1,0 +1,543 @@
+{
+  "$schema" : "https://json.schemastore.org/sarif-2.1.0.json",
+  "version" : "2.1.0",
+  "runs" : [ {
+    "tool" : {
+      "driver" : {
+        "name" : "CodeQL",
+        "organization" : "GitHub",
+        "semanticVersion" : "2.15.2",
+        "notifications" : [ {
+          "id" : "js/baseline/expected-extracted-files",
+          "name" : "js/baseline/expected-extracted-files",
+          "shortDescription" : {
+            "text" : "Expected extracted files"
+          },
+          "fullDescription" : {
+            "text" : "Files appearing in the source archive that are expected to be extracted."
+          },
+          "defaultConfiguration" : {
+            "enabled" : true
+          },
+          "properties" : {
+            "tags" : [ "expected-extracted-files", "telemetry" ]
+          }
+        } ],
+        "rules" : [ {
+          "id" : "js/dataFlows",
+          "name" : "js/dataFlows",
+          "defaultConfiguration" : {
+            "enabled" : true,
+            "level" : "warning"
+          },
+          "properties" : {
+            "id" : "js/dataFlows",
+            "kind" : "problem"
+          }
+        } ]
+      },
+      "extensions" : [ {
+        "name" : "growlithe-js",
+        "semanticVersion" : "0.0.0",
+        "locations" : [ {
+          "uri" : "file:///D:/Code/Playground/Codeql/javascript/",
+          "description" : {
+            "text" : "The QL pack root directory."
+          }
+        }, {
+          "uri" : "file:///D:/Code/Playground/Codeql/javascript/qlpack.yml",
+          "description" : {
+            "text" : "The QL pack definition file."
+          }
+        } ]
+      } ]
+    },
+    "invocations" : [ {
+      "toolExecutionNotifications" : [ {
+        "locations" : [ {
+          "physicalLocation" : {
+            "artifactLocation" : {
+              "uri" : "test.js",
+              "uriBaseId" : "%SRCROOT%",
+              "index" : 1
+            }
+          }
+        } ],
+        "message" : {
+          "text" : ""
+        },
+        "level" : "none",
+        "descriptor" : {
+          "id" : "js/baseline/expected-extracted-files",
+          "index" : 0
+        },
+        "properties" : {
+          "formattedMessage" : {
+            "text" : ""
+          }
+        }
+      }, {
+        "locations" : [ {
+          "physicalLocation" : {
+            "artifactLocation" : {
+              "uri" : "add.js",
+              "uriBaseId" : "%SRCROOT%",
+              "index" : 0
+            }
+          }
+        } ],
+        "message" : {
+          "text" : ""
+        },
+        "level" : "none",
+        "descriptor" : {
+          "id" : "js/baseline/expected-extracted-files",
+          "index" : 0
+        },
+        "properties" : {
+          "formattedMessage" : {
+            "text" : ""
+          }
+        }
+      } ],
+      "executionSuccessful" : true
+    } ],
+    "artifacts" : [ {
+      "location" : {
+        "uri" : "add.js",
+        "uriBaseId" : "%SRCROOT%",
+        "index" : 0
+      }
+    }, {
+      "location" : {
+        "uri" : "test.js",
+        "uriBaseId" : "%SRCROOT%",
+        "index" : 1
+      }
+    } ],
+    "results" : [ {
+      "ruleId" : "js/dataFlows",
+      "ruleIndex" : 0,
+      "rule" : {
+        "id" : "js/dataFlows",
+        "index" : 0
+      },
+      "message" : {
+        "text" : "[SOURCE, INVOCATION, PARAM:STATIC:SourceCode, DYNAMIC:context](1)==>[None](2)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 11,
+            "startColumn" : 42,
+            "endColumn" : 49
+          }
+        }
+      } ],
+      "partialFingerprints" : {
+        "primaryLocationLineHash" : "f20b54564e499625:1",
+        "primaryLocationStartColumnFingerprint" : "41"
+      },
+      "relatedLocations" : [ {
+        "id" : 1,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 11,
+            "startColumn" : 42,
+            "endColumn" : 49
+          }
+        },
+        "message" : {
+          "text" : "SOURCE, INVOCATION, PARAM:STATIC:SourceCode, DYNAMIC:context"
+        }
+      }, {
+        "id" : 2,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 11,
+            "startColumn" : 42,
+            "endColumn" : 49
+          }
+        },
+        "message" : {
+          "text" : "None"
+        }
+      } ]
+    }, {
+      "ruleId" : "js/dataFlows",
+      "ruleIndex" : 0,
+      "rule" : {
+        "id" : "js/dataFlows",
+        "index" : 0
+      },
+      "message" : {
+        "text" : "[None](1)==>[SINK, INVOCATION, RETURN:STATIC:SourceCode, DYNAMIC:res1](2)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 19,
+            "startColumn" : 16,
+            "endColumn" : 20
+          }
+        }
+      } ],
+      "partialFingerprints" : {
+        "primaryLocationLineHash" : "b7f43ae9de93a275:1",
+        "primaryLocationStartColumnFingerprint" : "7"
+      },
+      "relatedLocations" : [ {
+        "id" : 1,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 15,
+            "startColumn" : 22,
+            "endLine" : 18,
+            "endColumn" : 10
+          }
+        },
+        "message" : {
+          "text" : "None"
+        }
+      }, {
+        "id" : 2,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 19,
+            "startColumn" : 16,
+            "endColumn" : 20
+          }
+        },
+        "message" : {
+          "text" : "SINK, INVOCATION, RETURN:STATIC:SourceCode, DYNAMIC:res1"
+        }
+      } ]
+    }, {
+      "ruleId" : "js/dataFlows",
+      "ruleIndex" : 0,
+      "rule" : {
+        "id" : "js/dataFlows",
+        "index" : 0
+      },
+      "message" : {
+        "text" : "[None](1)==>[SINK, INVOCATION, RETURN:STATIC:SourceCode, DYNAMIC:noProductRes](2)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 49,
+            "startColumn" : 16,
+            "endColumn" : 28
+          }
+        }
+      } ],
+      "partialFingerprints" : {
+        "primaryLocationLineHash" : "b997ddd0e6833edd:1",
+        "primaryLocationStartColumnFingerprint" : "7"
+      },
+      "relatedLocations" : [ {
+        "id" : 1,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 32,
+            "startColumn" : 30,
+            "endLine" : 48,
+            "endColumn" : 10
+          }
+        },
+        "message" : {
+          "text" : "None"
+        }
+      }, {
+        "id" : 2,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 49,
+            "startColumn" : 16,
+            "endColumn" : 28
+          }
+        },
+        "message" : {
+          "text" : "SINK, INVOCATION, RETURN:STATIC:SourceCode, DYNAMIC:noProductRes"
+        }
+      } ]
+    }, {
+      "ruleId" : "js/dataFlows",
+      "ruleIndex" : 0,
+      "rule" : {
+        "id" : "js/dataFlows",
+        "index" : 0
+      },
+      "message" : {
+        "text" : "[SOURCE, INVOCATION, PARAM:STATIC:SourceCode, DYNAMIC:event](1)==>[SINK, GLOBAL, STATIC:\"TABLE_NAME\", DYNAMIC:{{\\r\\n     ...       }}](2)\n[SOURCE, GLOBAL, productUrl, DYNAMIC:axios.g ... uctUrl)](3)==>[SINK, GLOBAL, STATIC:\"TABLE_NAME\", DYNAMIC:{{\\r\\n     ...       }}](2)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 64,
+            "startColumn" : 13,
+            "endLine" : 82,
+            "endColumn" : 15
+          }
+        }
+      } ],
+      "partialFingerprints" : {
+        "primaryLocationLineHash" : "da8859c68e0cad8c:1",
+        "primaryLocationStartColumnFingerprint" : "0"
+      },
+      "relatedLocations" : [ {
+        "id" : 1,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 11,
+            "startColumn" : 35,
+            "endColumn" : 40
+          }
+        },
+        "message" : {
+          "text" : "SOURCE, INVOCATION, PARAM:STATIC:SourceCode, DYNAMIC:event"
+        }
+      }, {
+        "id" : 2,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 64,
+            "startColumn" : 13,
+            "endLine" : 82,
+            "endColumn" : 15
+          }
+        },
+        "message" : {
+          "text" : "SINK, GLOBAL, STATIC:\"TABLE_NAME\", DYNAMIC:{{\\r\\n     ...       }}"
+        }
+      }, {
+        "id" : 3,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 29,
+            "startColumn" : 39,
+            "endColumn" : 60
+          }
+        },
+        "message" : {
+          "text" : "SOURCE, GLOBAL, productUrl, DYNAMIC:axios.g ... uctUrl)"
+        }
+      } ]
+    }, {
+      "ruleId" : "js/dataFlows",
+      "ruleIndex" : 0,
+      "rule" : {
+        "id" : "js/dataFlows",
+        "index" : 0
+      },
+      "message" : {
+        "text" : "[SOURCE, INVOCATION, PARAM:STATIC:SourceCode, DYNAMIC:event](1)==>[SINK, GLOBAL, STATIC:\"TABLE_NAME\", DYNAMIC:{{\\r\\n     ...       }}](2)\n[SOURCE, GLOBAL, productUrl, DYNAMIC:axios.g ... uctUrl)](3)==>[SINK, GLOBAL, STATIC:\"TABLE_NAME\", DYNAMIC:{{\\r\\n     ...       }}](2)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 92,
+            "startColumn" : 13,
+            "endLine" : 110,
+            "endColumn" : 15
+          }
+        }
+      } ],
+      "partialFingerprints" : {
+        "primaryLocationLineHash" : "da8859c68e0cad8c:2",
+        "primaryLocationStartColumnFingerprint" : "0"
+      },
+      "relatedLocations" : [ {
+        "id" : 1,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 11,
+            "startColumn" : 35,
+            "endColumn" : 40
+          }
+        },
+        "message" : {
+          "text" : "SOURCE, INVOCATION, PARAM:STATIC:SourceCode, DYNAMIC:event"
+        }
+      }, {
+        "id" : 2,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 92,
+            "startColumn" : 13,
+            "endLine" : 110,
+            "endColumn" : 15
+          }
+        },
+        "message" : {
+          "text" : "SINK, GLOBAL, STATIC:\"TABLE_NAME\", DYNAMIC:{{\\r\\n     ...       }}"
+        }
+      }, {
+        "id" : 3,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 29,
+            "startColumn" : 39,
+            "endColumn" : 60
+          }
+        },
+        "message" : {
+          "text" : "SOURCE, GLOBAL, productUrl, DYNAMIC:axios.g ... uctUrl)"
+        }
+      } ]
+    }, {
+      "ruleId" : "js/dataFlows",
+      "ruleIndex" : 0,
+      "rule" : {
+        "id" : "js/dataFlows",
+        "index" : 0
+      },
+      "message" : {
+        "text" : "[SOURCE, INVOCATION, PARAM:STATIC:SourceCode, DYNAMIC:event](1)==>[SINK, INVOCATION, RETURN:STATIC:SourceCode, DYNAMIC:successRes](2)"
+      },
+      "locations" : [ {
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 131,
+            "startColumn" : 12,
+            "endColumn" : 22
+          }
+        }
+      } ],
+      "partialFingerprints" : {
+        "primaryLocationLineHash" : "4e92045b22e20a1:1",
+        "primaryLocationStartColumnFingerprint" : "7"
+      },
+      "relatedLocations" : [ {
+        "id" : 1,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 11,
+            "startColumn" : 35,
+            "endColumn" : 40
+          }
+        },
+        "message" : {
+          "text" : "SOURCE, INVOCATION, PARAM:STATIC:SourceCode, DYNAMIC:event"
+        }
+      }, {
+        "id" : 2,
+        "physicalLocation" : {
+          "artifactLocation" : {
+            "uri" : "add.js",
+            "uriBaseId" : "%SRCROOT%",
+            "index" : 0
+          },
+          "region" : {
+            "startLine" : 131,
+            "startColumn" : 12,
+            "endColumn" : 22
+          }
+        },
+        "message" : {
+          "text" : "SINK, INVOCATION, RETURN:STATIC:SourceCode, DYNAMIC:successRes"
+        }
+      } ]
+    } ],
+    "newlineSequences" : [ "\r\n", "\n", " ", " " ],
+    "columnKind" : "utf16CodeUnits",
+    "properties" : {
+      "semmle.formatSpecifier" : "sarifv2.1.0"
+    }
+  } ]
+}
