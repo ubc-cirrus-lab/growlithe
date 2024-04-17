@@ -68,3 +68,27 @@ def getMetaProp(prop, resource_type, resource_name):
             return client.get_bucket_location(Bucket=resource_name)['LocationConstraint']
     elif prop == "MetaConduitResourceName":
         return resource_name
+
+@pyDatalog.predicate()
+def ipToCountry(ip, out):
+    import urllib.request
+    import json
+
+    endpoint = f'https://ipinfo.io/{ip.id}/json'
+
+    try:
+        with urllib.request.urlopen(endpoint) as response:
+            data = json.load(response)
+            yield (ip, data['country'])
+    except urllib.error.URLError:
+        pass
+    
+def getUserAttribute(event, attr):
+    import json
+    return json.loads(event['requestContext']['authorizer']['claims'][attr])['formatted']
+
+def getDictNestedKeyVal(dictionary, nestedKeys):
+    inner = dictionary
+    for key in nestedKeys:
+        inner = inner[key]
+    return inner
