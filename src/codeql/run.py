@@ -11,5 +11,6 @@ CodeQL.analyze(
     benchmark_config.queries_to_run,
     benchmark_config.rerun_db_create,
     benchmark_config.rerun_queries,
+    'python',
     benchmark_config.num_runs,
 )

@@ -9,7 +9,7 @@ import time, shutil
 
 class CodeQL:
     @staticmethod
-    def analyze(app_path, queries, rerun_db_create, rerun_queries, num_runs=1):
+    def analyze(app_path, queries, rerun_db_create, rerun_queries, language, num_runs=1):
         
         db_create_time_list = []
         query_time_list = []
@@ -19,18 +19,18 @@ class CodeQL:
             app_path = f"{pathlib.Path(app_path).resolve()}"
             growlithe_path = f"{app_path}/../growlithe/"
             create_dir_if_not_exists(growlithe_path)
-
-            codeql_db_path = f"{growlithe_path}/codeqldb/"
+            codeql_db_name = f"codeqldb_{language}/"
+            codeql_db_path = f"{growlithe_path}/{codeql_db_name}/"
             output_path = f"{growlithe_path}/output/"
 
-            if rerun_db_create:
+            if rerun_db_create or not os.path.exists(codeql_db_path):
                 if os.path.exists(codeql_db_path):
                     logger.info("Deleting existing database...")
                     shutil.rmtree(codeql_db_path, ignore_errors=False, onerror=None)
                     logger.info("Existing database deleted")
 
                 start_time = time.time()
-                CodeQL._create_database(app_path, growlithe_path)
+                CodeQL._create_database(app_path, growlithe_path, language, codeql_db_name)
                 printPattern("*", 75)
                 db_create_time_list.append(time.time() - start_time)
                 profiler_logger.info(
@@ -39,12 +39,12 @@ class CodeQL:
                 printPattern("*", 75)
             else:
                 logger.info(
-                    f"CodeQL database already exists at {codeql_db_path} - skipping database creation"
+                    f"Expecting CodeQL database at {codeql_db_path} - skipping database creation"
                 )
 
             if rerun_queries:
                 start_time = time.time()
-                CodeQL._analyze_functions(app_path, codeql_db_path, output_path, queries)
+                CodeQL._analyze_functions(app_path, codeql_db_path, language, output_path, queries)
                 query_time_list.append(time.time() - start_time)
             else:
                 logger.info(
@@ -62,14 +62,14 @@ class CodeQL:
             )
 
     @staticmethod
-    def _analyze_functions(app_path, codeql_db_path, output_path, queries):
+    def _analyze_functions(app_path, codeql_db_path, language, output_path, queries):
         current_dir = pathlib.Path(__file__).parent.resolve()
 
         functions = find_python_files(app_path)
         logger.info(f"Found {len(functions)} functions to analyze: ")
         logger.info(functions)
 
-        codeql_config_path = f"{current_dir}/queries/Config.qll"
+        codeql_config_path = f"{current_dir}/{language}/queries/Config.qll"
         with open(codeql_config_path, "r") as file:
             config_template = file.read()
 
@@ -100,7 +100,7 @@ class CodeQL:
                     "analyze",
                     "-q",
                     "--output",
-                    f"{output_path}/{query_file}.sarif",
+                    f"{output_path}/{query_file}_{language}.sarif",
                     "--format",
                     "sarifv2.1.0",
                     "--rerun",
@@ -111,7 +111,7 @@ class CodeQL:
                     "--max-disk-cache",
                     "0",
                     codeql_db_path,
-                    f"{current_dir}/queries/{query_file}.ql",
+                    f"{current_dir}/{language}/queries/{query_file}.ql",
                 ],
                 stdout=subprocess.DEVNULL,
             )
@@ -123,11 +123,11 @@ class CodeQL:
             printPattern("*", 75)
 
     @staticmethod
-    def _create_database(app_path, growlithe_path):
+    def _create_database(app_path, growlithe_path, language, codeql_db_name):
         printPattern("*", 75)
         logger.info(f"Creating CodeQL database in {growlithe_path}")
         subprocess.run(
-            f"(cd {growlithe_path} && codeql database create codeqldb --language=python --overwrite -j=0 -M=2048 -s={app_path})",
+            f"(cd {growlithe_path} && codeql database create {codeql_db_name} --language={language} --overwrite -j=0 -M=2048 -s={app_path})",
             shell=True,
             stdout=subprocess.DEVNULL,
         )
