@@ -30,7 +30,7 @@ node_modules/
 # Archives, Outputs & Data
 archive/
 output/
-growlithe/
+benchmarks/*/growlithe/
 
 # Caches
 __pycache__/
