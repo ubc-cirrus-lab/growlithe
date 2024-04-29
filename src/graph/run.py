@@ -14,14 +14,20 @@ from src.graph.utils import *
 from collections import defaultdict
 from src.benchmark_config import *
 
-sarif_data = loader.load_sarif_file(
-    os.path.join(app_growlithe_path, "output", "dataflows.sarif")
-)
-results = sarif_data.get_results()
+results = []
+for language in ["python", "javascript"]:
+    sarif_data = loader.load_sarif_file(
+        os.path.join(app_growlithe_path, "output", f"dataflows_{language}.sarif")
+    )
+    results.extend(sarif_data.get_results())
 
 for i in range(num_runs):
-    profiler_logger.info("==========================================================================")
-    profiler_logger.info(f"Running iteration {i+1}/{num_runs} of Graph analysis & instrumentation...")
+    profiler_logger.info(
+        "=========================================================================="
+    )
+    profiler_logger.info(
+        f"Running iteration {i+1}/{num_runs} of Graph analysis & instrumentation..."
+    )
 
     #########################################################
     # Generate the graph structure
@@ -40,7 +46,9 @@ for i in range(num_runs):
                 ]["uri"],
             )
 
-    profiler_logger.info(f"Graph generation completed in {time.time() - start_time} seconds")
+    profiler_logger.info(
+        f"Graph generation completed in {time.time() - start_time} seconds"
+    )
 
     # Temporary variable to debug intra-function graph
     # TODO: Integrate stitcher again and remove selection for smaller part
@@ -55,7 +63,9 @@ for i in range(num_runs):
         logger.warning("=== Regenerating policy ===")
         start_time = time.time()
         graph.init_policies(edge_policy_path)
-        profiler_logger.info(f"Policy generation completed in {time.time() - start_time} seconds")
+        profiler_logger.info(
+            f"Policy generation completed in {time.time() - start_time} seconds"
+        )
     else:
         logger.warning("=== Using previously generated policy ===")
     #########################################################
@@ -81,26 +91,35 @@ for i in range(num_runs):
 
     #########################################################
     # Add required import statements
-    for tree in tainted_file_trees.values():
-        tree.body.insert(
-            0,
-            ast.ImportFrom(
-                module="growlithe_predicates", names=[ast.alias(name="*", asname=None)]
-            ),
-        )
+    if tainted_file_trees is not None:
+        for tree in tainted_file_trees.values():
+            tree.body.insert(
+                0,
+                ast.ImportFrom(
+                    module="growlithe_predicates",
+                    names=[ast.alias(name="*", asname=None)],
+                ),
+            )
 
-    # Write the tainted trees to the file system
-    for file, tree in tainted_file_trees.items():
-        directory = os.path.split(f"{app_growlithe_path}/{file}")[0]
-        os.makedirs(directory, exist_ok=True)
-        shutil.copy(
-            f'{os.path.join(os.path.dirname(os.path.abspath(__file__)),"policy/policy_predicates.py")}',
-            os.path.join(directory, "growlithe_predicates.py"),
-        )
-        with open(os.path.join(app_growlithe_path, file), "w") as f:
-            f.write(ast.unparse(ast.fix_missing_locations(tree)))
+        # Write the tainted trees to the file system
+        for file, tree in tainted_file_trees.items():
+            directory = os.path.split(f"{app_growlithe_path}/{file}")[0]
+            os.makedirs(directory, exist_ok=True)
+            shutil.copy(
+                f'{os.path.join(os.path.dirname(os.path.abspath(__file__)),"policy/policy_predicates.py")}',
+                os.path.join(directory, "growlithe_predicates.py"),
+            )
+            with open(os.path.join(app_growlithe_path, file), "w") as f:
+                f.write(ast.unparse(ast.fix_missing_locations(tree)))
 
-    profiler_logger.info(f"Policy Instrumentation completed in {time.time() - start_time} seconds")
+    profiler_logger.info(
+        f"Policy Instrumentation completed in {time.time() - start_time} seconds"
+    )
     #########################################################
     # Generate IAM policies
-    # IAMGenerator(graph).run()
+    start_time = time.time()
+
+    IAMGenerator(graph).run()
+    profiler_logger.info(
+        f"IAM Generation completed in {time.time() - start_time} seconds"
+    )

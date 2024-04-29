@@ -9,12 +9,15 @@ import time, shutil
 
 class CodeQL:
     @staticmethod
-    def analyze(app_path, queries, rerun_db_create, rerun_queries, language, num_runs=1):
-        
+    def analyze(
+        app_path, queries, rerun_db_create, rerun_queries, language, num_runs=1
+    ):
         db_create_time_list = []
         query_time_list = []
         for i in range(num_runs):
-            profiler_logger.info(f"Running iteration {i+1}/{num_runs} of CodeQL analysis...")
+            profiler_logger.info(
+                f"Running iteration {i+1}/{num_runs} of CodeQL analysis..."
+            )
 
             app_path = f"{pathlib.Path(app_path).resolve()}"
             growlithe_path = f"{app_path}/../growlithe/"
@@ -30,7 +33,9 @@ class CodeQL:
                     logger.info("Existing database deleted")
 
                 start_time = time.time()
-                CodeQL._create_database(app_path, growlithe_path, language, codeql_db_name)
+                CodeQL._create_database(
+                    app_path, growlithe_path, language, codeql_db_name
+                )
                 printPattern("*", 75)
                 db_create_time_list.append(time.time() - start_time)
                 profiler_logger.info(
@@ -44,16 +49,20 @@ class CodeQL:
 
             if rerun_queries:
                 start_time = time.time()
-                CodeQL._analyze_functions(app_path, codeql_db_path, language, output_path, queries)
+                CodeQL._analyze_functions(
+                    app_path, codeql_db_path, language, output_path, queries
+                )
                 query_time_list.append(time.time() - start_time)
             else:
                 logger.info(
                     f"CodeQL analysis output already exists at {output_path} - skipping analysis"
                 )
-                
-            logger.info(f"Iteration {i+1}/{num_runs} of CodeQL analysis complete")
+
+            profiler_logger.info(
+                f"Iteration {i+1}/{num_runs} of CodeQL analysis complete"
+            )
         if len(db_create_time_list) > 0:
-            logger.info(
+            profiler_logger.info(
                 f"profiler_logger database creation time over {num_runs} iterations: {sum(db_create_time_list)/len(db_create_time_list)} seconds"
             )
         if len(query_time_list) > 0:
@@ -65,7 +74,12 @@ class CodeQL:
     def _analyze_functions(app_path, codeql_db_path, language, output_path, queries):
         current_dir = pathlib.Path(__file__).parent.resolve()
 
-        functions = find_python_files(app_path)
+        if language == "python":
+            functions = find_python_files(app_path)
+        elif language == "javascript":
+            functions = find_javascript_files(app_path)
+        else:
+            raise Exception(f"Unsupported language {language}")
         logger.info(f"Found {len(functions)} functions to analyze: ")
         logger.info(functions)
 
@@ -150,6 +164,20 @@ def find_python_files(folder_path):
                 python_files.append(relative_path)
 
     return python_files
+
+
+def find_javascript_files(folder_path):
+    javascript_files = []
+
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(".js"):
+                relative_path = os.path.relpath(os.path.join(root, file), folder_path)
+                relative_path = relative_path.replace(os.path.sep, "/")
+
+                javascript_files.append(relative_path)
+
+    return javascript_files
 
 
 def function_path_to_name(function_path):

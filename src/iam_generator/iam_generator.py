@@ -22,21 +22,30 @@ class IAMGenerator:
 
     def save_roles(self):
         for function, role in self.function_roles.items():
-            with open(
-                f"{app_growlithe_path}/LambdaFunctions/{function}/role.json", "w"
-            ) as f:
-                json.dump(role, f, indent=4)
+            try:
+                with open(
+                    f"{app_growlithe_path}/LambdaFunctions/{function}/role.json", "w"
+                ) as f:
+                    json.dump(role, f, indent=4)
+            except FileNotFoundError:
+                logger.warning(
+                    f"Function {function} does not have a directory in {app_growlithe_path}/LambdaFunctions"
+                )
 
     def initialize_function_roles(self):
         for edge in self.edges:
             source_node: Node = edge.source_node
             sink_node: Node = edge.sink_node
-            source_function: str = source_node.function.split("/")[
-                1
-            ]  # TODO: define a field for raw function name
-            sink_function: str = sink_node.function.split("/")[
-                1
-            ]  # TODO: define a field for raw function name
+            try:
+                source_function: str = source_node.function.split("/")[
+                    1
+                ]  # TODO: define a field for raw function name
+                sink_function: str = sink_node.function.split("/")[
+                    1
+                ]  # TODO: define a field for raw function name
+            except IndexError:
+                source_function = source_node.function
+                sink_function = sink_node.function
             if source_function not in self.function_roles.keys():
                 self.function_roles[source_function] = {
                     "Version": "2012-10-17",
@@ -80,12 +89,16 @@ class IAMGenerator:
         for edge in self.edges:
             source_node: Node = edge.source_node
             sink_node: Node = edge.sink_node
-            source_function: str = source_node.function.split("/")[
-                1
-            ]  # TODO: define a field for raw function name
-            sink_function: str = sink_node.function.split("/")[
-                1
-            ]  # TODO: define a field for raw function name
+            try:
+                source_function: str = source_node.function.split("/")[
+                    1
+                ]  # TODO: define a field for raw function name
+                sink_function: str = sink_node.function.split("/")[
+                    1
+                ]  # TODO: define a field for raw function name
+            except IndexError:
+                source_function = source_node.function
+                sink_function = sink_node.function
             if sink_node.resource_type == "S3_BUCKET":
                 logger.info(f"Generating role for {sink_function}")
                 object_name = "*"
