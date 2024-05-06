@@ -6,6 +6,7 @@ from src.utility import IDGenerator
 from src.graph.policy.policy import EdgePolicy, generate_default_edge_policy
 import json
 
+
 class ReferenceType(Enum):
     """
     Enum class to define the type of reference.
@@ -273,3 +274,52 @@ class Graph:
         # Store the accumulated policy json in a file
         with open(policy_path, "w") as f:
             json.dump(edge_policies, f, indent=4)
+
+    def append_policies(self, policy_path):
+        edge_policies = json.load(open(policy_path))
+        edge_policies = [EdgePolicy(policy) for policy in edge_policies]
+
+        # remove the edge policies that are not in the graph anymore
+        edge_policies = [
+            edge_policy
+            for edge_policy in edge_policies
+            if self.edge_exists(edge_policy)
+        ]
+
+        edge_policy_map = {}
+
+        for policy in edge_policies:
+            edge_policy_map[
+                (
+                    policy.source_function,
+                    policy.source,
+                    policy.sink_function,
+                    policy.sink,
+                )
+            ] = policy
+
+        # add the edge policies that are new
+        for edge in self.edges:
+            if (
+                edge.source_node.function,
+                edge.source_node.policy_id,
+                edge.sink_node.function,
+                edge.sink_node.policy_id,
+            ) not in edge_policy_map:
+                default_policy = generate_default_edge_policy(edge)
+                edge_policies.append(default_policy)
+
+        # Store the accumulated policy json in a file
+        with open(policy_path, "w") as f:
+            json.dump([policy.to_json() for policy in edge_policies], f, indent=4)
+
+    def edge_exists(self, edge_policy):
+        for edge in self.edges:
+            if (
+                edge_policy.source_function == edge.source_node.function
+                and edge_policy.source == edge.source_node.policy_id
+                and edge_policy.sink_function == edge.sink_node.function
+                and edge_policy.sink == edge.sink_node.policy_id
+            ):
+                return True
+        return False

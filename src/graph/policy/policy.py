@@ -10,12 +10,13 @@ class Policy:
         self.policy_str = policy_str
         self.start, self.end = policy_str.split(" => ")
         self.end, self.rhs = self.end.split(" ? ")
-    
+
     def __str__(self) -> str:
         return self.policy_str
 
     def __repr__(self) -> str:
         return self.policy_str
+
 
 class EdgePolicy:
     """
@@ -36,12 +37,13 @@ class EdgePolicy:
 
     def __str__(self) -> str:
         return f"EdgePolicy({self.source}, {self.read_policy}, {self.sink}, {self.write_policy})"
-    
+
     def __repr__(self) -> str:
         return f"EdgePolicy({self.source}, {self.read_policy}, {self.sink}, {self.write_policy})"
-    
+
     def to_json(self) -> str:
         return self.policy_json
+
 
 def generate_default_edge_policy(edge):
     """
@@ -57,3 +59,4 @@ def generate_default_edge_policy(edge):
             "write_policy": "allow",
         }
     )
+    return edge.edge_policy

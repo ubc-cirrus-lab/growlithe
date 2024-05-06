@@ -68,6 +68,7 @@ for i in range(num_runs):
         )
     else:
         logger.warning("=== Using previously generated policy ===")
+        graph.append_policies(edge_policy_path)
     #########################################################
 
     # Load edge policies from json containing policy predicates as strings
