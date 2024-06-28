@@ -36,6 +36,7 @@ class SAMParser:
                 )
             if resource_details["Type"] == "AWS::Serverless::StateMachine":
                 definition_uri = resource_details["Properties"]["DefinitionUri"]
+                print(definition_uri)
             resources.append(resource)
 
         # extract dependencies
