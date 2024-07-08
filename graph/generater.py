@@ -30,58 +30,82 @@ class GraphGenerator:
         for resource in resources:
             # Add workflow dependency edges
             for dependency in resource.dependencies:
+                sources: List[Node] = []
                 if isinstance(resource, Function):
-                    source = resource.get_return_node()
+                    sources.append(resource.get_return_node())
                 else:
-                    event = [event for event in dependency.metadata["Events"].values()][0]
+                    event = [event for event in dependency.metadata["Events"].values()][0]  #TODO: fix for multiple events
                     if resource.type == 'AWS::DynamoDB::Table':
-                        source = Node(
-                                Reference(
+                        sources.append(Node(
+                                resource=Reference(
                                     ReferenceType.STATIC,
                                     event["Properties"]["Stream"]["Fn::GetAtt"][0],
                                 ),
-                                Reference(
+                                object=Reference(
                                 ReferenceType.DYNAMIC, ""
                                 ), #PRAVEEN: Don't know what goes here
-                                "DynamoDB",
-                                None,
-                                None,
-                                dependency,
-                                {},
-                                {},
-                                Scope.GLOBAL,
-                            )
+                                object_type="DynamoDB",
+                                object_handler=None,
+                                object_code_location=None,
+                                object_fn=dependency,
+                                object_attrs={},
+                                resource_attrs={},
+                                scope=Scope.GLOBAL,
+                            ))
                     elif resource.type == 'AWS::Serverless::Api':
-                        source = Node(
-                                Reference(
+                        sources.append(Node(
+                                resource=Reference(
                                     ReferenceType.STATIC,
                                     event["Properties"]["RestApiId"]["Ref"],
                                 ),
-                                Reference(
+                                object=Reference(
                                 ReferenceType.DYNAMIC, event["Properties"]["Path"]
                                 ),
-                                "API-GET",
-                                None,
-                                None,
-                                dependency,
-                                {},
-                                {},
-                                Scope.GLOBAL,
-                            )
-                    #TODO: add bucket trigger
+                                object_type="API-GET",
+                                object_handler=None,
+                                object_code_location=None,
+                                object_fn=dependency,
+                                object_attrs={},
+                                resource_attrs={},
+                                scope=Scope.GLOBAL,
+                            ))
+                    elif resource.type == 'AWS::S3::Bucket':
+                        for bucket in event["Properties"]["Pattern"]["detail"]["bucket"]["name"]:
+                            bucket_name = bucket["Ref"]
+                            sources.append(Node(
+                                    resource=Reference(
+                                        ReferenceType.STATIC,
+                                        bucket_name,
+                                    ),
+                                    object=Reference(
+                                    ReferenceType.DYNAMIC, ""
+                                    ),
+                                    object_type="S3",
+                                    object_handler=None,
+                                    object_code_location=None,
+                                    object_fn=dependency,
+                                    object_attrs={},
+                                    resource_attrs={},
+                                    scope=Scope.GLOBAL,
+                                ))
+                    else:
+                        logger.error(f"Resource type {resource.type} not supported")
+                        raise NotImplementedError
+                for source in sources:
+                    logger.info(f"{source.object_fn.name}")
                     self.graph.add_node(source)
-                if isinstance(dependency, Function):
-                    sink = dependency.get_event_node()                        
-                    self.graph.add_edge(
-                        Edge(
-                            source,
-                            sink,
-                            source.object_code_location,
-                            sink.object_code_location,
-                            dependency,
-                            EdgeType.INDIRECT #PRAVEEN: check
+                    if isinstance(dependency, Function):
+                        sink = dependency.get_event_node()                        
+                        self.graph.add_edge(
+                            Edge(
+                                u=source,
+                                v=sink,
+                                source_code_path=source.object_code_location,
+                                sink_code_path=sink.object_code_location,
+                                function=dependency,
+                                edge_type=EdgeType.INDIRECT #PRAVEEN: check
+                            )
                         )
-                    )
 
         # Add lambda invoke dependency edges
         for node in self.graph.nodes:
