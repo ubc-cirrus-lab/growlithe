@@ -9,3 +9,10 @@
 - Install dependencies: `pip install -r requirements.txt`.
 
 - Run main.py
+
+### Using Docker Image
+- Build the docker image using:
+`docker build -t your-image-name .`
+
+- Run an interactive session using:
+`docker run -it growlithe bash`

@@ -5,11 +5,15 @@ import platform
 system_platform = platform.system()
 # Windows
 if system_platform == 'Windows':
-    growlithe_results_path = r"D:\Code\growlithe-v2\growlithe-results"
+    growlithe_results_path = r"D:\Code\growlithe-results"
 
 # MacOS
 elif system_platform == 'Darwin':
     growlithe_results_path = "/Users/arshia/repos/ubc/final/growlithe-results"
+
+# Linux
+elif system_platform == 'Linux':
+    growlithe_results_path = "/growlithe-results"
 ###################################################################################################
 
 # ########## Benchmark1 #############
