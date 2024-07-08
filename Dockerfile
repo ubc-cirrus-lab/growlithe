@@ -17,7 +17,7 @@ RUN curl -L -o codeql.zip https://github.com/github/codeql-cli-binaries/releases
     && rm codeql.zip
 
 # Add CodeQL to the PATH
-ENV PATH="/opt/codeql/codeql:${PATH}"
+ENV PATH="/opt/codeql/:${PATH}"
 
 # Copy the requirements file into the container
 COPY requirements.txt .
@@ -28,8 +28,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container
 COPY . .
 
+WORKDIR /app/graph/codeql/python
+RUN codeql pack install
+
+WORKDIR /app/graph/codeql/javascript
+RUN codeql pack install
+
+WORKDIR /app
 # Set environment variables if needed
 # ENV VARIABLE_NAME=value
 
 # Run your scripts
-# CMD ["python", "main.py"]
+CMD ["python", "main.py"]

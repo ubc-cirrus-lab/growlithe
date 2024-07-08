@@ -12,7 +12,17 @@
 
 ### Using Docker Image
 - Build the docker image using:
-`docker build -t your-image-name .`
+`docker build -t growlithe .`
 
 - Run an interactive session using:
 `docker run -it growlithe bash`
+
+### Docker with SSH
+- Build the docker image using:
+`docker build -t growlithe-study .`
+
+- Run an interactive session using:
+`docker run -it -p 2222:22 --name growlithe-study-1 growlithe-study`
+
+- SSH to the docker container using the credentials in the docker image and the port used for forwarding:
+`ssh participant1@localhost -p 2222`

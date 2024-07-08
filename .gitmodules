@@ -1,6 +1,0 @@
-[submodule "benchmarks/ocr/lambda-OCRmyPDF"]
-	path = benchmarks/ocr/lambda-OCRmyPDF
-	url = https://github.com/chronograph-pe/lambda-OCRmyPDF.git
-[submodule "benchmarks/aws-serverless-shopping-cart"]
-	path = benchmarks/aws-serverless-shopping-cart
-	url = https://github.com/aws-samples/aws-serverless-shopping-cart.git
