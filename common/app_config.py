@@ -5,11 +5,15 @@ import platform
 system_platform = platform.system()
 # Windows
 if system_platform == 'Windows':
-    growlithe_results_path = r"D:\Code\growlithe-v2\growlithe-results"
+    growlithe_results_path = r"D:\Code\growlithe-results"
 
 # MacOS
 elif system_platform == 'Darwin':
     growlithe_results_path = "/Users/arshia/repos/ubc/final/growlithe-results"
+
+# Linux
+elif system_platform == 'Linux':
+    growlithe_results_path = "/app/tasks/"
 ###################################################################################################
 
 # ########## Benchmark1 #############
@@ -20,18 +24,18 @@ elif system_platform == 'Darwin':
 # app_config_path = ""
 # ########## Benchmark1 #############
 ########## Benchmark2 #############
-# benchmark_name = "Benchmark2"
-# app_name = "ImageProcessing"
-# src_dir = "src"
-# app_config_type = "SAM"
-# app_config_path = os.path.join(growlithe_results_path, benchmark_name, app_name, "template.yaml")
+benchmark_name = "Benchmark2"
+app_name = "ImageProcessing"
+src_dir = "src"
+app_config_type = "SAM"
+app_config_path = os.path.join(growlithe_results_path, benchmark_name, app_name, "template.yaml")
 ########## Benchmark2 #############
 ########## Benchmark3 #############
-benchmark_name = "Benchmark3"
-app_name = "ShoppingCart"
-src_dir = "src"
-app_config_type = "StepFunction"
-app_config_path = ""
+# benchmark_name = "Benchmark3"
+# app_name = "ShoppingCart"
+# src_dir = "src"
+# app_config_type = "StepFunction"
+# app_config_path = ""
 # ########## Benchmark3 #############
 
 ######## DO NOT CHANGE #############

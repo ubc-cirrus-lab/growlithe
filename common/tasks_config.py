@@ -3,8 +3,8 @@ Defines tasks in growlithe to be run or skipped on the app
 Also defines number of runs
 """
 
-CREATE_CODEQL_DB = False
-RUN_CODEQL_QUERIES = False
+CREATE_CODEQL_DB = True
+RUN_CODEQL_QUERIES = True
 GENERATE_EDGE_POLICY = True
 PROFILE_GROWLITHE_RUNS = True
 
