@@ -1,5 +1,6 @@
 import re
 from typing import List, Set
+from growlithe import *
 
 
 class PolicyPredicate:
@@ -45,12 +46,25 @@ class PredicateSet:
     @property
     def contains_session_variables(self) -> bool:
         return any(var.startswith("Session") for var in self.variables)
-    
+
     def add_predicate(self, predicate: PolicyPredicate):
         self.predicates.add(predicate)
-    
-    def evaluate(self):
-        pass
+
+    @property
+    def query(self) -> str:
+        return " & ".join([f"{pred.predicate_str}" for pred in self.predicates])
+
+    @property
+    def deferred_query(self):
+        if self.contains_session_variables:
+            return self.query
+        try:
+            if pyDatalog.ask(self.query) == None:
+                print(f"ERROR: Partial policy failed offline check: {self.query}")
+            else:
+                return None
+        except Exception as e:
+            return self.query
 
 
 class PolicyClause:
@@ -84,7 +98,6 @@ class PolicyClause:
             # TODO: Replace with properties stored in node/edge objects
             for var in disjoint_set.variables:
                 if var.startswith("Session"):
-                    print(f"Adding implicit predicate for session variable: {var}")
                     disjoint_set.add_predicate(
                         PolicyPredicate(f"eq({var}, '{{getSessionVar('{var}')}}')")
                     )
@@ -96,14 +109,18 @@ class PolicyClause:
                     pass
 
     @property
-    def query(self) -> str:
+    def deferred_query(self) -> str:
         return " & ".join(
             [
-                f"{pred.predicate_str}"
+                f"{disj.deferred_query}"
                 for disj in self.disjoint_predicates
-                for pred in disj.predicates
+                if disj.deferred_query is not None
             ]
         )
+
+    @property
+    def query(self) -> str:
+        return " & ".join([f"({disj.query})" for disj in self.disjoint_predicates])
 
 
 class Policy:
@@ -130,15 +147,15 @@ class Policy:
             clauses.append(PolicyClause(predicates))
         return clauses
 
-    def generate_assertion(self, language) -> str:
+    def generate_assertion(self, language, hybrid=True) -> str:
         if language == "python":
-            return self.generate_python_assertion()
+            return self.generate_python_assertion(hybrid)
 
-    def generate_python_assertion(self) -> str:
+    def generate_python_assertion(self, hybrid) -> str:
         # Generate the pyDatalog assertion string for python
 
         pyDatalog_queries = [
-            f'pyDatalog.ask(f"{clause.query}") != None'
+            f'pyDatalog.ask(f"{clause.deferred_query if hybrid else clause.query}") != None'
             for clause in self.policy_clauses
         ]
         # Get the python statement: assert pyDatalog.ask(c1)!=None or pyDatalog.ask(c2)!=None or ... , "Policy evaluated to be false"
