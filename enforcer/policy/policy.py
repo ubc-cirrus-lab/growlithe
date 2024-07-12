@@ -33,7 +33,7 @@ class PolicyPredicate:
 
 class PredicateSet:
     def __init__(self, predicates: Set[PolicyPredicate]):
-        self.predicates = predicates
+        self.predicates: Set[PolicyPredicate] = predicates
         self.variables = self.extract_variables()
 
     def extract_variables(self) -> Set[str]:
@@ -45,22 +45,29 @@ class PredicateSet:
     @property
     def contains_session_variables(self) -> bool:
         return any(var.startswith("Session") for var in self.variables)
+    
+    def add_predicate(self, predicate: PolicyPredicate):
+        self.predicates.add(predicate)
+    
+    def evaluate(self):
+        pass
 
 
 class PolicyClause:
     """OR separated policy clause in a DNF policy"""
 
     def __init__(self, predicates: List[PolicyPredicate]):
-        self.predicates = predicates
-        self.disjoint_predicates = self.divide_into_disjoint_sets()
+        self.predicates: List[PolicyPredicate] = predicates
+        self.disjoint_predicates: List[PredicateSet] = self.divide_into_disjoint_sets()
+        self.insert_implicit_predicate()
 
     # # Each clause can have set of predicates that can be evaluated independently of the other predicates
-    def divide_into_disjoint_sets(self) -> List[List[PolicyPredicate]]:
-        disjoint_sets = []
+    def divide_into_disjoint_sets(self) -> List[PredicateSet]:
+        disjoint_sets: List[PredicateSet] = []
         predicates = self.predicates.copy()
         while predicates:
             predicate = predicates.pop(0)
-            current_set = [predicate]
+            current_set = set({predicate})
             current_vars = predicate.variables
             i = 0
             while i < len(predicates):
@@ -69,21 +76,16 @@ class PolicyClause:
                     current_vars.update(current_set[-1].variables)
                 else:
                     i += 1
-            disjoint_sets.append(current_set)
+            disjoint_sets.append(PredicateSet(current_set))
         return disjoint_sets
 
     def insert_implicit_predicate(self):
         for disjoint_set in self.disjoint_predicates:
-            variables: Set[str] = set()
-
-            # Collect all datalog variables used in the set of predicates
-            for pred in disjoint_set:
-                variables.update(pred.variables)
-
             # TODO: Replace with properties stored in node/edge objects
-            for var in variables:
+            for var in disjoint_set.variables:
                 if var.startswith("Session"):
-                    disjoint_set.append(
+                    print(f"Adding implicit predicate for session variable: {var}")
+                    disjoint_set.add_predicate(
                         PolicyPredicate(f"eq({var}, '{{getSessionVar('{var}')}}')")
                     )
                 elif var.startswith("Inst"):
@@ -95,11 +97,13 @@ class PolicyClause:
 
     @property
     def query(self) -> str:
-        return " & ".join([f"{pred.predicate_str}" for pred in self.predicates])
-
-    def insert_implicit_predicate(self):
-        for pred in self.predicates:
-            pass
+        return " & ".join(
+            [
+                f"{pred.predicate_str}"
+                for disj in self.disjoint_predicates
+                for pred in disj.predicates
+            ]
+        )
 
 
 class Policy:
