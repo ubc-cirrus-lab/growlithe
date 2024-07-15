@@ -3,11 +3,12 @@ Defines tasks in growlithe to be run or skipped on the app
 Also defines number of runs
 """
 
-CREATE_CODEQL_DB = True
-RUN_CODEQL_QUERIES = True
-GENERATE_EDGE_POLICY = True
+CREATE_CODEQL_DB = False
+RUN_CODEQL_QUERIES = False
+GENERATE_EDGE_POLICY = False
 PROFILE_GROWLITHE_RUNS = True
 
+HYBRID_MODE = True
 # # Directory to store updated app, and intermediate growlithe files like codeql db, edge policies, etc.
 # app_growlithe_path = os.path.join(app_path, "..", "growlithe")
 # app_growlithe_output_path = os.path.join(app_growlithe_path, "output")

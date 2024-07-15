@@ -1,6 +1,6 @@
 from pyDatalog import pyDatalog
 from collections import defaultdict
-import os
+import os, time, boto3
 
 default_value = lambda: {os.environ["AWS_LAMBDA_FUNCTION_NAME"]}
 GROWLITHE_TAINTS = defaultdict(default_value)
@@ -56,6 +56,9 @@ def hasSubstr2(str, substr):
     if str.id.startswith(substr.id):
         yield (str, substr)
 
+@pyDatalog.predicate()
+def concat3(concatenated_string, str1, str2):
+    yield (str1.id + str2.id, str1, str2)
 
 ##==================================================================#
 # """Taint predicates"""
@@ -80,43 +83,33 @@ def taintSetExcludes(node_id, label):
 # Session properties are retrieved at runtime
 # Retrieved values are set for the required datalog variable
 # in the policy assertion at runtime
-def getSessionVar(prop):
-    if prop == "SessionTime":
-        import time
-
+def getInstProp(prop):
+    if prop == "InstTime":
         return round(time.time())
-    elif prop == "SessionRegion":
-        import os
-
+    elif prop == "InstRegion":
         return os.environ["AWS_REGION"]
 
 
-def getMetaProp(prop, resource_type, resource_name):
-    if prop == "MetaConduitRegion":
-        if resource_type == "S3_BUCKET":
-            import boto3
+def getResourceProp(prop, object_type, resource_name):
+    if prop == "Resource":
+        return resource_name
 
+    elif prop == "ResourceRegion":
+        if object_type == "S3_BUCKET":
             client = boto3.client("s3")
             return client.get_bucket_location(Bucket=resource_name)[
                 "LocationConstraint"
             ]
-        elif resource_type == "DYNAMODB_TABLE":
-            import boto3
-
+        elif object_type == "DYNAMODB_TABLE":
             client = boto3.client("dynamodb")
             return client.describe_table(TableName=resource_name)["Table"][
                 "TableArn"
             ].split(":")[3]
 
-    elif prop == "MetaConduitResourceName":
-        return resource_name
-
 
 @pyDatalog.predicate()
 def getItemVal5(val, table_name, key_name, key, prop):
     print("Getting Value")
-    import boto3
-
     dynamodb = boto3.resource("dynamodb")
     print(table_name.id, key_name.id, key.id, prop.id)
     table = dynamodb.Table(table_name.id)

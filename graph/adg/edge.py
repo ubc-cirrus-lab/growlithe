@@ -1,5 +1,5 @@
 from enum import Enum
-
+from enforcer.policy.policy import Policy
 from graph.adg.function import Function
 from graph.adg.node import Node
 from itertools import count
@@ -35,6 +35,11 @@ class Edge:
         self.edge_type: EdgeType = edge_type
         self.edge_id = next(self._id_generator)
 
+        # Default Policies
+        # FIXME: Set to allow for ease of testing, check with default deny
+        self.read_policy = Policy("READ", "allow")
+        self.write_policy = Policy("WRITE", "allow")
+
     def __repr__(self):
         return f"{self.source.__repr__()} -{self.edge_id}-> {self.sink.__repr__()}"
 
@@ -54,7 +59,11 @@ class Edge:
                 "id": self.edge_id,
                 "source": self.source.__repr__(),
                 "sink": self.sink.__repr__(),
-                "read": "allow",
-                "write": "allow",
+                "read": self.read_policy.__str__(),
+                "write": self.write_policy.__str__(),
             }
         return None
+
+    def update_policy(self, policy_json):
+        self.read_policy = Policy("READ", policy_json["read"], self.source)
+        self.write_policy = Policy("WRITE", policy_json["write"], self.sink)

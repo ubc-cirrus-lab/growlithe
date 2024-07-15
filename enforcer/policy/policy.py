@@ -1,6 +1,11 @@
+from __future__ import annotations
 import re
 from typing import List, Set
-from growlithe import *
+from common.tasks_config import HYBRID_MODE
+from enforcer.policy.growlithe import *
+from graph.adg.node import Node
+
+from graph.adg.types import ReferenceType
 
 
 class PolicyPredicate:
@@ -62,6 +67,7 @@ class PredicateSet:
             if pyDatalog.ask(self.query) == None:
                 print(f"ERROR: Partial policy failed offline check: {self.query}")
             else:
+                # FIXME: Complete pipeline when offline checks are successful
                 return None
         except Exception as e:
             return self.query
@@ -70,27 +76,32 @@ class PredicateSet:
 class PolicyClause:
     """OR separated policy clause in a DNF policy"""
 
-    def __init__(self, predicates: List[PolicyPredicate]):
+    def __init__(self, predicates: List[PolicyPredicate], policy: Policy):
         self.predicates: List[PolicyPredicate] = predicates
         self.disjoint_predicates: List[PredicateSet] = self.divide_into_disjoint_sets()
+        self.policy = policy
         self.insert_implicit_predicate()
 
     # # Each clause can have set of predicates that can be evaluated independently of the other predicates
     def divide_into_disjoint_sets(self) -> List[PredicateSet]:
         disjoint_sets: List[PredicateSet] = []
-        predicates = self.predicates.copy()
+        predicates: List[PolicyPredicate] = self.predicates.copy()
         while predicates:
             predicate = predicates.pop(0)
-            current_set = set({predicate})
-            current_vars = predicate.variables
+            current_set: Set[PolicyPredicate] = {predicate}
+            current_vars = set(predicate.variables)
+
             i = 0
             while i < len(predicates):
-                if current_vars & predicates[i].variables:
-                    current_set.append(predicates.pop(i))
-                    current_vars.update(current_set[-1].variables)
+                if current_vars & set(predicates[i].variables):
+                    current_predicate = predicates.pop(i)
+                    current_set.add(current_predicate)
+                    current_vars.update(current_predicate.variables)
                 else:
                     i += 1
+
             disjoint_sets.append(PredicateSet(current_set))
+
         return disjoint_sets
 
     def insert_implicit_predicate(self):
@@ -98,11 +109,36 @@ class PolicyClause:
             # TODO: Replace with properties stored in node/edge objects
             for var in disjoint_set.variables:
                 if var.startswith("Session"):
-                    disjoint_set.add_predicate(
-                        PolicyPredicate(f"eq({var}, '{{getSessionVar('{var}')}}')")
-                    )
+                    raise NotImplementedError("Session variables not supported yet")
                 elif var.startswith("Inst"):
-                    raise NotImplementedError("Instance variables not supported yet")
+                    # Instance properties only resolved at runtime
+                    disjoint_set.add_predicate(
+                        PolicyPredicate(f"eq({var}, '{{getInstProp('{var}')}}')")
+                    )
+                elif var.startswith("Resource"):  # Try to resolve identifier offline
+                    if (
+                        HYBRID_MODE
+                        and self.policy.node.resource.reference_type
+                        == ReferenceType.STATIC
+                    ):
+                        try:
+                            prop = getResourceProp(
+                                var,
+                                self.policy.node.object_type,
+                                self.policy.node.resource.reference_name,
+                            )
+                            disjoint_set.add_predicate(
+                                PolicyPredicate(f"eq({var}, '{prop}')")
+                            )
+                            continue
+                        except Exception as e:
+                            print(f"Error: {e}")
+
+                    disjoint_set.add_predicate(
+                        PolicyPredicate(
+                            f"eq({var}, '{{getResourceProp('{var}', '{self.policy.node.object_type}', '{self.policy.node.resource.reference_name}')}}')"
+                        )
+                    )
                 elif var.startswith("Object"):
                     raise NotImplementedError("Object variables not supported yet")
                 else:
@@ -124,41 +160,57 @@ class PolicyClause:
 
 
 class Policy:
-    def __init__(self, policy_type: str, policy_str: str):
+    def __init__(self, policy_type: str, policy_str: str, node: Node = None):
+        self.node = node
         self.policy_type = policy_type
-        self.policy_str = policy_str
-        self.policy_clauses: List[PolicyClause] = self.parse_policy_str(policy_str)
+        self.policy_str = "" if policy_str == "allow" else policy_str
+        self.policy_clauses: List[PolicyClause] = self.parse_policy_str(self.policy_str)
+        pass
+
+    def __str__(self) -> str:
+        return "allow" if self.policy_str == "" else self.policy_str
 
     def parse_policy_str(self, policy_str: str) -> List[PolicyClause]:
-        # Split the policy string into clauses (separated by 'or')
-        clause_strs = re.split(r"\s+or\s+", policy_str.strip())
+        if policy_str == "":
+            return []
 
-        clauses: List[PolicyClause] = []
-        for clause_str in clause_strs:
-            # Remove outer parentheses
-            clause_str = clause_str.strip()[1:-1]
+        # Function to process a single clause
+        def process_clause(clause_str: str) -> PolicyClause:
+            # Remove outer parentheses if present
+            clause_str = clause_str.strip()
+            if clause_str.startswith("(") and clause_str.endswith(")"):
+                clause_str = clause_str[1:-1].strip()
 
             # Split the clause into predicates (separated by '&')
             predicate_strs = re.split(r"\s*&\s*", clause_str)
+            predicates = [PolicyPredicate(pred.strip()) for pred in predicate_strs]
+            return PolicyClause(predicates, self)
 
-            predicates: List[PolicyPredicate] = [
-                PolicyPredicate(pred) for pred in predicate_strs
-            ]
-            clauses.append(PolicyClause(predicates))
-        return clauses
+        # Check if the policy has multiple clauses
+        if " or " in policy_str:
+            # Split the policy string into clauses (separated by 'or')
+            clause_strs = re.split(r"\s+or\s+", policy_str.strip())
+            return [process_clause(clause) for clause in clause_strs]
+        else:
+            # Single clause policy
+            return [process_clause(policy_str)]
 
-    def generate_assertion(self, language, hybrid=True) -> str:
+    def generate_assertion(self, language) -> str:
         if language == "python":
-            return self.generate_python_assertion(hybrid)
+            return self.generate_python_assertion()
 
-    def generate_python_assertion(self, hybrid) -> str:
+    def generate_python_assertion(self) -> str:
         # Generate the pyDatalog assertion string for python
+        valid_queries = []
 
-        pyDatalog_queries = [
-            f'pyDatalog.ask(f"{clause.deferred_query if hybrid else clause.query}") != None'
-            for clause in self.policy_clauses
-        ]
-        # Get the python statement: assert pyDatalog.ask(c1)!=None or pyDatalog.ask(c2)!=None or ... , "Policy evaluated to be false"
-        return (
-            f"assert {' or '.join(pyDatalog_queries)}, 'Policy evaluated to be false'"
-        )
+        for clause in self.policy_clauses:
+            query = clause.deferred_query if HYBRID_MODE else clause.query
+            if query != "":
+                valid_queries.append(f'pyDatalog.ask(f"{query}") != None')
+
+        if not valid_queries:
+            return ""
+        else:
+            return (
+                f"assert {' or '.join(valid_queries)}, 'Policy evaluated to be false'"
+            )
