@@ -92,7 +92,6 @@ class GraphGenerator:
                         logger.error(f"Resource type {resource.type} not supported")
                         raise NotImplementedError
                 for source in sources:
-                    logger.info(f"{source.object_fn.name}")
                     self.graph.add_node(source)
                     if isinstance(dependency, Function):
                         sink = dependency.get_event_node()                        

@@ -99,8 +99,8 @@ class Graph:
             # TODO: Add to the instrumented code
             read_assertion = edge.read_policy.generate_assertion("python")
             if read_assertion:
-                logger.info(f"Assertion: {read_assertion}")
+                logger.debug(f"Assertion: {read_assertion}")
 
             write_assertion = edge.write_policy.generate_assertion("python")
             if write_assertion:
-                logger.info(f"Assertion: {write_assertion}")
+                logger.debug(f"Assertion: {write_assertion}")

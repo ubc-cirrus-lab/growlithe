@@ -1,8 +1,10 @@
 from __future__ import annotations
 import re
 from typing import List, Set
+from common import logger
 from common.tasks_config import HYBRID_MODE
 from enforcer.policy.growlithe import *
+from enforcer.taint.taint_utils import online_taint_label
 from graph.adg.node import Node
 
 from graph.adg.types import ReferenceType
@@ -25,7 +27,7 @@ class PolicyPredicate:
             args = [arg.strip() for arg in match.group(2).split(",")]
             return name, args
         else:
-            print(f"Error: '{self.predicate_str}' is not a valid function predicate")
+            logger.error(f"Error: '{self.predicate_str}' is not a valid function predicate")
             return "", []
 
     def extract_variables(self) -> Set[str]:
@@ -65,7 +67,7 @@ class PredicateSet:
             return self.query
         try:
             if pyDatalog.ask(self.query) == None:
-                print(f"ERROR: Partial policy failed offline check: {self.query}")
+                logger.error(f"OFFLINE POLICY ERROR: Partial policy failed offline check: {self.query}")
             else:
                 # FIXME: Complete pipeline when offline checks are successful
                 return None
@@ -107,6 +109,7 @@ class PolicyClause:
     def insert_implicit_predicate(self):
         for disjoint_set in self.disjoint_predicates:
             # TODO: Replace with properties stored in node/edge objects
+            # Resolve growlithe identifiers
             for var in disjoint_set.variables:
                 if var.startswith("Session"):
                     raise NotImplementedError("Session variables not supported yet")
@@ -132,7 +135,7 @@ class PolicyClause:
                             )
                             continue
                         except Exception as e:
-                            print(f"Error: {e}")
+                            logger.debug(f"Error while resolving {prop} offline: {e}")
 
                     disjoint_set.add_predicate(
                         PolicyPredicate(
@@ -143,6 +146,17 @@ class PolicyClause:
                     raise NotImplementedError("Object variables not supported yet")
                 else:
                     pass
+
+            # Resolve special growlithe predicates
+            for predicate in disjoint_set.predicates.copy():
+                if predicate.predicate_name == "taintSetIncludes":
+                    # TODO: Add offline optimizations for taint checks
+                    # TODO: Replace helper function with prop within node for taint labels
+                    disjoint_set.add_predicate(
+                        PolicyPredicate(
+                            f"eq({predicate.arguments[0]}, '{online_taint_label(self.policy.node)}')"
+                        )
+                    )
 
     @property
     def deferred_query(self) -> str:
@@ -165,7 +179,6 @@ class Policy:
         self.policy_type = policy_type
         self.policy_str = "" if policy_str == "allow" else policy_str
         self.policy_clauses: List[PolicyClause] = self.parse_policy_str(self.policy_str)
-        pass
 
     def __str__(self) -> str:
         return "allow" if self.policy_str == "" else self.policy_str
@@ -186,10 +199,13 @@ class Policy:
             predicates = [PolicyPredicate(pred.strip()) for pred in predicate_strs]
             return PolicyClause(predicates, self)
 
+        # Normalize whitespace, including newlines
+        policy_str = re.sub(r"\s+", " ", policy_str.strip())
+
         # Check if the policy has multiple clauses
-        if " or " in policy_str:
+        if re.search(r"\s+or\s+", policy_str, re.IGNORECASE):
             # Split the policy string into clauses (separated by 'or')
-            clause_strs = re.split(r"\s+or\s+", policy_str.strip())
+            clause_strs = re.split(r"\s+or\s+", policy_str, flags=re.IGNORECASE)
             return [process_clause(clause) for clause in clause_strs]
         else:
             # Single clause policy
