@@ -34,7 +34,7 @@ class Reference:
     Class to represent a reference.
     """
 
-    def __init__(self, reference_type, reference_name):
+    def __init__(self, reference_type: ReferenceType, reference_name: str):
         """
         Initialize a Reference instance.
         """

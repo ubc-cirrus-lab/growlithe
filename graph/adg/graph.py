@@ -86,3 +86,21 @@ class Graph:
         with open(policy_edges_json_path, "w") as f:
             json.dump(policy_edges_json_list, f, indent=4)
         logger.info(f"Policy spec generated at {policy_edges_json_path} with {len(policy_edges_json_list)}/{len(self.edges)} entries")
+
+    def get_updated_policy_json(self, policy_edges_json_path):
+        with open(policy_edges_json_path, "r") as f:
+            policy_edges = json.load(f)
+        for policy_edge in policy_edges:
+            edge_id = policy_edge["id"]
+            self.edges[edge_id].update_policy(policy_edge)
+
+    def enforce_policy(self):
+        for edge in self.edges:
+            # TODO: Add to the instrumented code
+            read_assertion = edge.read_policy.generate_assertion("python")
+            if read_assertion:
+                logger.debug(f"Assertion: {read_assertion}")
+
+            write_assertion = edge.write_policy.generate_assertion("python")
+            if write_assertion:
+                logger.debug(f"Assertion: {write_assertion}")

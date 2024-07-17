@@ -9,7 +9,7 @@ from cfn_flip import load_yaml
 from graph.adg.resource import Resource
 from graph.adg.function import Function
 from common.logger import logger
-
+from common.app_config import app_path
 
 class SAMParser:
     def __init__(self, sam_file):
@@ -105,7 +105,7 @@ class SAMParser:
                 )
             if resource_details["Type"] == "AWS::Serverless::StateMachine":
                 definition_uri: str = resource_details["Properties"]["DefinitionUri"]
-                definition_path: str = os.path.join('/', *self.sam_file.split("/")[:-1], definition_uri)
+                definition_path: str = os.path.join(app_path, *self.sam_file.split("/")[:-1], definition_uri)
                 has_step_function: bool = True
                 parent_step_function: Resource = resource
             resources.append(resource)

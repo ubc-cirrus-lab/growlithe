@@ -21,11 +21,13 @@ class Function(Resource):
         self.nodes = []
         self.edges = []
 
-        self.file= os.path.join(path, 'app.py')
-        with open(f"{app_path}/{self.file}", "r") as f:
-            code = f.read()
-            tree = ast.parse(code)
-            self.code_tree = tree
+        # TODO: Make this language agnostic
+        if self.path:
+            self.file = os.path.join(path, 'app.py')
+            with open(f"{app_path}/{self.file}", "r") as f:
+                code = f.read()
+                tree = ast.parse(code)
+                self.code_tree = tree
 
     def __str__(self):
         pass
