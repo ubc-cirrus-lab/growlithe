@@ -23,7 +23,7 @@ class Function(Resource):
 
         # TODO: Make this language agnostic
         if self.path:
-            self.file= os.path.join(path, 'app.py')
+            self.file = os.path.join(path, 'app.py')
             with open(f"{app_path}/{self.file}", "r") as f:
                 code = f.read()
                 tree = ast.parse(code)

@@ -1,5 +1,5 @@
 from enforcer.policy.policy import Policy
-from enforcer.policy.growlithe import *
+from enforcer.policy.template.growlithe import *
 from graph.adg.function import Function
 from graph.adg.node import Node
 from graph.adg.types import Reference, ReferenceType, Scope

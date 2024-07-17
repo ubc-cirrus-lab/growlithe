@@ -2,8 +2,8 @@ from __future__ import annotations
 import re
 from typing import List, Set
 from common import logger
-from common.tasks_config import HYBRID_MODE
-from enforcer.policy.growlithe import *
+from common.tasks_config import HYBRID_ENFORCEMENT_MODE
+from enforcer.policy.template.growlithe import *
 from enforcer.taint.taint_utils import online_taint_label
 from graph.adg.node import Node
 
@@ -120,7 +120,7 @@ class PolicyClause:
                     )
                 elif var.startswith("Resource"):  # Try to resolve identifier offline
                     if (
-                        HYBRID_MODE
+                        HYBRID_ENFORCEMENT_MODE
                         and self.policy.node.resource.reference_type
                         == ReferenceType.STATIC
                     ):
@@ -220,7 +220,7 @@ class Policy:
         valid_queries = []
 
         for clause in self.policy_clauses:
-            query = clause.deferred_query if HYBRID_MODE else clause.query
+            query = clause.deferred_query if HYBRID_ENFORCEMENT_MODE else clause.query
             if query != "":
                 valid_queries.append(f'pyDatalog.ask(f"{query}") != None')
 

@@ -12,9 +12,8 @@ from common.file_utils import create_dir_if_not_exists
 from enforcer.taint.taint_tracker import TaintTracker
 from graph.parsers.state_machine_parser import StepFunctionParser
 from common.file_utils import detect_languages
-import os
 
-from visualize import visualize
+# from visualize import visualize
 
 def main():
     languages: set[str] = detect_languages(path=app_path)
@@ -55,7 +54,6 @@ def main():
     graph.get_updated_policy_json(policy_spec_path)
     # Enforcement 
     graph.enforce_policy()
-    
     # Taint Tracking
     taint_tracker = TaintTracker(graph=graph)
     taint_tracker.run()

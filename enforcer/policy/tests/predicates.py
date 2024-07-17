@@ -1,4 +1,4 @@
-from enforcer.policy.growlithe import *
+from enforcer.policy.template.growlithe import *
 
 # Example usage
 print(pyDatalog.ask('X == 1'))

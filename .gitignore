@@ -9,7 +9,7 @@ codeqldb/
 # test files
 test.ql
 test.py
-*test*
+# *test*
 
 # query results
 query_results/
@@ -24,7 +24,6 @@ node_modules/
 # Configs
 .serverless/
 *.lock.yml
-.vscode/
 .idea/
 
 # Archives, Outputs & Data
