@@ -19,9 +19,8 @@ class Resource:
         resource.trigger_type = self.type
     
     def visualize_dependencies(self):
-        if self.dependencies == []:
+        if not self.dependencies:
             print(self.name)
         else:
             print(f"{self.name} -> {', '.join([r.name for r in self.dependencies])}")
-
         

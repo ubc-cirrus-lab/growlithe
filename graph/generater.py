@@ -27,100 +27,19 @@ class GraphGenerator:
                 sarif_parser.parse_sarif_result(result, self.graph, function, EdgeType.DATA)
 
     def add_inter_function_edges(self, resources: List[Resource]):
-        for resource in resources:
-            # Add workflow dependency edges
-            for dependency in resource.dependencies:
-                sources: List[Node] = []
-                if isinstance(resource, Function):
-                    sources.append(resource.get_return_node())
-                else:
-                    event = [event for event in dependency.metadata["Events"].values()][0]  #TODO: fix for multiple events
-                    if resource.type == 'AWS::DynamoDB::Table':
-                        sources.append(Node(
-                                resource=Reference(
-                                    ReferenceType.STATIC,
-                                    event["Properties"]["Stream"]["Fn::GetAtt"][0],
-                                ),
-                                object=Reference(
-                                ReferenceType.DYNAMIC, ""
-                                ), #PRAVEEN: Don't know what goes here
-                                object_type="DynamoDB",
-                                object_handler=None,
-                                object_code_location=None,
-                                object_fn=dependency,
-                                object_attrs={},
-                                resource_attrs={},
-                                scope=Scope.GLOBAL,
-                            ))
-                    elif resource.type == 'AWS::Serverless::Api':
-                        sources.append(Node(
-                                resource=Reference(
-                                    ReferenceType.STATIC,
-                                    event["Properties"]["RestApiId"]["Ref"],
-                                ),
-                                object=Reference(
-                                ReferenceType.DYNAMIC, event["Properties"]["Path"]
-                                ),
-                                object_type="API-GET",
-                                object_handler=None,
-                                object_code_location=None,
-                                object_fn=dependency,
-                                object_attrs={},
-                                resource_attrs={},
-                                scope=Scope.GLOBAL,
-                            ))
-                    elif resource.type == 'AWS::S3::Bucket':
-                        for bucket in event["Properties"]["Pattern"]["detail"]["bucket"]["name"]:
-                            bucket_name = bucket["Ref"]
-                            sources.append(Node(
-                                    resource=Reference(
-                                        ReferenceType.STATIC,
-                                        bucket_name,
-                                    ),
-                                    object=Reference(
-                                    ReferenceType.DYNAMIC, ""
-                                    ),
-                                    object_type="S3",
-                                    object_handler=None,
-                                    object_code_location=None,
-                                    object_fn=dependency,
-                                    object_attrs={},
-                                    resource_attrs={},
-                                    scope=Scope.GLOBAL,
-                                ))
+        for source in resources:
+            for target in source.dependencies:
+                # source -> target
+                if isinstance(target, Function):
+                    if isinstance(source, Function):
+                        # Function chain
+                        self.connect_functions(source, target)
                     else:
-                        logger.error(f"Resource type {resource.type} not supported")
-                        raise NotImplementedError
-                for source in sources:
-                    self.graph.add_node(source)
-                    if isinstance(dependency, Function):
-                        sink = dependency.get_event_node()                        
-                        self.graph.add_edge(
-                            Edge(
-                                u=source,
-                                v=sink,
-                                source_code_path=source.object_code_location,
-                                sink_code_path=sink.object_code_location,
-                                function=dependency,
-                                edge_type=EdgeType.INDIRECT #PRAVEEN: check
-                            )
-                        )
-
-        # Add lambda invoke dependency edges
-        for node in self.graph.nodes:
-            if node.object_type == 'LAMBDA_INVOKE':
-                for function in self.graph.functions:
-                    if function.name in node.resource.reference_name:
-                        self.graph.add_edge(
-                            Edge(
-                                node,
-                                function.get_event_node(),
-                                node.object_code_location,
-                                function.get_event_node().object_code_location,
-                                None,
-                                EdgeType.INDIRECT
-                            )
-                        )
+                        # trigger
+                        self.add_trigger_edge(source, target)
+                else:
+                    # should not happen
+                    logger.error(f"{source.name}:{source.type} -> {target.name}:{target.type} is not supported.")
 
     def add_metadata_edges(self, functions: List[Function]):
         language = "python"
@@ -137,34 +56,18 @@ class GraphGenerator:
             for result in function_metadataflows:
                 sarif_parser.parse_sarif_result(result, self.graph, function, edge_type)
 
-    def add_indirect_edges(self, functions: List[Function]):
-        """
-        
-For each of the above pairs (f1,f2), we now add edges (of type INDIRECT) for read-after-write operations performed on objects in persisted data stores shared across f1, f2.
+    def connect_functions(self, source: Function, target: Function):
+        source_ret: Node = source.get_return_node()
+        target_event: Node = target.get_event_node()
+        edge = Edge(
+            u=source_ret,
+            v=target_event,
+            source_code_path=source_ret.object_code_location,
+            sink_code_path=target_event.object_code_location,
+            function=source,
+            edge_type=EdgeType.INDIRECT
+        )
+        self.graph.add_edge(edge)
 
-We define Nw in Vf1 as nodes representing persisted data objects with an incoming edge (i.e. has a write operation on them).
-Similarly, we define Nr in Vf2 as nodes representing persisted data objects with an outgoing edge (i.e. has a read operation on them).
-
-For nw in Nw:
-	For nr in Nr:
-		// Both nodes have same object type
-		If node_props[nw].ObjType == node_props[nr].ObjType &&
-		//The nodes have a possible offline taint label match
-match_labels(offline_taint_label(nw), offline_taint_label(nw)) in [‘Match’, ‘PossibleMatch’]:
-//exists a path from upstreamMetaNodes(nw) to upstreamMetaNodes(nr):
-For mw in upstreamMetaNodes(nw):
-	For mr in upstreamMetaNodes(nr):
-	If mw in TransitiveUpstreamNodes[mr]
-			Add an edge from nw to nr with edgeType INDIRECT
-
-        """
-        for function1 in functions:
-            # TODO: Change dependencies to next func (dependenceis seems opposite)
-            for function2 in function1.dependencies:
-                for node1 in function1.nodes:
-                    for node2 in function2.nodes:
-                        if node1.object_type == node2.object_type:
-                            if node1.incoming_edges and node2.outgoing_edges:
-                                if node1.offline_match(node2) in [TaintLabelMatch.MATCH, TaintLabelMatch.POSSIBLE_MATCH]:
-                                    pass
-                                        
+    def add_trigger_edge(self, source: Resource, target: Function):
+        pass
