@@ -4,7 +4,7 @@ from graph.adg.edge import Edge, EdgeType
 from graph.adg.graph import Graph
 from graph.adg.node import Node
 from graph.adg.function import Function
-from graph.adg.resource import Resource
+from graph.adg.resource import Resource, ResourceType
 from graph.adg.types import Reference, ReferenceType, Scope, TaintLabelMatch
 from graph.parsers.sarif import SarifParser
 from common.app_config import growlithe_path, benchmark_name
@@ -27,6 +27,7 @@ class GraphGenerator:
                 sarif_parser.parse_sarif_result(result, self.graph, function, EdgeType.DATA)
 
     def add_inter_function_edges(self, resources: List[Resource]):
+        function_pairs = []
         for source in resources:
             for target in source.dependencies:
                 # source -> target
@@ -34,12 +35,15 @@ class GraphGenerator:
                     if isinstance(source, Function):
                         # Function chain
                         self.connect_functions(source, target)
+                        function_pairs.append((source, target))
                     else:
                         # trigger
-                        self.add_trigger_edge(source, target)
+                        self.handle_trigger(source, target)
                 else:
                     # should not happen
                     logger.error(f"{source.name}:{source.type} -> {target.name}:{target.type} is not supported.")
+        for (source, target) in function_pairs:
+            self.add_potential_indirect_flows(source, target)
 
     def add_metadata_edges(self, functions: List[Function]):
         language = "python"
@@ -69,5 +73,46 @@ class GraphGenerator:
         )
         self.graph.add_edge(edge)
 
-    def add_trigger_edge(self, source: Resource, target: Function):
-        pass
+    def handle_trigger(self, source: Resource, target: Function):
+        # S3 trigger
+        if source.type == ResourceType.S3_BUCKET:
+            self.append_resource_metadata(source)
+        # TODO: DynamoDB trigger
+
+    def append_resource_metadata(self, resource: Resource):
+        """
+        Add potential resource to the node inside the function that represents the resource
+        :param resource: Resource
+        """
+        for node in self.graph.nodes:
+            if node.object_type == resource.type.name:
+                if 'potential_resources' in node.resource_attrs:
+                    node.resource_attrs['potential_resources'].append(resource)
+                else:
+                    node.resource_attrs['potential_resources'] = [resource]
+            print(node.resource_attrs)
+
+    def add_potential_indirect_flows(self, source: Function, target: Function):
+        """
+        Add indirect edges from all the nodes in the source function to all the nodes in the sink function that share potential resources.
+        :param source: source function
+        :param target: target function
+        """
+        print(source.name, target.name)
+        for node1 in self.graph.nodes:
+            if node1.object_fn == source:
+                for node2 in self.graph.nodes:
+                    if node2.object_fn == target:
+                        if 'potential_resources' in node1.resource_attrs and 'potential_resources' in node2.resource_attrs:
+                            for resource in node1.resource_attrs['potential_resources']:
+                                if resource in node2.resource_attrs['potential_resources']:
+                                    edge = Edge(
+                                        u=node1,
+                                        v=node2,
+                                        source_code_path=node1.object_code_location,
+                                        sink_code_path=node2.object_code_location,
+                                        function=source,
+                                        edge_type=EdgeType.INDIRECT
+                                    )
+                                    self.graph.add_edge(edge)
+

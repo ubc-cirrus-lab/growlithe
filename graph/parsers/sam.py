@@ -6,7 +6,7 @@ import json
 
 from typing import List
 from cfn_flip import load_yaml
-from graph.adg.resource import Resource
+from graph.adg.resource import Resource, ResourceType
 from graph.adg.function import Function
 from common.logger import logger
 from common.app_config import app_path
@@ -92,7 +92,7 @@ class SAMParser:
             if resource_details["Type"] == "AWS::Serverless::Function":
                 resource: Resource = Function(
                     name=resource_name,
-                    type=resource_details["Type"],
+                    type=ResourceType(resource_details["Type"]),
                     runtime=resource_details["Properties"]["Runtime"],
                     path=resource_details["Properties"]["CodeUri"],
                     metadata=resource_details["Properties"],
@@ -100,7 +100,7 @@ class SAMParser:
             else:
                 resource: Resource = Resource(
                     name=resource_name,
-                    type=resource_details["Type"],
+                    type=ResourceType(resource_details["Type"]),
                     metadata=resource_details["Properties"],
                 )
             if resource_details["Type"] == "AWS::Serverless::StateMachine":
