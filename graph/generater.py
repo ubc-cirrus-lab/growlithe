@@ -5,7 +5,7 @@ from graph.adg.graph import Graph
 from graph.adg.node import Node
 from graph.adg.function import Function
 from graph.adg.resource import Resource, ResourceType
-from graph.adg.types import Reference, ReferenceType, Scope, TaintLabelMatch
+from graph.adg.types import Scope
 from graph.parsers.sarif import SarifParser
 from common.app_config import growlithe_path, benchmark_name
 from common.logger import logger
@@ -44,6 +44,7 @@ class GraphGenerator:
                     logger.error(f"{source.name}:{source.type} -> {target.name}:{target.type} is not supported.")
         for (source, target) in function_pairs:
             self.add_potential_indirect_flows(source, target)
+
 
     def add_metadata_edges(self, functions: List[Function]):
         language = "python"
@@ -90,7 +91,6 @@ class GraphGenerator:
                     node.resource_attrs['potential_resources'].append(resource)
                 else:
                     node.resource_attrs['potential_resources'] = [resource]
-            print(node.resource_attrs)
 
     def add_potential_indirect_flows(self, source: Function, target: Function):
         """
@@ -98,11 +98,10 @@ class GraphGenerator:
         :param source: source function
         :param target: target function
         """
-        print(source.name, target.name)
         for node1 in self.graph.nodes:
-            if node1.object_fn == source:
+            if node1.object_fn == source and node1.scope == Scope.GLOBAL and node1.is_sink:
                 for node2 in self.graph.nodes:
-                    if node2.object_fn == target:
+                    if node2.object_fn == target and node2.scope == Scope.GLOBAL and node2.is_source:
                         if 'potential_resources' in node1.resource_attrs and 'potential_resources' in node2.resource_attrs:
                             for resource in node1.resource_attrs['potential_resources']:
                                 if resource in node2.resource_attrs['potential_resources']:
@@ -115,4 +114,3 @@ class GraphGenerator:
                                         edge_type=EdgeType.INDIRECT
                                     )
                                     self.graph.add_edge(edge)
-
