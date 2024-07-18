@@ -49,11 +49,17 @@ class SAMParser:
             elif next_state['Type'] == 'Choice':
                 for choice in next_state['Choices']:
                     target = choice['Next']
+                    default = next_state['Default']
                     target_function_name = states["States"][target]['Parameters']['FunctionName']
+                    default_function_name = states["States"][default]['Parameters']['FunctionName']
                     if '$' in target_function_name:
                         target_function_name = substitutions[target_function_name[2:-1]]
+                    if '$' in default_function_name:
+                        default_function_name = substitutions[default_function_name[2:-1]]
                     target_function = self.find_resource(target_function_name, resources)
+                    default_function = self.find_resource(default_function_name, resources)
                     source_function.add_dependency(target_function)
+                    source_function.add_dependency(default_function)
             elif next_state['Type'] == 'Catch':
                 target = next_state['Next']
                 target_function_name = states["States"][target]['Parameters']['FunctionName']
