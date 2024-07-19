@@ -1,6 +1,7 @@
 """
 This is the main file for the project.
 """
+import logging
 
 from graph.parsers.sam import SAMParser
 from graph.adg.graph import Graph
@@ -10,7 +11,6 @@ from common.app_config import app_path, app_name, app_config_path, growlithe_pat
 from common.tasks_config import CREATE_CODEQL_DB, GENERATE_EDGE_POLICY, RUN_CODEQL_QUERIES
 from common.file_utils import create_dir_if_not_exists
 from enforcer.taint.taint_tracker import TaintTracker
-from graph.parsers.state_machine_parser import StepFunctionParser
 from common.file_utils import detect_languages
 
 # from visualize import visualize
@@ -32,8 +32,9 @@ def main():
     # Parse the SAM/cloud template of the application to get functions, resources and dependencies
     if app_config_type == 'SAM':
         app_config_parser = SAMParser(app_config_path)
-    elif app_config_type == 'StepFunction':
-        app_config_parser = StepFunctionParser("<Path to step func config>")
+    else:
+        logging.error(f"{app_config_type} is not supported. Only SAM templates are supported for now.")
+        exit()
     if app_config_parser:
         graph.add_functions(app_config_parser.get_functions())
         graph.add_resources(app_config_parser.get_resources())
@@ -44,6 +45,7 @@ def main():
     graph_generator.add_metadata_edges(app_config_parser.get_functions())
     graph_generator.add_inter_function_edges(app_config_parser.get_resources())
 
+    # graph.visualize()
     # visualize(graph)
 
     graph.dump_nodes_json(nodes_path)
