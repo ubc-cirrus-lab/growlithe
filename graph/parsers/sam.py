@@ -111,7 +111,8 @@ class SAMParser:
                 )
             if resource_details["Type"] == "AWS::Serverless::StateMachine":
                 definition_uri: str = os.path.join(*resource_details["Properties"]["DefinitionUri"].split(os.sep))
-                definition_path: str = os.path.join(os.sep, *self.sam_file.split(os.sep)[:-1], definition_uri)
+                sam_file_dir: str = os.path.dirname(self.sam_file)
+                definition_path: str = os.path.join(sam_file_dir, definition_uri)
                 has_step_function: bool = True
                 parent_step_function: Resource = resource
             resources.append(resource)
