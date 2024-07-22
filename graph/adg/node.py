@@ -65,3 +65,12 @@ class Node:
             "Object": self.object.__str__(),
             "Function": self.object_fn.path if self.object_fn else None,
         }
+
+    @property
+    def is_sink(self):
+        return 'SINK' in self.object_code_location['message']['text']
+
+    @property
+    def is_source(self):
+        return 'SOURCE' in self.object_code_location['message']['text']
+

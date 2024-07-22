@@ -6,7 +6,7 @@ import json
 
 from typing import List
 from cfn_flip import load_yaml
-from graph.adg.resource import Resource
+from graph.adg.resource import Resource, ResourceType
 from graph.adg.function import Function
 from common.logger import logger
 from common.app_config import app_path
@@ -49,11 +49,17 @@ class SAMParser:
             elif next_state['Type'] == 'Choice':
                 for choice in next_state['Choices']:
                     target = choice['Next']
+                    default = next_state['Default']
                     target_function_name = states["States"][target]['Parameters']['FunctionName']
+                    default_function_name = states["States"][default]['Parameters']['FunctionName']
                     if '$' in target_function_name:
                         target_function_name = substitutions[target_function_name[2:-1]]
+                    if '$' in default_function_name:
+                        default_function_name = substitutions[default_function_name[2:-1]]
                     target_function = self.find_resource(target_function_name, resources)
+                    default_function = self.find_resource(default_function_name, resources)
                     source_function.add_dependency(target_function)
+                    source_function.add_dependency(default_function)
             elif next_state['Type'] == 'Catch':
                 target = next_state['Next']
                 target_function_name = states["States"][target]['Parameters']['FunctionName']
@@ -92,7 +98,7 @@ class SAMParser:
             if resource_details["Type"] == "AWS::Serverless::Function":
                 resource: Resource = Function(
                     name=resource_name,
-                    type=resource_details["Type"],
+                    type=ResourceType(resource_details["Type"]),
                     runtime=resource_details["Properties"]["Runtime"],
                     path=resource_details["Properties"]["CodeUri"],
                     metadata=resource_details["Properties"],
@@ -100,12 +106,13 @@ class SAMParser:
             else:
                 resource: Resource = Resource(
                     name=resource_name,
-                    type=resource_details["Type"],
+                    type=ResourceType(resource_details["Type"]),
                     metadata=resource_details["Properties"],
                 )
             if resource_details["Type"] == "AWS::Serverless::StateMachine":
-                definition_uri: str = resource_details["Properties"]["DefinitionUri"]
-                definition_path: str = os.path.join(app_path, *self.sam_file.split("/")[:-1], definition_uri)
+                definition_uri: str = os.path.join(*resource_details["Properties"]["DefinitionUri"].split(os.sep))
+                sam_file_dir: str = os.path.dirname(self.sam_file)
+                definition_path: str = os.path.join(sam_file_dir, definition_uri)
                 has_step_function: bool = True
                 parent_step_function: Resource = resource
             resources.append(resource)
