@@ -31,6 +31,7 @@ archive/
 output/
 growlithe/
 tasks/
+build/
 
 # Caches
 __pycache__/

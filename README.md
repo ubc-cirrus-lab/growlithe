@@ -26,3 +26,9 @@
 
 - SSH to the docker container using the credentials in the docker image and the port used for forwarding:
 `ssh participant1@localhost -p 2222`
+
+### Development
+- Install as pip package in edit mode as
+`pip install -e .`
+
+- Navigate to application and use cli `growlithe`
