@@ -79,7 +79,6 @@ python-dateutil==2.9.0.post0
 python-docx==0.8.11
 python-slugify==8.0.4
 pytz==2024.1
-pywin32==306
 PyYAML==6.0.1
 referencing==0.35.1
 regex==2024.7.24

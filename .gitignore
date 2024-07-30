@@ -29,7 +29,6 @@ node_modules/
 # Archives, Outputs & Data
 archive/
 output/
-growlithe/
 tasks/
 build/
 
