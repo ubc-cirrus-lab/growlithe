@@ -3,6 +3,7 @@ import ast
 
 from common.app_config import app_path
 from .resource import Resource
+from common.logger import logger
 
 """
 Stores all functions in a given application, their dependencies and nodes/edges corresponding to them
@@ -23,11 +24,13 @@ class Function(Resource):
 
         # TODO: Make this language agnostic
         if self.path:
-            self.file = os.path.join(path, 'app.py')
-            with open(f"{app_path}/{self.file}", "r") as f:
+            with open(f"{app_path}/{self.path}", "r") as f:
                 code = f.read()
                 tree = ast.parse(code)
                 self.code_tree = tree
+        else:
+            logger.error(f"Path for function {self.name} is empty.")
+            raise FileNotFoundError
 
     def __str__(self):
         pass

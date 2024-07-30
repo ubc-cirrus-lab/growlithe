@@ -100,7 +100,7 @@ class SAMParser:
                     name=resource_name,
                     type=ResourceType(resource_details["Type"]),
                     runtime=resource_details["Properties"]["Runtime"],
-                    path=resource_details["Properties"]["CodeUri"],
+                    path=os.path.join(resource_details["Properties"]["CodeUri"], f"{resource_details['Properties']['Handler'].split('.')[0]}.py"),
                     metadata=resource_details["Properties"],
                 )
             else:

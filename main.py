@@ -1,8 +1,6 @@
 """
 This is the main file for the project.
 """
-import logging
-
 from graph.parsers.sam import SAMParser
 from graph.adg.graph import Graph
 from graph.codeql.analyzer import Analyzer
@@ -12,11 +10,13 @@ from common.tasks_config import CREATE_CODEQL_DB, GENERATE_EDGE_POLICY, RUN_CODE
 from common.file_utils import create_dir_if_not_exists
 from enforcer.taint.taint_tracker import TaintTracker
 from common.file_utils import detect_languages
+from common.logger import logger
 
-# from visualize import visualize
+from visualize import visualize
 
 def main():
     languages: set[str] = detect_languages(path=app_path)
+    logger.info(f"found languages in the source code: {languages}")
 
     # Run Static analysis
     create_dir_if_not_exists(path=growlithe_path)
@@ -33,7 +33,7 @@ def main():
     if app_config_type == 'SAM':
         app_config_parser = SAMParser(app_config_path)
     else:
-        logging.error(f"{app_config_type} is not supported. Only SAM templates are supported for now.")
+        logger.error(f"{app_config_type} is not supported. Only SAM templates are supported for now.")
         exit()
     if app_config_parser:
         graph.add_functions(app_config_parser.get_functions())
@@ -46,7 +46,7 @@ def main():
     graph_generator.add_inter_function_edges(app_config_parser.get_resources())
 
     # graph.visualize()
-    # visualize(graph)
+    #visualize(graph)
 
     graph.dump_nodes_json(nodes_path)
     # Generate required policy templates
@@ -54,6 +54,7 @@ def main():
         graph.dump_policy_edges_json(policy_spec_path)
 
     graph.get_updated_policy_json(policy_spec_path)
+
     # Enforcement 
     graph.enforce_policy()
     # Taint Tracking
