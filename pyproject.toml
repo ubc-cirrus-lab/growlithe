@@ -14,7 +14,7 @@ where = [""]
 include = ["growlithe*"]
 
 [tool.setuptools.package-data]
-"growlithe" = ["*.ql", "*.qll"]
+"growlithe" = ["**/*.ql", "**/*.qll", "**/*.yml"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
