@@ -9,14 +9,12 @@ description = "Growlithe CLI for building, deploying, and managing applications"
 requires-python = "==3.10.*"
 dynamic = ["dependencies"]
 
-# [tool.setuptools]
-# packages = ["cli", "graph", "common", "enforcer"]
-[tool.setuptools]
-packages = ["growlithe", "growlithe.cli", "growlithe.graph", "growlithe.graph.parsers", "growlithe.common", "growlithe.enforcer"]
+[tool.setuptools.packages.find]
+where = [""]
+include = ["growlithe*"]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
 
 [project.scripts]
-# growlithe = "cli.cli:cli"
 growlithe = "growlithe.cli.cli:cli"

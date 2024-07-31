@@ -1,6 +1,7 @@
 """
 Parses an AWS SAM template file to give a list of resource and their properties like events
 """
+
 import os
 import json
 
@@ -9,61 +10,88 @@ from cfn_flip import load_yaml
 from growlithe.graph.adg.resource import Resource, ResourceType
 from growlithe.graph.adg.function import Function
 from growlithe.common.logger import logger
-from growlithe.common.app_config import app_path
+
 
 class SAMParser:
     def __init__(self, sam_file):
         self.sam_file: str = sam_file
         self.resources: List[Resource] = self.parse()
 
-
-    def parse_state_machine(self, definition_path: str, step_function: Resource, resources: List[Resource]):
+    def parse_state_machine(
+        self, definition_path: str, step_function: Resource, resources: List[Resource]
+    ):
         substitutions = {}
-        if 'DefinitionSubstitutions' in step_function.metadata.keys():
-            for key, value in step_function.metadata['DefinitionSubstitutions'].items():
-                substitutions[key] = value.items()[0][1][0] if value.items()[0][0] == 'Fn::GetAtt' else value
+        if "DefinitionSubstitutions" in step_function.metadata.keys():
+            for key, value in step_function.metadata["DefinitionSubstitutions"].items():
+                substitutions[key] = (
+                    value.items()[0][1][0]
+                    if value.items()[0][0] == "Fn::GetAtt"
+                    else value
+                )
 
         with open(definition_path, "r") as f:
             states = json.loads(f.read())
-        self.fix_dependencies(step_function=step_function, resources=resources, substitutions=substitutions, states=states)
+        self.fix_dependencies(
+            step_function=step_function,
+            resources=resources,
+            substitutions=substitutions,
+            states=states,
+        )
         for _, state in states["States"].items():
             # get source function
-            self.extract_dependencies(resources=resources, substitutions=substitutions, states=states, state=state)
+            self.extract_dependencies(
+                resources=resources,
+                substitutions=substitutions,
+                states=states,
+                state=state,
+            )
 
     def extract_dependencies(self, resources, substitutions, states, state):
         source_function = None
-        if state['Type'] == 'Task':
-            source_function_name = state['Parameters']['FunctionName']
-            if '$' in source_function_name:
+        if state["Type"] == "Task":
+            source_function_name = state["Parameters"]["FunctionName"]
+            if "$" in source_function_name:
                 source_function_name = substitutions[source_function_name[2:-1]]
             source_function = self.find_resource(source_function_name, resources)
 
         if source_function and "Next" in state.keys():
             next_state = states["States"][state["Next"]]
-            if next_state['Type'] == 'Task':
-                target_function_name = next_state['Parameters']['FunctionName']
-                if '$' in target_function_name:
+            if next_state["Type"] == "Task":
+                target_function_name = next_state["Parameters"]["FunctionName"]
+                if "$" in target_function_name:
                     target_function_name = substitutions[target_function_name[2:-1]]
                 target_function = self.find_resource(target_function_name, resources)
                 source_function.add_dependency(target_function)
-            elif next_state['Type'] == 'Choice':
-                for choice in next_state['Choices']:
-                    target = choice['Next']
-                    default = next_state['Default']
-                    target_function_name = states["States"][target]['Parameters']['FunctionName']
-                    default_function_name = states["States"][default]['Parameters']['FunctionName']
-                    if '$' in target_function_name:
+            elif next_state["Type"] == "Choice":
+                for choice in next_state["Choices"]:
+                    target = choice["Next"]
+                    default = next_state["Default"]
+                    target_function_name = states["States"][target]["Parameters"][
+                        "FunctionName"
+                    ]
+                    default_function_name = states["States"][default]["Parameters"][
+                        "FunctionName"
+                    ]
+                    if "$" in target_function_name:
                         target_function_name = substitutions[target_function_name[2:-1]]
-                    if '$' in default_function_name:
-                        default_function_name = substitutions[default_function_name[2:-1]]
-                    target_function = self.find_resource(target_function_name, resources)
-                    default_function = self.find_resource(default_function_name, resources)
+                    if "$" in default_function_name:
+                        default_function_name = substitutions[
+                            default_function_name[2:-1]
+                        ]
+                    target_function = self.find_resource(
+                        target_function_name, resources
+                    )
+                    default_function = self.find_resource(
+                        default_function_name, resources
+                    )
                     source_function.add_dependency(target_function)
                     source_function.add_dependency(default_function)
-            elif next_state['Type'] == 'Catch':
-                target = next_state['Next']
-                target_function_name = states["States"][target]['Parameters']['FunctionName']
-                if '$' in target_function_name:
+            elif next_state["Type"] == "Catch":
+                target = next_state["Next"]
+                target_function_name = states["States"][target]["Parameters"][
+                    "FunctionName"
+                ]
+                if "$" in target_function_name:
                     target_function_name = substitutions[target_function_name[2:-1]]
                 target_function = self.find_resource(target_function_name, resources)
                 source_function.add_dependency(target_function)
@@ -73,8 +101,8 @@ class SAMParser:
 
     def fix_dependencies(self, step_function, resources, substitutions, states):
         start_state = states["States"][states["StartAt"]]
-        function_name = start_state['Parameters']['FunctionName']
-        if '$' in function_name:
+        function_name = start_state["Parameters"]["FunctionName"]
+        if "$" in function_name:
             function_name = substitutions[function_name[2:-1]]
 
         # fix dependencies: remove step function and add the first function
@@ -87,7 +115,6 @@ class SAMParser:
             function = self.find_resource(function_name, resources)
             parent.dependencies.append(function)
             function.metadata = step_function.metadata
-                    
 
     def parse(self):
         resources: List[Resource] = []
@@ -110,7 +137,9 @@ class SAMParser:
                     metadata=resource_details["Properties"],
                 )
             if resource_details["Type"] == "AWS::Serverless::StateMachine":
-                definition_uri: str = os.path.join(*resource_details["Properties"]["DefinitionUri"].split(os.sep))
+                definition_uri: str = os.path.join(
+                    *resource_details["Properties"]["DefinitionUri"].split(os.sep)
+                )
                 sam_file_dir: str = os.path.dirname(self.sam_file)
                 definition_path: str = os.path.join(sam_file_dir, definition_uri)
                 has_step_function: bool = True
@@ -130,13 +159,24 @@ class SAMParser:
                     elif event_type == "DynamoDB":
                         ref.append(properties["Stream"]["Fn::GetAtt"][0])
                     elif event_type == "EventBridgeRule":
-                        ref.extend(bucket["Ref"] for bucket in properties["Pattern"]["detail"]["bucket"]["name"])
+                        ref.extend(
+                            bucket["Ref"]
+                            for bucket in properties["Pattern"]["detail"]["bucket"][
+                                "name"
+                            ]
+                        )
                     source_resource: Resource = None
                     for ref in ref:
-                        source_resource = self.find_resource(ref=ref, resources=resources)
+                        source_resource = self.find_resource(
+                            ref=ref, resources=resources
+                        )
                         source_resource.add_dependency(resource)
         if has_step_function:
-            self.parse_state_machine(definition_path=definition_path, step_function=parent_step_function, resources=resources)
+            self.parse_state_machine(
+                definition_path=definition_path,
+                step_function=parent_step_function,
+                resources=resources,
+            )
         return resources
 
     def find_resource(self, ref, resources):

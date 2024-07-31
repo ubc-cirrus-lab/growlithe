@@ -1,9 +1,9 @@
 import click
-from .build import build as build_command
-from .deploy import deploy as deploy_command
-from .analyze import analyze as analyze_command
-from .apply import apply as apply_command
-from .config import Config
+from growlithe.cli.build import build as build_command
+from growlithe.cli.deploy import deploy as deploy_command
+from growlithe.cli.analyze import analyze as analyze_command
+from growlithe.cli.apply import apply as apply_command
+from growlithe.config import get_config
 
 
 @click.group()
@@ -13,7 +13,7 @@ from .config import Config
 @click.pass_context
 def cli(ctx, config):
     """Growlithe CLI for building, deploying, and managing applications."""
-    ctx.obj = Config(config)
+    ctx.obj = get_config(config)
 
 
 @cli.command()
@@ -39,6 +39,9 @@ def deploy(config):
 @click.pass_obj
 def analyze(config):
     """Analyze the application and generate dataflow graphs and policy templates."""
+    click.echo(
+        f"Analyzing the application {config.app_name} with Growlithe path {config.growlithe_path}."
+    )
     analyze_command(config)
 
 

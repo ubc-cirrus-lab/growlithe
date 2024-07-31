@@ -1,5 +1,5 @@
 import os
-from growlithe.common.app_config import src_dir
+
 
 """
 Create a directory if it does not exist
@@ -16,7 +16,7 @@ Return a list of files in a directory for a specific language
 """
 
 
-def get_language_files(root, language):
+def get_language_files(root, language, src_dir):
     result = []
     # Find all files in the directory
     for _, sub_dirs, _ in os.walk(root):
@@ -25,7 +25,9 @@ def get_language_files(root, language):
                 # Find all files in the sub directory
                 for sub_dir_path, _, files in os.walk(os.path.join(root, sub_dir)):
                     for file in files:
-                        if (language == "python" and file.endswith(".py")) or (language == "javascript" and file.endswith(".js")):
+                        if (language == "python" and file.endswith(".py")) or (
+                            language == "javascript" and file.endswith(".js")
+                        ):
                             relative_path = os.path.relpath(
                                 os.path.join(sub_dir_path, file), root
                             )
@@ -39,9 +41,10 @@ Return the list of languages found in a directory
 """
 # Define a mapping of file extensions to programming languages
 EXTENSION_LANGUAGE_MAP = {
-    '.py': 'python',
-    '.js': 'javascript',
+    ".py": "python",
+    ".js": "javascript",
 }
+
 
 def detect_languages(path):
     languages_used = set()

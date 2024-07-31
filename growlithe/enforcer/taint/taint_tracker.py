@@ -2,18 +2,20 @@ import ast
 import os
 
 from .taint_utils import online_taint_label
-from graph.adg.graph import Graph
-from graph.adg.edge import Edge, EdgeType
-from graph.adg.node import Node
-from graph.adg.function import Function
-from common.logger import logger
-from common.app_config import growlithe_path, app_path
+from growlithe.graph.adg.graph import Graph
+from growlithe.graph.adg.edge import Edge, EdgeType
+from growlithe.graph.adg.node import Node
+from growlithe.graph.adg.function import Function
+from growlithe.common.logger import logger
+from growlithe.config import Config
+
 
 class TaintTracker:
-    def __init__(self, graph: Graph):
+    def __init__(self, graph: Graph, config: Config):
         self.graph: Graph = graph
         self.nodes_with_taint: set[Node] = set()
         self.tainted_functions: set[str] = set()
+        self.config = config
 
     def run(self):
         for function in self.graph.functions:
@@ -23,7 +25,7 @@ class TaintTracker:
             print(edge)
             if edge.edge_type != EdgeType.METADATA:
                 self.track_taints(edge)
-        
+
     def add_preamble(self, function: Function):
         function.code_tree.body.insert(
             0,
@@ -67,7 +69,7 @@ class TaintTracker:
                             i,
                             ast.parse(
                                 f'GROWLITHE_TAINTS[f"{online_taint_label(source_node)}"] = GROWLITHE_TAINTS[f"{online_taint_label(source_node)}"].union(GROWLITHE_FILE_TAINTS[f\'{{{source_node.object.reference_name}}}\'])'
-                            )
+                            ),
                         )
                     tree.body.insert(
                         i,
@@ -203,7 +205,7 @@ class TaintTracker:
                                     i,
                                     ast.parse(
                                         f"{ast_node.value.id}['GROWLITHE_TAINTS'] = ','.join(GROWLITHE_TAINTS[f'{online_taint_label(sink_node)}'])"
-                                    )
+                                    ),
                                 )
 
                     return
@@ -212,14 +214,16 @@ class TaintTracker:
 
     def save_files(self):
         for function in self.graph.functions:
-            file_path = f"{growlithe_path}/{function.file}"
+            file_path = f"{self.config.growlithe_path}/{function.file}"
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             with open(file_path, "w") as f:
                 f.write(ast.unparse(ast.fix_missing_locations(function.code_tree)))
 
     def add_param_taint_extraction(self, function: Function):
         node = function.get_event_node()
-        param_line = function.get_event_node().object_code_location["physicalLocation"]["region"]["startLine"]
+        param_line = function.get_event_node().object_code_location["physicalLocation"][
+            "region"
+        ]["startLine"]
         for tree_node in ast.walk(function.code_tree):
             if isinstance(tree_node, ast.FunctionDef):
                 if getattr(tree_node, "lineno", None) == param_line:
@@ -240,7 +244,9 @@ class TaintTracker:
                     )
                     tree_node.body.insert(
                         0,
-                        ast.parse(f"GROWLITHE_TAINTS[f'{online_taint_label(node)}'].update({{f'{online_taint_label(node)}', GROWLITHE_INVOCATION_ID}})"),
+                        ast.parse(
+                            f"GROWLITHE_TAINTS[f'{online_taint_label(node)}'].update({{f'{online_taint_label(node)}', GROWLITHE_INVOCATION_ID}})"
+                        ),
                     )
                     tree_node.body.insert(
                         0,

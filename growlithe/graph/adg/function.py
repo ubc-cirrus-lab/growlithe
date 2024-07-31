@@ -1,8 +1,9 @@
 import os
 import ast
 
-from growlithe.common.app_config import app_path
-from .resource import Resource
+from growlithe.graph.adg.resource import Resource
+from growlithe.config import Config
+
 
 """
 Stores all functions in a given application, their dependencies and nodes/edges corresponding to them
@@ -10,7 +11,7 @@ Stores all functions in a given application, their dependencies and nodes/edges 
 
 
 class Function(Resource):
-    def __init__(self, name, type, runtime, path, metadata=dict()):
+    def __init__(self, name, type, runtime, path, config: Config, metadata=dict()):
         super(Function, self).__init__(name, type, metadata)
         self.path: str = path
         self.runtime = runtime
@@ -23,8 +24,8 @@ class Function(Resource):
 
         # TODO: Make this language agnostic
         if self.path:
-            self.file = os.path.join(path, 'app.py')
-            with open(f"{app_path}/{self.file}", "r") as f:
+            self.file = os.path.join(path, "app.py")
+            with open(f"{config.app_path}/{self.file}", "r") as f:
                 code = f.read()
                 tree = ast.parse(code)
                 self.code_tree = tree
@@ -43,7 +44,7 @@ class Function(Resource):
 
     def add_event_node(self, node):
         self.event_node = node
-    
+
     def add_return_node(self, node):
         self.return_node = node
 
