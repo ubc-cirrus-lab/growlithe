@@ -99,7 +99,7 @@ class Analyzer:
 
 
 def update_query_config(current_dir, language, functions):
-    codeql_config_path: str = f"{current_dir}/{language}/queries/Config.qll"
+    codeql_config_path: str = os.path.join(current_dir, language, "queries", "Config.qll")
     with open(codeql_config_path, "r") as file:
         config_template: str = file.read()
 

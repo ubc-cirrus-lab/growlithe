@@ -11,9 +11,9 @@ Stores all functions in a given application, their dependencies and nodes/edges 
 
 
 class Function(Resource):
-    def __init__(self, name, type, runtime, path, config: Config, metadata=dict()):
+    def __init__(self, name, type, runtime, function_path, metadata=dict()):
         super(Function, self).__init__(name, type, metadata)
-        self.path: str = path
+        self.function_path: str = function_path
         self.runtime = runtime
 
         self.sarif_results = None
@@ -23,9 +23,8 @@ class Function(Resource):
         self.edges = []
 
         # TODO: Make this language agnostic
-        if self.path:
-            self.file = os.path.join(path, "app.py")
-            with open(f"{config.app_path}/{self.file}", "r") as f:
+        if self.function_path:
+            with open(function_path, "r") as f:
                 code = f.read()
                 tree = ast.parse(code)
                 self.code_tree = tree
@@ -34,7 +33,7 @@ class Function(Resource):
         pass
 
     def __repr__(self):
-        return f"{self.name} ({self.path})"
+        return f"{self.name} ({self.function_path})"
 
     def add_node(self, node):
         self.nodes.append(node)

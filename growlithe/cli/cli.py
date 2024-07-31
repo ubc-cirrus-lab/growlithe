@@ -1,4 +1,5 @@
 import click
+import os
 from growlithe.cli.build import build as build_command
 from growlithe.cli.deploy import deploy as deploy_command
 from growlithe.cli.analyze import analyze as analyze_command
@@ -13,7 +14,7 @@ from growlithe.config import get_config
 @click.pass_context
 def cli(ctx, config):
     """Growlithe CLI for building, deploying, and managing applications."""
-    ctx.obj = get_config(config)
+    ctx.obj = get_config(os.path.abspath(config))
 
 
 @cli.command()

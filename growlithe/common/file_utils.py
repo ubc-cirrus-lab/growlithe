@@ -54,3 +54,19 @@ def detect_languages(path):
             if extension in EXTENSION_LANGUAGE_MAP:
                 languages_used.add(EXTENSION_LANGUAGE_MAP[extension])
     return languages_used
+
+
+def get_file_extension(runtime):
+    runtime_extensions = {
+        "nodejs": ".js",
+        "python": ".py",
+        "ruby": ".rb",
+        "java": ".java",
+        "go": ".go",
+        "dotnet": ".cs",
+    }
+
+    for lang, ext in runtime_extensions.items():
+        if lang in runtime.lower():
+            return ext
+    return ""  # Default to no extension if runtime is not recognized

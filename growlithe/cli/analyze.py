@@ -31,7 +31,7 @@ def analyze(config):
 
     # Parse the SAM/cloud template of the application
     if config.app_config_type == "SAM":
-        app_config_parser = SAMParser(config.app_config_path)
+        app_config_parser = SAMParser(config.app_config_path, config)
     elif config.app_config_type == "StepFunction":
         app_config_parser = StepFunctionParser(config.app_config_path)
     else:
@@ -45,7 +45,7 @@ def analyze(config):
         graph.add_resources(app_config_parser.get_resources())
 
     # Update graph object with required nodes/edges
-    graph_generator = GraphGenerator(graph)
+    graph_generator = GraphGenerator(graph, config)
     graph_generator.generate_intrafunction_graphs(app_config_parser.get_functions())
     graph_generator.add_metadata_edges(app_config_parser.get_functions())
     graph_generator.add_inter_function_edges(app_config_parser.get_resources())

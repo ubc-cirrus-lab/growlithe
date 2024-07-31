@@ -7,14 +7,17 @@ import json
 
 from typing import List
 from cfn_flip import load_yaml
+from growlithe.common.file_utils import get_file_extension
+from growlithe.config import Config
 from growlithe.graph.adg.resource import Resource, ResourceType
 from growlithe.graph.adg.function import Function
 from growlithe.common.logger import logger
 
 
 class SAMParser:
-    def __init__(self, sam_file):
+    def __init__(self, sam_file, config):
         self.sam_file: str = sam_file
+        self.config: Config = config
         self.resources: List[Resource] = self.parse()
 
     def parse_state_machine(
@@ -123,11 +126,25 @@ class SAMParser:
             config: dict = load_yaml(f.read())
         for resource_name, resource_details in config["Resources"].items():
             if resource_details["Type"] == "AWS::Serverless::Function":
-                resource: Resource = Function(
+                code_uri = resource_details["Properties"]["CodeUri"]
+                handler = resource_details["Properties"]["Handler"]
+                runtime = resource_details["Properties"]["Runtime"]
+                handler_path = handler.split(".")[0]
+                file_extension = get_file_extension(runtime)
+
+                # Construct the full path to the Lambda function's code
+                function_path = os.path.normpath(
+                    os.path.join(
+                        self.config.benchmark_path,
+                        code_uri,
+                        f"{handler_path}{file_extension}",
+                    )
+                )
+                resource = Function(
                     name=resource_name,
                     type=ResourceType(resource_details["Type"]),
                     runtime=resource_details["Properties"]["Runtime"],
-                    path=resource_details["Properties"]["CodeUri"],
+                    function_path=function_path,
                     metadata=resource_details["Properties"],
                 )
             else:

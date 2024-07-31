@@ -21,7 +21,7 @@ class SarifParser:
             for result in self.results
             if result["locations"][0]["physicalLocation"]["artifactLocation"][
                 "uri"
-            ].startswith(function.path)
+            ].startswith(function.function_path)
         ]
 
     def parse_sarif_result(self, result, graph: Graph, function: Function, edge_type):

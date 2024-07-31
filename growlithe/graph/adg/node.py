@@ -63,7 +63,7 @@ class Node:
             "Resource": self.resource.__str__(),
             "ObjectType": self.object_type,
             "Object": self.object.__str__(),
-            "Function": self.object_fn.path if self.object_fn else None,
+            "Function": self.object_fn.function_path if self.object_fn else None,
         }
 
     @property

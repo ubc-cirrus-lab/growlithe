@@ -1,7 +1,6 @@
 import yaml
 import os
 import platform
-
 from growlithe.common.file_utils import create_dir_if_not_exists
 from growlithe.common.logger import init_logger
 
@@ -20,97 +19,71 @@ class Config:
             return
         self._initialized = True
 
-        # Set default values based on platform
-        self.set_platform_defaults()
+        self.config = {}
+        self.defaults = self.get_defaults()
 
-        # Set default values for the selected benchmark
-        self.set_benchmark_defaults()
-
-        # Override defaults with values from config file if provided
         if config_path and os.path.exists(config_path):
             print(f"Loading config from {config_path}")
             self.load_from_file(config_path)
-        if config_path:
+        elif config_path:
             print(f"Config file {config_path} not found. Using defaults.")
         else:
             print("No config file provided. Using defaults.")
 
-        # Ensure all paths are absolute
+        self.set_config_values()
+        self.set_derived_paths()
         self.make_paths_absolute()
 
         create_dir_if_not_exists(self.growlithe_path)
         init_logger(self.profiler_log_path)
 
-    def set_platform_defaults(self):
+        print(self.__str__())
+
+    def get_defaults(self):
         system_platform = platform.system()
         if system_platform == "Windows":
-            self.growlithe_results_path = r"D:\Code\growlithe-results"
+            growlithe_results_path = r"D:\Code\growlithe-results"
         elif system_platform == "Darwin":
-            self.growlithe_results_path = (
-                "/Users/arshia/repos/ubc/final/growlithe-results"
-            )
+            growlithe_results_path = "/Users/arshia/repos/ubc/final/growlithe-results"
         elif system_platform == "Linux":
-            self.growlithe_results_path = "/app/tasks/"
+            growlithe_results_path = "/app/tasks/"
 
-    def set_benchmark_defaults(self):
-        # Uncomment the benchmark you want to use as default
+        return {
+            "growlithe_results_path": growlithe_results_path,
+            "benchmark_name": "Benchmark2",
+            "app_name": "ImageProcessing",
+            "src_dir": "src",
+            "app_config_type": "SAM",
+            "app_config_path": os.path.join(
+                growlithe_results_path, "Benchmark2", "ImageProcessing", "template.yaml"
+            ),
+        }
 
-        # ########## Benchmark1 #############
-        # self.benchmark_name = "Benchmark1"
-        # self.app_name = "ClaimProcessing"
-        # self.src_dir = "src"
-        # self.app_config_type = "SAM"
-        # self.app_config_path = ""
-        # ########## Benchmark1 #############
+    def load_from_file(self, config_path):
+        with open(config_path, "r") as f:
+            self.config = yaml.safe_load(f)
 
-        ########## Benchmark2 #############
-        self.benchmark_name = "Benchmark2"
-        self.app_name = "ImageProcessing"
-        self.src_dir = "src"
-        self.app_config_type = "SAM"
-        self.app_config_path = os.path.join(
-            self.growlithe_results_path,
-            self.benchmark_name,
-            self.app_name,
-            "template.yaml",
-        )
-        ########## Benchmark2 #############
+    def set_config_values(self):
+        for key, default_value in self.defaults.items():
+            setattr(self, key, self.config.get(key, default_value))
 
-        # ########## Benchmark3 #############
-        # self.benchmark_name = "Benchmark3"
-        # self.app_name = "ShoppingCart"
-        # self.src_dir = "src"
-        # self.app_config_type = "StepFunction"
-        # self.app_config_path = ""
-        # ########## Benchmark3 #############
-
-        # Set derived paths
-        self.benchmark_path = os.path.join(
-            self.growlithe_results_path, self.benchmark_name
-        )
-        self.app_path = os.path.join(self.benchmark_path, self.app_name)
+    def set_derived_paths(self):
+        self.benchmark_path = os.path.dirname(self.app_config_path)
+        self.app_path = self.benchmark_path
         self.src_path = os.path.join(self.app_path, self.src_dir)
+        self.growlithe_path = os.path.join(os.path.dirname(self.app_path), "growlithe")
+
         self.new_app_path = os.path.join(
-            self.benchmark_path, f"{self.app_name}Growlithe"
+            self.growlithe_path, f"{self.app_name}_growlithe"
         )
-        self.growlithe_path = os.path.join(self.benchmark_path, "Growlithe")
         self.profiler_log_path = os.path.join(
             self.growlithe_path, "growlithe_profiler.log"
         )
         self.nodes_path = os.path.join(self.growlithe_path, "nodes.json")
         self.policy_spec_path = os.path.join(self.growlithe_path, "policy_spec.json")
 
-    def load_from_file(self, config_path):
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
-
-        # Override default values with those from the config file
-        for key, value in config.items():
-            setattr(self, key, value)
-
     def make_paths_absolute(self):
         path_attributes = [
-            "growlithe_results_path",
             "app_config_path",
             "benchmark_path",
             "app_path",
@@ -124,6 +97,15 @@ class Config:
         for attr in path_attributes:
             if hasattr(self, attr):
                 setattr(self, attr, os.path.abspath(getattr(self, attr)))
+
+    def __str__(self):
+        return "\n".join(
+            [
+                f"{key}\t\t: {value}"
+                for key, value in self.__dict__.items()
+                if not key.startswith("_") and key != "config" and key != "defaults"
+            ]
+        )
 
 
 # Usage
