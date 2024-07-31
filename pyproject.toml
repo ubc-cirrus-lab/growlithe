@@ -13,6 +13,9 @@ dynamic = ["dependencies"]
 where = [""]
 include = ["growlithe*"]
 
+[tool.setuptools.package-data]
+"growlithe" = ["*.ql", "*.qll"]
+
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }
 

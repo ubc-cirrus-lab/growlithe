@@ -27,9 +27,11 @@ class Config:
         self.set_benchmark_defaults()
 
         # Override defaults with values from config file if provided
-        if config_path:
+        if config_path and os.path.exists(config_path):
             print(f"Loading config from {config_path}")
             self.load_from_file(config_path)
+        if config_path:
+            print(f"Config file {config_path} not found. Using defaults.")
         else:
             print("No config file provided. Using defaults.")
 
