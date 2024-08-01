@@ -3,9 +3,9 @@ import semmle.python.dataflow.new.DataFlow
 
 module Config {
   string getFileEndingPattern() {
-    result = ["src/tag_store_image/app.py",
-		"src/blur_image/app.py",
+    result = ["src/blur_image/app.py",
 		"src/filter_image/app.py",
+		"src/tag_store_image/app.py",
 		"src/transform_image/app.py"]
   }
 

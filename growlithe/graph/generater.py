@@ -19,7 +19,7 @@ class GraphGenerator:
     def generate_intrafunction_graphs(self, functions: List[Function]):
         language = "python"
         sarif_parser = SarifParser(
-            os.path.join(self.config.growlithe_path, f"dataflows_{language}.sarif")
+            os.path.join(self.config.growlithe_path, f"dataflows_{language}.sarif"), self.config
         )
         for function in functions:
             function_dataflows = sarif_parser.get_results_for_function(function)
@@ -53,7 +53,7 @@ class GraphGenerator:
     def add_metadata_edges(self, functions: List[Function]):
         language = "python"
         sarif_parser = SarifParser(
-            os.path.join(self.config.growlithe_path, f"metadataflows_{language}.sarif")
+            os.path.join(self.config.growlithe_path, f"metadataflows_{language}.sarif"), self.config
         )
         edge_type = EdgeType.METADATA
         if self.config.benchmark_name.startswith(

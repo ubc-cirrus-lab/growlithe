@@ -2,6 +2,7 @@ from sarif import loader
 import os
 import re
 
+from growlithe.config import Config
 from growlithe.graph.adg.edge import Edge, EdgeType
 from growlithe.graph.adg.function import Function
 from growlithe.graph.adg.graph import Graph
@@ -11,17 +12,26 @@ from growlithe.common.logger import logger
 
 
 class SarifParser:
-    def __init__(self, sarif_output_path):
+    def __init__(self, sarif_output_path, config):
         self.sarif_output_path = sarif_output_path
         self.results = loader.load_sarif_file(sarif_output_path).get_results()
+        self.config: Config = config
 
     def get_results_for_function(self, function: Function):
+        function_path = os.path.abspath(function.function_path)
+
         return [
             result
             for result in self.results
-            if result["locations"][0]["physicalLocation"]["artifactLocation"][
-                "uri"
-            ].startswith(function.function_path)
+            if os.path.abspath(
+                os.path.join(
+                    self.config.app_path,
+                    result["locations"][0]["physicalLocation"]["artifactLocation"][
+                        "uri"
+                    ],
+                )
+            )
+            == function_path
         ]
 
     def parse_sarif_result(self, result, graph: Graph, function: Function, edge_type):

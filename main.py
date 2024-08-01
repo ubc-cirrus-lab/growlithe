@@ -64,7 +64,7 @@ def main():
     # Enforcement
     graph.enforce_policy()
     # Taint Tracking
-    taint_tracker = TaintTracker(graph=graph)
+    taint_tracker = TaintTracker(graph=graph, config=config)
     taint_tracker.run()
     taint_tracker.save_files()
     pass
