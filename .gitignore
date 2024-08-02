@@ -29,8 +29,8 @@ node_modules/
 # Archives, Outputs & Data
 archive/
 output/
-growlithe/
 tasks/
+build/
 
 # Caches
 __pycache__/

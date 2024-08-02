@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "growlithe"
+version = "0.1.0"
+description = "Growlithe CLI for building, deploying, and managing applications"
+requires-python = "==3.10.*"
+dynamic = ["dependencies"]
+
+[tool.setuptools.packages.find]
+where = [""]
+include = ["growlithe*"]
+
+[tool.setuptools.package-data]
+"growlithe" = ["**/*.ql", "**/*.qll", "**/*.yml"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[project.scripts]
+growlithe = "growlithe.cli.cli:cli"
