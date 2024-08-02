@@ -44,7 +44,7 @@ class Config:
         if system_platform == "Windows":
             growlithe_results_path = r"D:\Code\growlithe-results"
         elif system_platform == "Darwin":
-            growlithe_results_path = "/Users/arshia/repos/ubc/final/growlithe-results"
+            growlithe_results_path = "/Users/arshia/repos/ubc/growlithe-results"
         elif system_platform == "Linux":
             growlithe_results_path = "/app/tasks/"
 
