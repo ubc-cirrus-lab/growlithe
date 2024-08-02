@@ -2,6 +2,7 @@
 This is the main file for the project.
 """
 
+from growlithe.common.logger import logger
 from growlithe.graph.parsers.sam import SAMParser
 from growlithe.graph.adg.graph import Graph
 from growlithe.graph.codeql.analyzer import Analyzer
@@ -12,17 +13,16 @@ from growlithe.common.tasks_config import (
     GENERATE_EDGE_POLICY,
     RUN_CODEQL_QUERIES,
 )
-from growlithe.common.file_utils import create_dir_if_not_exists
+from growlithe.common.file_utils import create_dir_if_not_exists, save_files
 from growlithe.enforcer.taint.taint_tracker import TaintTracker
 from growlithe.graph.parsers.state_machine_parser import StepFunctionParser
 from growlithe.common.file_utils import detect_languages
 from growlithe.config import get_config
 
-# from visualize import visualize
+from visualize import visualize
 
 
 def main():
-
     config = get_config()
     languages: set[str] = detect_languages(path=config.app_path)
 
@@ -41,11 +41,14 @@ def main():
     # Parse the SAM/cloud template of the application to get functions, resources and dependencies
     if config.app_config_type == "SAM":
         app_config_parser = SAMParser(config.app_config_path, config)
-    elif config.app_config_type == "StepFunction":
-        app_config_parser = StepFunctionParser("<Path to step func config>")
-    if app_config_parser:
-        graph.add_functions(app_config_parser.get_functions())
-        graph.add_resources(app_config_parser.get_resources())
+    else:
+        logger.error(
+            f"{config.app_config_type} is not supported. Only SAM templates are supported for now."
+        )
+        exit()
+
+    graph.add_functions(app_config_parser.get_functions())
+    graph.add_resources(app_config_parser.get_resources())
 
     # Update graph object with required nodes/edges
     graph_generator = GraphGenerator(graph, config)
@@ -53,6 +56,7 @@ def main():
     graph_generator.add_metadata_edges(app_config_parser.get_functions())
     graph_generator.add_inter_function_edges(app_config_parser.get_resources())
 
+    # graph.visualize()
     # visualize(graph)
 
     graph.dump_nodes_json(config.nodes_path)
@@ -66,8 +70,7 @@ def main():
     # Taint Tracking
     taint_tracker = TaintTracker(graph=graph, config=config)
     taint_tracker.run()
-    taint_tracker.save_files()
-    pass
+    save_files(graph=graph)
 
 
 if __name__ == "__main__":

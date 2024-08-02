@@ -140,11 +140,19 @@ class SAMParser:
                         f"{handler_path}{file_extension}",
                     )
                 )
+                growlithe_function_path = os.path.normpath(
+                    os.path.join(
+                        self.config.growlithe_path,
+                        code_uri,
+                        f"{handler_path}{file_extension}",
+                    )
+                )
                 resource = Function(
                     name=resource_name,
                     type=ResourceType(resource_details["Type"]),
                     runtime=resource_details["Properties"]["Runtime"],
                     function_path=function_path,
+                    growlithe_function_path=growlithe_function_path,
                     metadata=resource_details["Properties"],
                 )
             else:

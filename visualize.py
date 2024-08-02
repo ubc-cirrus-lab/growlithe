@@ -6,7 +6,6 @@ import matplotlib.patches as mpatches
 import numpy as np
 
 from growlithe.graph.adg.graph import Graph
-from growlithe.common.app_config import nodes_path
 
 def visualize(graph: Graph):
     # Create a new directed graph

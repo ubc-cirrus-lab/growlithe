@@ -47,10 +47,10 @@ class Graph:
         edge.sink.incoming_edges.append(edge)
         return edge
 
-    def add_functions(self, functions: Function):
+    def add_functions(self, functions: list[Function]):
         self.functions = functions
 
-    def add_resources(self, resources: Resource):
+    def add_resources(self, resources: list[Resource]):
         self.resources = resources
     
     def visualize(self):

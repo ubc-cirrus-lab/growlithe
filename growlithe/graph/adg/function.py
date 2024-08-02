@@ -1,8 +1,7 @@
-import os
 import ast
 
+from growlithe.common.logger import logger
 from growlithe.graph.adg.resource import Resource
-from growlithe.config import Config
 
 
 """
@@ -11,9 +10,10 @@ Stores all functions in a given application, their dependencies and nodes/edges 
 
 
 class Function(Resource):
-    def __init__(self, name, type, runtime, function_path, metadata=dict()):
+    def __init__(self, name, type, runtime, function_path, growlithe_function_path, metadata=dict()):
         super(Function, self).__init__(name, type, metadata)
         self.function_path: str = function_path
+        self.growlithe_function_path: str = growlithe_function_path
         self.runtime = runtime
 
         self.sarif_results = None
@@ -28,6 +28,9 @@ class Function(Resource):
                 code = f.read()
                 tree = ast.parse(code)
                 self.code_tree = tree
+        else:
+            logger.error(f"Path for function {self.name} is empty.")
+            raise FileNotFoundError
 
     def __str__(self):
         pass
