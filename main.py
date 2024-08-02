@@ -68,7 +68,6 @@ def main():
     taint_tracker = TaintTracker(graph=graph, config=config)
     taint_tracker.run()
     taint_tracker.save_files()
-    pass
 
 
 if __name__ == "__main__":

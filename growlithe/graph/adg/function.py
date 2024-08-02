@@ -1,8 +1,6 @@
-import os
 import ast
 
-from common.app_config import app_path
-from common.logger import logger
+from growlithe.common.logger import logger
 from growlithe.graph.adg.resource import Resource
 
 
@@ -12,9 +10,10 @@ Stores all functions in a given application, their dependencies and nodes/edges 
 
 
 class Function(Resource):
-    def __init__(self, name, type, runtime, function_path, metadata=dict()):
+    def __init__(self, name, type, runtime, function_path, growlithe_function_path, metadata=dict()):
         super(Function, self).__init__(name, type, metadata)
         self.function_path: str = function_path
+        self.growlithe_function_path: str = growlithe_function_path
         self.runtime = runtime
 
         self.sarif_results = None

@@ -133,9 +133,10 @@ class TaintTracker:
 
     def save_files(self):
         for function in self.graph.functions:
-            os.makedirs(os.path.dirname(function.function_path), exist_ok=True)
-            with open(function.function_path, "w") as f:
+            os.makedirs(os.path.dirname(function.growlithe_function_path), exist_ok=True)
+            with open(function.growlithe_function_path, "w") as f:
                 f.write(ast.unparse(ast.fix_missing_locations(function.code_tree)))
+            logger.info(f"Saved tainted function {function.name} in {function.growlithe_function_path}")
 
     def add_param_taint_extraction(self, function: Function):
         node = function.get_event_node()
