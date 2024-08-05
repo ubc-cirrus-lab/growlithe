@@ -61,6 +61,7 @@ class Edge:
                 "sink": self.sink.__repr__(),
                 "read": self.read_policy.__str__(),
                 "write": self.write_policy.__str__(),
+                "function": self.function.__repr__(),
             }
         return None
 

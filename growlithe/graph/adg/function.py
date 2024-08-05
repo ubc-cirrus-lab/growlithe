@@ -33,7 +33,7 @@ class Function(Resource):
             raise FileNotFoundError
 
     def __str__(self):
-        pass
+        self.__repr__()
 
     def __repr__(self):
         return f"{self.name} ({self.function_path})"
