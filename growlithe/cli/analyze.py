@@ -1,3 +1,4 @@
+import pickle
 import click
 from growlithe.graph.parsers.sam import SAMParser
 from growlithe.graph.parsers.state_machine_parser import StepFunctionParser
@@ -55,6 +56,9 @@ def analyze(config):
     # Generate required policy templates
     if GENERATE_EDGE_POLICY:
         graph.dump_policy_edges_json(config.policy_spec_path)
+
+    with open(config.graph_dump_path, "wb") as f:
+        pickle.dump(graph, f)
 
     click.echo("Analysis completed successfully!", color="green")
     return graph

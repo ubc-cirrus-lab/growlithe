@@ -56,9 +56,9 @@ class GraphGenerator:
             os.path.join(self.config.growlithe_path, f"metadataflows_{language}.sarif"), self.config
         )
         edge_type = EdgeType.METADATA
-        if self.config.benchmark_name.startswith(
+        if self.config.has_key("benchmark_name") and (self.config.benchmark_name.startswith(
             "Benchmark1"
-        ) or self.config.benchmark_name.startswith("Benchmark3"):
+        ) or self.config.benchmark_name.startswith("Benchmark3")):
             edge_type = EdgeType.DATA
 
         for function in functions:

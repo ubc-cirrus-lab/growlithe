@@ -2,7 +2,7 @@ import yaml
 import os
 import platform
 from growlithe.common.file_utils import create_dir_if_not_exists
-from growlithe.common.logger import init_logger
+from growlithe.common.logger import init_logger, logger
 
 
 class Config:
@@ -20,24 +20,25 @@ class Config:
         self._initialized = True
 
         self.config = {}
-        self.defaults = self.get_defaults()
 
         if config_path and os.path.exists(config_path):
             print(f"Loading config from {config_path}")
-            self.load_from_file(config_path)
-        elif config_path:
-            print(f"Config file {config_path} not found. Using defaults.")
+            config_instance = self.load_from_file(config_path)
+            self.set_config_values(config_instance)
         else:
-            print("No config file provided. Using defaults.")
+            print(
+                "No config file provided, and default does not exist. Using defaults."
+            )
+            config_instance = self.get_defaults()
 
-        self.set_config_values()
+        self.set_config_values(config_instance)
         self.set_derived_paths()
         self.make_paths_absolute()
 
         create_dir_if_not_exists(self.growlithe_path)
         init_logger(self.profiler_log_path)
 
-        print(self.__str__())
+        logger.info(self.__str__())
 
     def get_defaults(self):
         system_platform = platform.system()
@@ -61,11 +62,12 @@ class Config:
 
     def load_from_file(self, config_path):
         with open(config_path, "r") as f:
-            self.config = yaml.safe_load(f)
+            config_instance = yaml.safe_load(f)
+        return config_instance
 
-    def set_config_values(self):
-        for key, default_value in self.defaults.items():
-            setattr(self, key, self.config.get(key, default_value))
+    def set_config_values(self, config_instance):
+        for key, val in config_instance.items():
+            setattr(self, key, config_instance.get(key, val))
 
     def set_derived_paths(self):
         self.benchmark_path = os.path.dirname(self.app_config_path)
@@ -73,6 +75,7 @@ class Config:
         self.src_path = os.path.join(self.app_path, self.src_dir)
         self.growlithe_path = os.path.join(os.path.dirname(self.app_path), "growlithe")
 
+        self.graph_dump_path = os.path.join(self.growlithe_path, "graph_dump.pkl")
         self.new_app_path = os.path.join(
             self.growlithe_path, f"{self.app_name}_growlithe"
         )
@@ -88,6 +91,7 @@ class Config:
             "benchmark_path",
             "app_path",
             "src_path",
+            "graph_dump_path",
             "new_app_path",
             "growlithe_path",
             "profiler_log_path",
@@ -99,12 +103,26 @@ class Config:
                 setattr(self, attr, os.path.abspath(getattr(self, attr)))
 
     def __str__(self):
-        return "\n".join(
-            [
-                f"{key}\t\t: {value}"
-                for key, value in self.__dict__.items()
-                if not key.startswith("_") and key != "config" and key != "defaults"
-            ]
+        header = "Growlithe is using the following configuration:"
+        separator = "=" * 72
+
+        config_items = [
+            f"{key:<20} : {value}"
+            for key, value in self.__dict__.items()
+            if not key.startswith("_") and key not in ["config", "defaults"]
+        ]
+
+        return (
+            f"{separator}\n{header}\n{separator}\n"
+            + "\n".join(config_items)
+            + f"\n{separator}"
+        )
+
+    def has_key(self, key):
+        return (
+            key in self.__dict__.keys()
+            and not key.startswith("_")
+            and key not in ["config", "defaults"]
         )
 
 
