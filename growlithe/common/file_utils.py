@@ -1,5 +1,8 @@
 import os
 import ast
+import shutil
+
+import growlithe.common.logger
 
 
 def create_dir_if_not_exists(path):
@@ -97,7 +100,7 @@ def get_file_extension(runtime):
     return ""  # Default to no extension if runtime is not recognized
 
 
-def save_files(graph):
+def save_files(graph, growlithe_lib_path):
     """
     Save the files associated with each function in the graph.
 
@@ -111,3 +114,10 @@ def save_files(graph):
         os.makedirs(os.path.dirname(function.growlithe_function_path), exist_ok=True)
         with open(function.growlithe_function_path, "w") as f:
             f.write(ast.unparse(ast.fix_missing_locations(function.code_tree)))
+        local_lib_path = os.path.join(
+            os.path.dirname(function.growlithe_function_path), "growlithe_predicates.py"
+        )
+        shutil.copy(growlithe_lib_path, local_lib_path)
+        growlithe.common.logger.logger.info(
+            "Saved function %s to %s", function.name, function.growlithe_function_path
+        )

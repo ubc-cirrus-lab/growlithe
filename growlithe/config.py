@@ -50,6 +50,14 @@ class Config:
 
         return {
             "growlithe_results_path": growlithe_results_path,
+            "growlithe_layer_arn": "arn:aws:lambda:us-west-2:123456789012:layer:growlithe:1",
+            "growlithe_lib_path": os.path.join(
+                os.path.dirname(__file__),
+                "enforcer",
+                "policy",
+                "template",
+                "growlithe.py",
+            ),
             "benchmark_name": "Benchmark2",
             "app_name": "ImageProcessing",
             "src_dir": "src",
