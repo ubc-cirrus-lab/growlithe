@@ -1,7 +1,7 @@
 from __future__ import annotations
 import re
 from typing import List, Set
-from growlithe.common import logger
+from growlithe.common.logger import logger
 from growlithe.common.tasks_config import HYBRID_ENFORCEMENT_MODE
 from growlithe.enforcer.policy.template.growlithe import *
 from growlithe.enforcer.taint.taint_utils import online_taint_label
@@ -53,6 +53,10 @@ class PredicateSet:
     def contains_session_variables(self) -> bool:
         return any(var.startswith("Session") for var in self.variables)
 
+    @property
+    def contains_taint_predicates(self) -> bool:
+        return any(pred.predicate_name.startswith("taint") for pred in self.predicates)
+
     def add_predicate(self, predicate: PolicyPredicate):
         self.predicates.add(predicate)
 
@@ -62,7 +66,7 @@ class PredicateSet:
 
     @property
     def deferred_query(self):
-        if self.contains_session_variables:
+        if self.contains_session_variables or self.contains_taint_predicates:
             return self.query
         try:
             if pyDatalog.ask(self.query) == None:
