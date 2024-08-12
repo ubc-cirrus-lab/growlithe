@@ -229,8 +229,6 @@ class SAMParser:
         self.add_iam_roles(graph)
         self.add_resource_policies(graph)
 
-        self.save_config()
-
     def fix_function_names(self):
         """
         Fixes the function names for AWS::Serverless::Function resources in the parsed YAML.
@@ -329,9 +327,6 @@ class SAMParser:
 
         Returns:
             dict: The generated IAM policy.
-
-        Raises:
-            None
         """
         actions = []
         if node.object_type == "S3_BUCKET":
@@ -354,9 +349,6 @@ class SAMParser:
 
         This method copies the existing layer to the growlithe folder, then adds a new layer to the parsed YAML under the key "GrowlithePyDatalogLayer".
         Additionally, it adds the "GrowlithePyDatalogLayer" to the "Layers" property of all the lambda function resources.
-
-        Parameters:
-        - None
 
         Returns:
         - None
@@ -384,9 +376,6 @@ class SAMParser:
         """
         Copies the PyDatalog layer to the growlithe location.
 
-        Parameters:
-            None
-
         Returns:
             None
         """
@@ -400,12 +389,10 @@ class SAMParser:
         """
         Save the updated configuration to a YAML file in the growlithe folder.
 
-        Parameters:
-            None
-
         Returns:
             None
         """
+        self.copy_config_toml()
         path = self.config.growlithe_path
         config_path = os.path.join(path, "template.yml")
         with open(config_path, "w", encoding="utf-8") as f:
@@ -418,3 +405,15 @@ class SAMParser:
             )
             f.write(raw)
         logger.info("Saved updated configuration to %s", config_path)
+
+    def copy_config_toml(self):
+        """
+        Copies the 'samconfig.toml' file from the app_path to the growlithe_path.
+
+        Returns:
+            None
+        """
+        path = os.path.join(self.config.app_path, "samconfig.toml")
+        destination = os.path.join(self.config.growlithe_path, "samconfig.toml")
+        if os.path.exists(path):
+            shutil.copy(path, destination)

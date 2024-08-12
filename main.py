@@ -75,6 +75,7 @@ def main():
 
     # Update the application configuration
     app_config_parser.modify_config(graph=graph)
+    app_config_parser.save_config()
 
 
 if __name__ == "__main__":
