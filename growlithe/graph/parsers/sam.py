@@ -4,6 +4,7 @@ Parses an AWS SAM template file to give a list of resource and their properties 
 
 import os
 import json
+import shutil
 import yaml
 
 from typing import List
@@ -272,6 +273,17 @@ class SAMParser:
                 ] = {"Statement": function.iam_policies}
 
     def extract_method(self, tree, node: Node, method=None):
+        """
+        Extracts the method name from the given AST tree and node.
+
+        Args:
+            tree (AST): The AST tree to search for the method.
+            node (Node): The node representing the method.
+            method (str, optional): The extracted method name. Defaults to None.
+
+        Returns:
+            str: The extracted method name.
+        """
         start_line = node.object_code_location["physicalLocation"]["region"][
             "startLine"
         ]
@@ -289,6 +301,19 @@ class SAMParser:
         return method
 
     def generate_iam_policy(self, method, node: Node):
+        """
+        Generates an IAM policy based on the provided method and node.
+
+        Args:
+            method (str): The method for which the IAM policy is being generated.
+            node (Node): The node object representing the resource.
+
+        Returns:
+            dict: The generated IAM policy.
+
+        Raises:
+            None
+        """
         actions = []
         if node.object_type == "S3_BUCKET":
             if method == "download_file":
@@ -305,15 +330,63 @@ class SAMParser:
         }
 
     def add_lambda_layer(self):
-        layer_arn = self.config.growlithe_layer_arn
+        """
+        Adds the pydatalog lambda layer to the parsed YAML.
+
+        This method copies the existing layer to the growlithe folder, then adds a new layer to the parsed YAML under the key "GrowlithePyDatalogLayer".
+        Additionally, it adds the "GrowlithePyDatalogLayer" to the "Layers" property of all the lambda function resources.
+
+        Parameters:
+        - None
+
+        Returns:
+        - None
+        """
+        self.copy_layer()
+        self.parsed_yaml["Resources"]["GrowlithePyDatalogLayer"] = {
+            "Type": "AWS::Serverless::LayerVersion",
+            "Properties": {
+                "LayerName": "GrowlithePyDatalogLayer",
+                "CompatibleArchitectures": ["x86_64"],
+                "ContentUri": "layers/pydatalog.zip",
+                "Description": "PyDatalog layer for Growlithe",
+                "CompatibleRuntimes": ["python3.10", "python3.9", "python3.8"],
+            },
+        }
         for _, resource_details in self.parsed_yaml["Resources"].items():
             if resource_details["Type"] == "AWS::Serverless::Function":
-                if "Layers" in resource_details["Properties"].keys():
-                    resource_details["Properties"]["Layers"].append(layer_arn)
-                else:
-                    resource_details["Properties"]["Layers"] = [layer_arn]
+                if not "Layers" in resource_details["Properties"].keys():
+                    resource_details["Properties"]["Layers"] = []
+                resource_details["Properties"]["Layers"].append(
+                    "!Ref GrowlithePyDatalogLayer"
+                )
+
+    def copy_layer(self):
+        """
+        Copies the PyDatalog layer to the growlithe location.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
+        destination = os.path.join(
+            self.config.growlithe_path, "layers", "pydatalog.zip"
+        )
+        os.makedirs(destination, exist_ok=True)
+        shutil.copy(self.config.pydatalog_layer_path, destination)
 
     def save_config(self):
+        """
+        Save the updated configuration to a YAML file in the growlithe folder.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
         path = self.config.growlithe_path
         config_path = os.path.join(path, "template.yml")
         with open(config_path, "w", encoding="utf-8") as f:
