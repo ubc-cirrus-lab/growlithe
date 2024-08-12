@@ -224,11 +224,30 @@ class SAMParser:
         return self.resources
 
     def modify_config(self, graph: Graph):
+        self.fix_function_names()
         self.add_lambda_layer()
         self.add_iam_roles(graph)
         self.add_resource_policies(graph)
 
         self.save_config()
+
+    def fix_function_names(self):
+        """
+        Fixes the function names for AWS::Serverless::Function resources in the parsed YAML.
+
+        Iterates through each resource in the parsed YAML and checks if it is a lambda function.
+        If the resource does not have a "FunctionName" property, it sets the "FunctionName" property to the resource name.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
+        for resource_name, resource_details in self.parsed_yaml["Resources"].items():
+            if resource_details["Type"] == "AWS::Serverless::Function":
+                if not "FunctionName" in resource_details["Properties"].keys():
+                    resource_details["Properties"]["FunctionName"] = resource_name
 
     def add_resource_policies(self, graph: Graph):
         for resource in graph.resources:
