@@ -267,7 +267,9 @@ class SAMParser:
                             "Statement": [
                                 {
                                     "Effect": "Allow",
-                                    "Principal": {"Service": "lambda.amazonaws.com"},
+                                    "Principal": {
+                                        "AWS": f"!GetAtt {resource.name}Role.Arn"
+                                    },
                                     "Action": list(resource.policy_actions),
                                     "Resource": f"!Sub arn:aws:s3:::${resource.name}/*",
                                 }
@@ -285,9 +287,40 @@ class SAMParser:
                 node.object_fn.iam_policies.append(iam_policy)
         for function in graph.functions:
             if function.iam_policies:
+                self.parsed_yaml["Resources"][function.name]["Properties"].pop(
+                    "Policies", None
+                )
+                self.parsed_yaml["Resources"][function.name]["Properties"].pop(
+                    "Role", None
+                )
+                self.parsed_yaml["Resources"][function.name].pop("Connectors", None)
+                self.parsed_yaml["Resources"][f"{function.name}Role"] = {
+                    "Type": "AWS::IAM::Role",
+                    "Properties": {
+                        "AssumeRolePolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Principal": {"Service": "lambda.amazonaws.com"},
+                                    "Action": "sts:AssumeRole",
+                                }
+                            ],
+                        },
+                        "Policies": [
+                            {
+                                "PolicyName": "root",
+                                "PolicyDocument": {
+                                    "Version": "2012-10-17",
+                                    "Statement": function.iam_policies,
+                                },
+                            }
+                        ],
+                    },
+                }
                 self.parsed_yaml["Resources"][function.name]["Properties"][
-                    "Policies"
-                ] = {"Statement": function.iam_policies}
+                    "Role"
+                ] = f"!GetAtt {function.name}Role.Arn"
 
     def extract_method(self, tree, node: Node, method=None):
         """
