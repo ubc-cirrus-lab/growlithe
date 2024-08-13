@@ -5,6 +5,7 @@ class ResourceType(Enum):
     """
     Enum class to define the type of resource.
     """
+
     S3_BUCKET = "AWS::S3::Bucket"
     DYNAMODB = "AWS::DynamoDB::Table"
     FUNCTION = "AWS::Serverless::Function"
@@ -25,6 +26,7 @@ class Resource:
         self.dependencies = []
         self.trigger = None
         self.trigger_type = None
+        self.policy_actions = set()
 
     def __str__(self) -> str:
         pass
@@ -36,7 +38,7 @@ class Resource:
         self.dependencies.append(resource)
         resource.trigger = self
         resource.trigger_type = self.type
-    
+
     def visualize_dependencies(self):
         if not self.dependencies:
             print(self.name)

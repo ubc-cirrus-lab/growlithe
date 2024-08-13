@@ -43,7 +43,8 @@ def main():
         app_config_parser = SAMParser(config.app_config_path, config)
     else:
         logger.error(
-            f"{config.app_config_type} is not supported. Only SAM templates are supported for now."
+            "%s is not supported. Only SAM templates are supported for now.",
+            config.app_config_type,
         )
         exit()
 
@@ -70,7 +71,11 @@ def main():
     # Taint Tracking
     taint_tracker = TaintTracker(graph=graph, config=config)
     taint_tracker.run()
-    save_files(graph=graph)
+    save_files(graph=graph, growlithe_lib_path=config.growlithe_lib_path)
+
+    # Update the application configuration
+    app_config_parser.modify_config(graph=graph)
+    app_config_parser.save_config()
 
 
 if __name__ == "__main__":

@@ -10,7 +10,15 @@ Stores all functions in a given application, their dependencies and nodes/edges 
 
 
 class Function(Resource):
-    def __init__(self, name, type, runtime, function_path, growlithe_function_path, metadata=dict()):
+    def __init__(
+        self,
+        name,
+        type,
+        runtime,
+        function_path,
+        growlithe_function_path,
+        metadata=dict(),
+    ):
         super(Function, self).__init__(name, type, metadata)
         self.function_path: str = function_path
         self.growlithe_function_path: str = growlithe_function_path
@@ -21,6 +29,7 @@ class Function(Resource):
         self.return_node = None
         self.nodes = []
         self.edges = []
+        self.iam_policies = []
 
         # TODO: Make this language agnostic
         if self.function_path:

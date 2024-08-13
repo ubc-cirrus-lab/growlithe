@@ -51,6 +51,20 @@ class Config:
 
         return {
             "growlithe_results_path": growlithe_results_path,
+            "growlithe_lib_path": os.path.join(
+                os.path.dirname(__file__),
+                "enforcer",
+                "policy",
+                "template",
+                "growlithe.py",
+            ),
+            "pydatalog_layer_path": os.path.join(
+                os.path.dirname(__file__),
+                "enforcer",
+                "policy",
+                "template",
+                "pydatalog.zip",
+            ),
             "benchmark_name": "Benchmark2",
             "app_name": "ImageProcessing",
             "src_dir": "src",
