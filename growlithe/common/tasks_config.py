@@ -13,4 +13,3 @@ CONSOLE_LOG_LEVEL = "DEBUG"
 FILE_LOG_LEVEL = "INFO"
 
 codeql_queries = ["dataflows", "metadataflows"]
-

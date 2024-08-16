@@ -24,6 +24,7 @@ class SAMParser:
         self.sam_file: str = sam_file
         self.config: Config = config
         self.parsed_yaml = None
+        self.step_function_path = None
         self.resources: List[Resource] = self.parse()
 
     def parse_state_machine(
@@ -162,17 +163,23 @@ class SAMParser:
                     metadata=resource_details["Properties"],
                 )
             else:
-                resource: Resource = Resource(
-                    name=resource_name,
-                    type=ResourceType(resource_details["Type"]),
-                    metadata=resource_details["Properties"],
-                )
+                try:
+                    resource: Resource = Resource(
+                        name=resource_name,
+                        type=ResourceType(resource_details["Type"]),
+                        metadata=resource_details["Properties"],
+                    )
+                except ValueError:
+                    logger.warning(
+                        "Unsupported resource type: %s", resource_details["Type"]
+                    )
             if resource_details["Type"] == "AWS::Serverless::StateMachine":
                 definition_uri: str = os.path.join(
                     *resource_details["Properties"]["DefinitionUri"].split(os.sep)
                 )
                 sam_file_dir: str = os.path.dirname(self.sam_file)
                 definition_path: str = os.path.join(sam_file_dir, definition_uri)
+                self.step_function_path = definition_path
                 has_step_function: bool = True
                 parent_step_function: Resource = resource
             resources.append(resource)
@@ -254,7 +261,7 @@ class SAMParser:
                     "Type": "AWS::Lambda::Permission",
                     "Properties": {
                         "Action": "lambda:InvokeFunction",
-                        "FunctionName": f"!Ref {resource.name}",
+                        "FunctionName": {"Fn::GetAtt": [resource.name, "Arn"]},
                         "Principal": "events.amazonaws.com",
                     },
                 }
@@ -262,16 +269,18 @@ class SAMParser:
                 self.parsed_yaml["Resources"][f"{resource.name}Policy"] = {
                     "Type": "AWS::S3::BucketPolicy",
                     "Properties": {
-                        "Bucket": f"!Ref {resource.name}",
+                        "Bucket": {"Ref": resource.name},
                         "PolicyDocument": {
                             "Statement": [
                                 {
                                     "Effect": "Allow",
                                     "Principal": {
-                                        "AWS": f"!GetAtt {resource.name}Role.Arn"
+                                        "Service": "lambda.amazonaws.com",
                                     },
                                     "Action": list(resource.policy_actions),
-                                    "Resource": f"!Sub arn:aws:s3:::${resource.name}/*",
+                                    "Resource": {
+                                        "Fn::Sub": f"arn:aws:s3:::${{{resource.name}}}/*"
+                                    },
                                 }
                             ]
                         },
@@ -316,11 +325,14 @@ class SAMParser:
                                 },
                             }
                         ],
+                        "ManagedPolicyArns": [
+                            "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                        ],
                     },
                 }
-                self.parsed_yaml["Resources"][function.name]["Properties"][
-                    "Role"
-                ] = f"!GetAtt {function.name}Role.Arn"
+                self.parsed_yaml["Resources"][function.name]["Properties"]["Role"] = {
+                    "Fn::GetAtt": [f"{function.name}Role", "Arn"]
+                }
 
     def extract_method(self, tree, node: Node, method=None):
         """
@@ -373,7 +385,9 @@ class SAMParser:
         return {
             "Effect": "Allow",
             "Action": actions,
-            "Resource": [f"!Ref {resource.name}" for resource in resources],
+            "Resource": [
+                {"Fn::GetAtt": [resource.name, "Arn"]} for resource in resources
+            ],
         }
 
     def add_lambda_layer(self):
@@ -402,7 +416,7 @@ class SAMParser:
                 if not "Layers" in resource_details["Properties"].keys():
                     resource_details["Properties"]["Layers"] = []
                 resource_details["Properties"]["Layers"].append(
-                    "!Ref GrowlithePyDatalogLayer"
+                    {"Ref": "GrowlithePyDatalogLayer"}
                 )
 
     def copy_layer(self):
@@ -425,6 +439,8 @@ class SAMParser:
         Returns:
             None
         """
+        if self.step_function_path:
+            self.copy_step_function()
         self.copy_config_toml()
         path = self.config.growlithe_path
         config_path = os.path.join(path, "template.yml")
@@ -438,6 +454,16 @@ class SAMParser:
             )
             f.write(raw)
         logger.info("Saved updated configuration to %s", config_path)
+
+    def copy_step_function(self):
+        """
+        Copies the step function definition to the growlithe location.
+
+        Returns:
+            None
+        """
+        destination = self.config.growlithe_path
+        shutil.copy(self.step_function_path, destination)
 
     def copy_config_toml(self):
         """

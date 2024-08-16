@@ -16,6 +16,9 @@ class ResourceType(Enum):
     IDENTITY_POOL = "AWS::Cognito::IdentityPool"
     USER_POOL_CLIENT = "AWS::Cognito::UserPoolClient"
     USER_POOL = "AWS::Cognito::UserPool"
+    IAM_ROLE = "AWS::IAM::Role"
+    IAM_POLICY = "AWS::IAM::Policy"
+    LAMBDA_PERMISSION = "AWS::Lambda::Permission"
 
 
 class Resource:

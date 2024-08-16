@@ -90,6 +90,7 @@ class Config:
         self.growlithe_path = os.path.join(os.path.dirname(self.app_path), "growlithe")
 
         self.graph_dump_path = os.path.join(self.growlithe_path, "graph_dump.pkl")
+        self.config_dump_path = os.path.join(self.growlithe_path, "config_dump.pkl")
         self.new_app_path = os.path.join(
             self.growlithe_path, f"{self.app_name}_growlithe"
         )
@@ -106,6 +107,7 @@ class Config:
             "app_path",
             "src_path",
             "graph_dump_path",
+            "config_dump_path",
             "new_app_path",
             "growlithe_path",
             "profiler_log_path",

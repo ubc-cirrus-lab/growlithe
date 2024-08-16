@@ -59,6 +59,8 @@ def analyze(config):
 
     with open(config.graph_dump_path, "wb") as f:
         pickle.dump(graph, f)
+    with open(config.config_dump_path, "wb") as f:
+        pickle.dump(app_config_parser, f)
 
     click.echo("Analysis completed successfully!", color="green")
     return graph

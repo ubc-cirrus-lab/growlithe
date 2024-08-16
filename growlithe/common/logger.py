@@ -1,5 +1,4 @@
 import logging.config
-from growlithe.common.file_utils import create_dir_if_not_exists
 from growlithe.common.tasks_config import CONSOLE_LOG_LEVEL, FILE_LOG_LEVEL
 
 
