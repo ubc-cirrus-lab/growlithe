@@ -1,13 +1,13 @@
 import pickle
 
-import growlithe.graph.adg.graph
+from growlithe.graph.adg.graph import Graph
 from growlithe.common.file_utils import save_files
 from growlithe.enforcer.taint.taint_tracker import TaintTracker
 
 
 def apply(config):
     with open(config.graph_dump_path, "rb") as f:
-        graph = pickle.load(f)
+        graph: Graph = pickle.load(f)
     with open(config.config_dump_path, "rb") as f:
         app_config_parser = pickle.load(f)
 

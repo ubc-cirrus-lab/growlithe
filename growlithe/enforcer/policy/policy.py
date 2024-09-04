@@ -4,7 +4,7 @@ from typing import List, Set
 from growlithe.common.logger import logger
 from growlithe.common.tasks_config import HYBRID_ENFORCEMENT_MODE
 from growlithe.enforcer.policy.template.growlithe import *
-from growlithe.enforcer.taint.taint_utils import online_taint_label
+from growlithe.enforcer.taint.taint_utils import online_taint_label, offline_match
 from growlithe.graph.adg.node import Node
 from growlithe.graph.adg.types import ReferenceType
 
@@ -57,15 +57,49 @@ class PredicateSet:
     def contains_taint_predicates(self) -> bool:
         return any(pred.predicate_name.startswith("taint") for pred in self.predicates)
 
+    @property
+    def taint_predicates(self) -> Set[PolicyPredicate]:
+        taint_preds = set()
+        for pred in self.predicates:
+            if pred.predicate_name.startswith("taint"):
+                taint_preds.add(pred)
+        return taint_preds
+
     def add_predicate(self, predicate: PolicyPredicate):
         self.predicates.add(predicate)
+
+    def remove_predicate(self, predicate: PolicyPredicate):
+        self.predicates.remove(predicate)
 
     @property
     def query(self) -> str:
         return " & ".join([f"{pred.predicate_str}" for pred in self.predicates])
 
-    @property
-    def deferred_query(self):
+    def deferred_query(self, node: Node) -> str:
+        taint_predicates = self.taint_predicates
+        if len(taint_predicates) != 0:
+            for taint_pred in taint_predicates:
+                if taint_pred.predicate_name == "taintSetIncludes":
+                    # If no possible matches for arg2 exist for ancestors of node in arg1,
+                    # generate error, else defer
+                    possible_match = False
+                    for ancestor in node.ancestor_nodes.union(node.ancestor_functions):
+                        if offline_match(taint_pred.arguments[1], ancestor):
+                            possible_match = True
+                    if not possible_match:
+                        logger.error(f"OFFLINE POLICY ERROR: Partial policy failed offline check: {taint_pred.predicate_str}, but no upstream path can satisfy this")
+                elif taint_pred.predicate_name == "taintSetExcludes":
+                    # If no possible matches for arg2 exist for ancestors of node in arg1,\
+                    # mark this pred as successfull and do not defer, else defer
+                    possible_match = False
+                    for ancestor in node.ancestor_nodes.union(node.ancestor_functions):
+                        if offline_match(taint_pred.arguments[1], ancestor):
+                            possible_match = True
+                    if not possible_match:
+                        logger.info(f"OFFLINE POLICY Optimized: No upstream path can satisfy this, removing predicate: {taint_pred.predicate_str}")
+                        self.remove_predicate(taint_pred)
+
+
         if self.contains_session_variables or self.contains_taint_predicates:
             return self.query
         try:
@@ -161,13 +195,12 @@ class PolicyClause:
                         )
                     )
 
-    @property
-    def deferred_query(self) -> str:
+    def deferred_query(self, node) -> str:
         return " & ".join(
             [
-                f"{disj.deferred_query}"
+                f"{disj.deferred_query(node)}"
                 for disj in self.disjoint_predicates
-                if disj.deferred_query is not None
+                if disj.deferred_query(node) is not None
             ]
         )
 
@@ -223,7 +256,7 @@ class Policy:
         valid_queries = []
 
         for clause in self.policy_clauses:
-            query = clause.deferred_query if HYBRID_ENFORCEMENT_MODE else clause.query
+            query = clause.deferred_query(self.node) if HYBRID_ENFORCEMENT_MODE else clause.query
             if query != "":
                 valid_queries.append(f'pyDatalog.ask(f"{query}") != None')
 

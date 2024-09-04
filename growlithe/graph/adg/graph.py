@@ -1,4 +1,5 @@
 import json
+from collections import deque
 from typing import List
 from growlithe.common.logger import logger
 from growlithe.graph.adg.node import Node
@@ -13,6 +14,7 @@ class Graph:
         self.name: str = name
         self.nodes: List[Node] = []
         self.edges: List[Edge] = []
+        self.reverse_edges: List[Edge] = []
         self.metadata_edges: List[Edge] = []
 
         self.functions: List[Function] = []
@@ -95,6 +97,7 @@ class Graph:
             self.edges[edge_id].update_policy(policy_edge)
 
     def enforce_policy(self):
+        self.populate_ancestors()
         for edge in self.edges:
             # TODO: Add to the instrumented code
             read_assertion = edge.read_policy.generate_assertion("python")
@@ -104,3 +107,44 @@ class Graph:
             write_assertion = edge.write_policy.generate_assertion("python")
             if write_assertion:
                 logger.debug(f"Adding assertion in {edge.function.function_path}:\n {write_assertion}")
+
+    """
+    Populate ancestor information for each node in the graph
+    Time Complexity: O(V + E)
+    """
+    def populate_ancestors(self):
+        # Calculate in-degree for each node, i.e. number of incoming edges for each sink node
+        in_degree = {node: 0 for node in self.nodes}
+        for edge in self.edges:
+            in_degree[edge.sink] += 1
+
+        # Initialize queue with nodes having in-degree 0
+        queue = deque([node for node in self.nodes if in_degree[node] == 0])
+
+        # Process nodes in topological order, i.e. increasing order of in-degree
+        while queue:
+            current_node = queue.popleft()
+
+            # Add current node's function to its ancestor_functions
+            current_node.ancestor_functions.add(current_node.object_fn)
+
+            # Process outgoing edges
+            for edge in current_node.outgoing_edges:
+                child_node = edge.sink
+
+                # Add current node and its ancestors to child's ancestors
+                child_node.ancestor_nodes.add(current_node)
+                child_node.ancestor_nodes.update(current_node.ancestor_nodes)
+
+                # Add current node's function and ancestor functions to child's ancestor functions
+                child_node.ancestor_functions.add(current_node.object_fn)
+                child_node.ancestor_functions.update(current_node.ancestor_functions)
+
+                # Decrease in-degree of child node
+                in_degree[child_node] -= 1
+                if in_degree[child_node] == 0:
+                    queue.append(child_node)
+
+        # Check for cycles
+        if sum(in_degree.values()) > 0:
+            logger.warn("ADG contains possible cycles.")

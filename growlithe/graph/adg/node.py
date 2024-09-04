@@ -36,6 +36,14 @@ class Node:
         self.outgoing_edges = []
         self.incoming_edges = []
 
+        # Upstream nodes and functions in the ADG for a given node
+        # Function of the current node will be included in the list
+        self.ancestor_nodes = set()
+        self.ancestor_functions = set()
+
+    def __hash__(self):
+        return hash(self.node_id)
+
     def __str__(self):
         return f"({self.object_fn.name}:{self.resource}:{self.object})"
 
