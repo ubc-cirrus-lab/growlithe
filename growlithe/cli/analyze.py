@@ -11,8 +11,9 @@ from growlithe.common.tasks_config import (
     RUN_CODEQL_QUERIES,
 )
 from growlithe.common.file_utils import create_dir_if_not_exists, detect_languages
+from growlithe.common.utils import profiler_decorator
 
-
+@profiler_decorator
 def analyze(config):
     """Analyze the application and generate dataflow graphs and policy templates."""
 

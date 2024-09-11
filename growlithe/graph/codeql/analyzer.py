@@ -44,7 +44,7 @@ class Analyzer:
     def run_queries(self, language):
         current_dir: str = pathlib.Path(__file__).parent.resolve()
         functions: list[str] = get_language_files(
-            root=self.config.app_path, language=language, src_dir=self.config.src_dir
+            root=self.config.app_path, language=language, src_dir=self.config.src_dir, growlithe_path=self.config.growlithe_path
         )
         logger.info(
             f"Running CodeQL queries for {language} in {self.config.app_name}: {', '.join(codeql_queries)}"

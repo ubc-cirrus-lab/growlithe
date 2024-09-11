@@ -193,6 +193,7 @@ class TaintTracker:
                                                 ctx=ast.Load(),
                                             )
                                         ],
+                                        keywords=[],
                                     )
                                 )
                             if isinstance(ast_node.value, ast.Name):

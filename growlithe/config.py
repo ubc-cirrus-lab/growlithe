@@ -3,7 +3,7 @@ import os
 import platform
 from growlithe.common.file_utils import create_dir_if_not_exists
 from growlithe.common.logger import init_logger, logger
-
+from typing import Dict, Any
 
 class Config:
     _instance = None
@@ -21,17 +21,17 @@ class Config:
 
         self.config = {}
 
+        default_config = self.get_defaults()
+
         if config_path and os.path.exists(config_path):
             print(f"Loading config from {config_path}")
-            config_instance = self.load_from_file(config_path)
-            self.set_config_values(config_instance)
+            loaded_config = self.load_from_file(config_path)
+            merged_config = self.merge_configs(default_config, loaded_config)
         else:
-            print(
-                "No config file provided, and default does not exist. Using defaults."
-            )
-            config_instance = self.get_defaults()
+            print("No config file provided, or it doesn't exist. Using defaults.")
+            merged_config = default_config
 
-        self.set_config_values(config_instance)
+        self.set_config_values(merged_config)
         self.set_derived_paths()
         self.make_paths_absolute()
 
@@ -140,6 +140,17 @@ class Config:
             and not key.startswith("_")
             and key not in ["config", "defaults"]
         )
+    def merge_configs(self, default_config: Dict[str, Any], loaded_config: Dict[str, Any]) -> Dict[str, Any]:
+        merged = default_config.copy()
+        for key, value in loaded_config.items():
+            if key in merged:
+                if isinstance(value, dict) and isinstance(merged[key], dict):
+                    merged[key] = self.merge_configs(merged[key], value)
+                else:
+                    merged[key] = value
+            else:
+                merged[key] = value
+        return merged
 
 
 # Usage
