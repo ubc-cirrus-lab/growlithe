@@ -31,12 +31,17 @@ class Function(Resource):
         self.edges = []
         self.iam_policies = []
 
-        # TODO: Make this language agnostic
         if self.function_path:
-            with open(function_path, "r") as f:
-                code = f.read()
-                tree = ast.parse(code)
-                self.code_tree = tree
+            if "python" in self.runtime:
+                with open(function_path, "r") as f:
+                    code = f.read()
+                    tree = ast.parse(code)
+                    self.code_tree = tree
+            elif "nodejs" in self.runtime:
+                logger.error(f"NodeJS runtime is not supported yet.")
+                raise NotImplementedError
+            else:
+                raise NotImplementedError
         else:
             logger.error(f"Path for function {self.name} is empty.")
             raise FileNotFoundError

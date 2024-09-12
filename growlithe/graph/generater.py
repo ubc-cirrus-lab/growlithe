@@ -19,7 +19,8 @@ class GraphGenerator:
     def generate_intrafunction_graphs(self, functions: List[Function]):
         language = "python"
         sarif_parser = SarifParser(
-            os.path.join(self.config.growlithe_path, f"dataflows_{language}.sarif"), self.config
+            os.path.join(self.config.growlithe_path, f"dataflows_{language}.sarif"),
+            self.config,
         )
         for function in functions:
             function_dataflows = sarif_parser.get_results_for_function(function)
@@ -49,16 +50,58 @@ class GraphGenerator:
                     )
         for source, target in function_pairs:
             self.add_potential_indirect_flows(source, target)
+        self.add_potential_resources(resources)
+
+    def add_potential_resources(self, resources):
+        for node in self.graph.nodes:
+            if (
+                node.object_type == "S3_BUCKET"
+                and "potential_resources" not in node.resource_attrs
+            ):
+                potential_resources = []
+                for resource in resources:
+                    if resource.type == ResourceType.S3_BUCKET:
+                        potential_resources.append(resource)
+                node.resource_attrs["potential_resources"] = potential_resources
+            elif (
+                node.object_type == "DYNAMODB_TABLE"
+                and "potential_resources" not in node.resource_attrs
+            ):
+                potential_resources = []
+                for resource in resources:
+                    if resource.type == ResourceType.DYNAMODB:
+                        potential_resources.append(resource)
+                node.resource_attrs["potential_resources"] = potential_resources
+            elif (
+                node.object_type == "LAMBDA_FUNCTION"
+                and "potential_resources" not in node.resource_attrs
+            ):
+                potential_resources = []
+                for resource in resources:
+                    if resource.type == ResourceType.FUNCTION:
+                        potential_resources.append(resource)
+                node.resource_attrs["potential_resources"] = potential_resources
+            elif (
+                node.object_type == "LAMBDA_INVOKE"
+                and "potential_resources" not in node.resource_attrs
+            ):
+                potential_resources = []
+                for resource in resources:
+                    if resource.type == ResourceType.FUNCTION:
+                        potential_resources.append(resource)
+                node.resource_attrs["potential_resources"] = potential_resources
 
     def add_metadata_edges(self, functions: List[Function]):
         language = "python"
         sarif_parser = SarifParser(
-            os.path.join(self.config.growlithe_path, f"metadataflows_{language}.sarif"), self.config
+            os.path.join(self.config.growlithe_path, f"metadataflows_{language}.sarif"),
+            self.config,
         )
         edge_type = EdgeType.METADATA
-        if self.config.has_key("benchmark_name") and (self.config.benchmark_name.startswith(
-            "Benchmark1"
-        ) or self.config.benchmark_name.startswith("Benchmark3")):
+        if self.config.has_key("benchmark_name") and (
+            self.config.benchmark_name.startswith("Benchmark1")
+            or self.config.benchmark_name.startswith("Benchmark3")
+        ):
             edge_type = EdgeType.DATA
 
         for function in functions:
@@ -84,7 +127,8 @@ class GraphGenerator:
         # S3 trigger
         if source.type == ResourceType.S3_BUCKET:
             self.append_resource_metadata(source)
-        # TODO: DynamoDB trigger
+        if source.type == ResourceType.DYNAMODB:
+            self.append_resource_metadata(source)
 
     def append_resource_metadata(self, resource: Resource):
         """

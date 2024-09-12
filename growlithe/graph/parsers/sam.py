@@ -6,6 +6,7 @@ import os
 import json
 import shutil
 import yaml
+import ast
 
 from typing import List
 from cfn_flip import load_yaml, yaml_dumper
@@ -358,7 +359,19 @@ class SAMParser:
                     getattr(ast_node, "lineno", None) == start_line
                     and getattr(ast_node, "end_lineno", None) == end_line
                 ):
-                    method = ast_node.value.func.attr
+                    if node.object_type == "S3_BUCKET":
+                        method = ast_node.value.func.attr
+                    elif node.object_type == "DYNAMODB_TABLE":
+                        if isinstance(ast_node.value, ast.Call):
+                            method = ast_node.value.func.attr
+                        elif isinstance(ast_node.value, ast.Subscript):
+                            method = ast_node.value.value.func.attr
+                        else:
+                            raise NotImplementedError
+                    elif node.object_type == "LAMBDA_INVOKE":
+                        method = ast_node.value.func.attr
+                    else:
+                        raise NotImplementedError
                 method = self.extract_method(ast_node, node, method=method)
         return method
 
@@ -379,6 +392,20 @@ class SAMParser:
                 actions.append("s3:GetObject")
             elif method == "upload_file":
                 actions.append("s3:PutObject")
+        elif node.object_type == "DYNAMODB_TABLE":
+            if method == "get_item":
+                actions.append("dynamodb:GetItem")
+            elif method == "put_item":
+                actions.append("dynamodb:PutItem")
+        elif node.object_type == "LAMBDA_INVOKE":
+            if method == "invoke":
+                actions.append("lambda:InvokeFunction")
+            else:
+                logger.error("Unsupported method: %s", method)
+                raise NotImplementedError
+        else:
+            logger.error("Unsupported resource type: %s", node.object_type)
+            raise NotImplementedError
         resources = node.resource_attrs["potential_resources"]
         for resource in resources:
             resource.policy_actions.update(actions)
