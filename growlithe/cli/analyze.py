@@ -24,12 +24,9 @@ def analyze(config):
     analyzer = Analyzer(config)
     for language in languages:
         if CREATE_CODEQL_DB:
-            analyzer.create_ir(language=language)
+            analyzer.create_codeql_database(language=language)
         if RUN_CODEQL_QUERIES:
-            analyzer.run_queries(language=language)
-
-    # Create a graph object
-    graph = Graph(config.app_name)
+            analyzer.run_codeql_queries(language=language)
 
     # Parse the SAM/cloud template of the application
     if config.app_config_type == "SAM":
@@ -42,6 +39,24 @@ def analyze(config):
         )
         return
 
+    graph = generate_adg(app_config_parser, config)
+
+    # Generate required policy templates
+    if GENERATE_EDGE_POLICY:
+        graph.dump_policy_edges_json(config.policy_spec_path)
+
+    with open(config.graph_dump_path, "wb") as f:
+        pickle.dump(graph, f)
+    with open(config.config_dump_path, "wb") as f:
+        pickle.dump(app_config_parser, f)
+
+    click.echo("Analysis completed successfully!", color="green")
+    return graph
+
+@profiler_decorator
+def generate_adg(app_config_parser, config):
+    # Create a graph object
+    graph = Graph(config.app_name)
     if app_config_parser:
         graph.add_functions(app_config_parser.get_functions())
         graph.add_resources(app_config_parser.get_resources())
@@ -54,14 +69,4 @@ def analyze(config):
 
     graph.dump_nodes_json(config.nodes_path)
 
-    # Generate required policy templates
-    if GENERATE_EDGE_POLICY:
-        graph.dump_policy_edges_json(config.policy_spec_path)
-
-    with open(config.graph_dump_path, "wb") as f:
-        pickle.dump(graph, f)
-    with open(config.config_dump_path, "wb") as f:
-        pickle.dump(app_config_parser, f)
-
-    click.echo("Analysis completed successfully!", color="green")
     return graph

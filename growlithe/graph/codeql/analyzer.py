@@ -17,7 +17,7 @@ class Analyzer:
     """Generate CodeQL intermediate representation (IR) or the database for an app for a specific language."""
 
     @profiler_decorator
-    def create_ir(self, language):
+    def create_codeql_database(self, language):
         logger.info(f"Creating CodeQL database in {self.config.growlithe_path}")
         try:
             subprocess.run(
@@ -41,7 +41,7 @@ class Analyzer:
     """Run CodeQL queries on the CodeQL intermediate representation (IR) or the database for an app for a specific language."""
 
     @profiler_decorator
-    def run_queries(self, language):
+    def run_codeql_queries(self, language):
         current_dir: str = pathlib.Path(__file__).parent.resolve()
         functions: list[str] = get_language_files(
             root=self.config.app_path, language=language, src_dir=self.config.src_dir, growlithe_path=self.config.growlithe_path

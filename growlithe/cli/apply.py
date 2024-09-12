@@ -10,17 +10,18 @@ from growlithe.common.utils import profiler_decorator
 def apply(config: Config):
     with open(config.graph_dump_path, "rb") as f:
         graph: Graph = pickle.load(f)
-    print("0", config.pydatalog_layer_path)
+    # Minor FIXME: For some reason config.pydatalog_layer_path
+    # resorts to the value of config.pydatlog_layer_path which
+    # existed when growlithe analyze was run even if the path changes in growlithe_config.yml
     with open(config.config_dump_path, "rb") as f:
         app_config_parser = pickle.load(f)
-    print("1", config.pydatalog_layer_path)
 
     graph.get_updated_policy_json(config.policy_spec_path)
     # Enforcement
     graph.enforce_policy()
     # Taint Tracking
     taint_tracker = TaintTracker(graph=graph, config=config)
-    taint_tracker.run()
+    taint_tracker.run_taint_tracking()
     save_files(graph=graph, growlithe_lib_path=config.growlithe_lib_path)
 
     # Update the application configuration

@@ -11,6 +11,7 @@ import ast
 from typing import List
 from cfn_flip import load_yaml, yaml_dumper
 from growlithe.common.file_utils import get_file_extension
+from growlithe.common.utils import profiler_decorator
 from growlithe.config import Config
 from growlithe.graph.adg.graph import Graph
 from growlithe.graph.adg.node import Node
@@ -26,7 +27,7 @@ class SAMParser:
         self.config: Config = config
         self.parsed_yaml = None
         self.step_function_path = None
-        self.resources: List[Resource] = self.parse()
+        self.resources: List[Resource] = self.parse_sam_template()
 
     def parse_state_machine(
         self, definition_path: str, step_function: Resource, resources: List[Resource]
@@ -127,7 +128,8 @@ class SAMParser:
             parent.dependencies.append(function)
             function.metadata = step_function.metadata
 
-    def parse(self):
+    @profiler_decorator
+    def parse_sam_template(self):
         resources: List[Resource] = []
         has_step_function = False
         with open(self.sam_file, "r") as f:

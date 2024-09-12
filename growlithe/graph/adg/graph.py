@@ -2,6 +2,7 @@ import json
 from collections import deque
 from typing import List
 from growlithe.common.logger import logger
+from growlithe.common.utils import profiler_decorator
 from growlithe.graph.adg.node import Node
 from growlithe.graph.adg.edge import Edge, EdgeType
 from growlithe.graph.adg.function import Function
@@ -96,6 +97,7 @@ class Graph:
             edge_id = policy_edge["id"]
             self.edges[edge_id].update_policy(policy_edge)
 
+    @profiler_decorator
     def enforce_policy(self):
         self.populate_ancestors()
         for edge in self.edges:
