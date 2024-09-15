@@ -1,5 +1,6 @@
 import pickle
 import click
+import sys
 from growlithe.graph.parsers.sam import SAMParser
 from growlithe.graph.parsers.state_machine_parser import StepFunctionParser
 from growlithe.graph.adg.graph import Graph
@@ -15,6 +16,7 @@ from growlithe.common.utils import profiler_decorator
 
 @profiler_decorator
 def analyze(config):
+    sys.setrecursionlimit(3000) # Increase the recursion limit to avoid RecursionError
     """Analyze the application and generate dataflow graphs and policy templates."""
 
     languages = detect_languages(path=config.app_path)

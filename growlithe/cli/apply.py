@@ -1,4 +1,5 @@
 import pickle
+import sys
 
 from growlithe.graph.adg.graph import Graph
 from growlithe.common.file_utils import save_files
@@ -8,6 +9,7 @@ from growlithe.common.utils import profiler_decorator
 
 @profiler_decorator
 def apply(config: Config):
+    sys.setrecursionlimit(3000) # Increase the recursion limit to avoid RecursionError
     with open(config.graph_dump_path, "rb") as f:
         graph: Graph = pickle.load(f)
     # Minor FIXME: For some reason config.pydatalog_layer_path
