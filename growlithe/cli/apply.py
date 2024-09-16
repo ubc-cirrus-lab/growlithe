@@ -7,9 +7,10 @@ from growlithe.enforcer.taint.taint_tracker import TaintTracker
 from growlithe.config import Config
 from growlithe.common.utils import profiler_decorator
 
+
 @profiler_decorator
 def apply(config: Config):
-    sys.setrecursionlimit(3000) # Increase the recursion limit to avoid RecursionError
+    sys.setrecursionlimit(3000)  # Increase the recursion limit to avoid RecursionError
     with open(config.graph_dump_path, "rb") as f:
         graph: Graph = pickle.load(f)
     # Minor FIXME: For some reason config.pydatalog_layer_path
@@ -19,11 +20,14 @@ def apply(config: Config):
         app_config_parser = pickle.load(f)
 
     graph.get_updated_policy_json(config.policy_spec_path)
-    # Enforcement
-    graph.enforce_policy()
+
     # Taint Tracking
     taint_tracker = TaintTracker(graph=graph, config=config)
     taint_tracker.run_taint_tracking()
+
+    # Enforcement
+    graph.enforce_policy()
+
     save_files(graph=graph, growlithe_lib_path=config.growlithe_lib_path)
 
     # Update the application configuration
