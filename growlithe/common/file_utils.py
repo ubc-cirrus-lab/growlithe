@@ -3,6 +3,7 @@ import ast
 import shutil
 
 from growlithe.common.logger import logger
+from growlithe.common.utils import profiler_decorator
 
 
 def create_dir_if_not_exists(path):
@@ -104,7 +105,7 @@ def get_file_extension(runtime):
             return ext
     return ""  # Default to no extension if runtime is not recognized
 
-
+@profiler_decorator
 def save_files(graph, growlithe_lib_path):
     """
     Save the files associated with each function in the graph.

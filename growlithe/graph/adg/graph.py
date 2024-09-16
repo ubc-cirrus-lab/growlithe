@@ -2,6 +2,8 @@ import json
 import ast
 from collections import deque
 from typing import List
+from multiprocessing import Pool
+from functools import partial
 from growlithe.common.logger import logger
 from growlithe.common.utils import profiler_decorator
 from growlithe.graph.adg.node import Node
@@ -96,12 +98,22 @@ class Graph:
             f"Policy spec generated at {policy_edges_json_path} with {len(policy_edges_json_list)}/{len(self.edges)} entries"
         )
 
+    @profiler_decorator
     def get_updated_policy_json(self, policy_edges_json_path):
         with open(policy_edges_json_path, "r") as f:
             policy_edges = json.load(f)
-        for policy_edge in policy_edges:
-            edge_id = policy_edge["id"]
-            self.edges[edge_id].update_policy(policy_edge)
+        
+        # Create a partial function that includes self.edges
+        update_edge = partial(self.update_edge, edges=self.edges)
+        
+        # Use multiprocessing to parallelize the loop
+        with Pool() as pool:
+            pool.map(update_edge, policy_edges)
+
+    @staticmethod
+    def update_edge(policy_edge, edges):
+        edge_id = policy_edge["id"]
+        edges[edge_id].update_policy(policy_edge)
 
     def insert_assertion(self, node: Node, assertion, code_path=None, tree=None):
         if tree is None:
