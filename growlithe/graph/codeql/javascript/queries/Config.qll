@@ -3,9 +3,7 @@ import DataFlow
 
 module Config {
   string getFileEndingPattern() {
-    result = [
-        "add.js"
-    ]
+    result = ["backend/add_to_cart/function.js"]
   }
 
   string getFunctionName() { result = "handler" }

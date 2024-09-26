@@ -2,6 +2,7 @@ import python
 import modules.Growlithe.Core
 import modules.Concepts.S3Bucket
 import modules.Concepts.DynamoDB
+import modules.Concepts.FireStore
 import modules.Concepts.Lambda
 import modules.Concepts.Image
 
@@ -62,6 +63,17 @@ module Sinks {
     override string getObjectPath() { result = Utils::strRepr(super.getKey()) }
 
     override string getResource() { result = super.getTableNameAsResource() }
+
+    // override DataFlow::Node getMetadataSink() { result = super.getKey()  }
+  }
+
+  
+  class FirestoreBatchDelete extends Core::Sink, FirestoreDB::FirestoreBatchDelete {
+    override Utils::ShareType getShareType() { result = "GLOBAL" }
+
+    override string getObjectPath() { result = Utils::strRepr(super.getDocumentReference()) }
+
+    override string getResource() { result = super.getCollectionNameAsResource() }
 
     // override DataFlow::Node getMetadataSink() { result = super.getKey()  }
   }
