@@ -18,8 +18,9 @@ class Function(Resource):
         function_path,
         growlithe_function_path,
         metadata=dict(),
+        deployed_region=None,
     ):
-        super(Function, self).__init__(name, type, metadata)
+        super(Function, self).__init__(name, type, metadata, deployed_region)
         self.function_path: str = function_path
         self.growlithe_function_path: str = growlithe_function_path
         self.runtime = runtime

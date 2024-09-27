@@ -2,6 +2,7 @@ import pickle
 import click
 import sys
 from growlithe.graph.parsers.sam import SAMParser
+from growlithe.graph.parsers.terraform import TerraformParser
 from growlithe.graph.parsers.state_machine_parser import StepFunctionParser
 from growlithe.graph.adg.graph import Graph
 from growlithe.graph.codeql.analyzer import Analyzer
@@ -33,6 +34,8 @@ def analyze(config):
     # Parse the SAM/cloud template of the application
     if config.app_config_type == "SAM":
         app_config_parser = SAMParser(config.app_config_path, config)
+    elif config.app_config_type == "GCP":
+        app_config_parser = TerraformParser(config.app_config_path, config)
     elif config.app_config_type == "StepFunction":
         app_config_parser = StepFunctionParser(config.app_config_path)
     else:
