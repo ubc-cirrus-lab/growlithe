@@ -1,6 +1,8 @@
 import pickle
 import click
+import sys
 from growlithe.graph.parsers.sam import SAMParser
+from growlithe.graph.parsers.terraform import TerraformParser
 from growlithe.graph.parsers.state_machine_parser import StepFunctionParser
 from growlithe.graph.adg.graph import Graph
 from growlithe.graph.codeql.analyzer import Analyzer
@@ -15,6 +17,7 @@ from growlithe.common.utils import profiler_decorator
 
 @profiler_decorator
 def analyze(config):
+    sys.setrecursionlimit(3000) # Increase the recursion limit to avoid RecursionError
     """Analyze the application and generate dataflow graphs and policy templates."""
 
     languages = detect_languages(path=config.app_path)
@@ -24,16 +27,15 @@ def analyze(config):
     analyzer = Analyzer(config)
     for language in languages:
         if CREATE_CODEQL_DB:
-            analyzer.create_ir(language=language)
+            analyzer.create_codeql_database(language=language)
         if RUN_CODEQL_QUERIES:
-            analyzer.run_queries(language=language)
-
-    # Create a graph object
-    graph = Graph(config.app_name)
+            analyzer.run_codeql_queries(language=language)
 
     # Parse the SAM/cloud template of the application
     if config.app_config_type == "SAM":
         app_config_parser = SAMParser(config.app_config_path, config)
+    elif config.app_config_type == "GCP":
+        app_config_parser = TerraformParser(config.app_config_path, config)
     elif config.app_config_type == "StepFunction":
         app_config_parser = StepFunctionParser(config.app_config_path)
     else:
@@ -42,6 +44,24 @@ def analyze(config):
         )
         return
 
+    graph = generate_adg(app_config_parser, config)
+
+    # Generate required policy templates
+    if GENERATE_EDGE_POLICY:
+        graph.dump_policy_edges_json(config.policy_spec_path)
+
+    with open(config.graph_dump_path, "wb") as f:
+        pickle.dump(graph, f)
+    with open(config.config_dump_path, "wb") as f:
+        pickle.dump(app_config_parser, f)
+
+    click.echo("Analysis completed successfully!", color="green")
+    return graph
+
+@profiler_decorator
+def generate_adg(app_config_parser, config):
+    # Create a graph object
+    graph = Graph(config.app_name)
     if app_config_parser:
         graph.add_functions(app_config_parser.get_functions())
         graph.add_resources(app_config_parser.get_resources())
@@ -54,14 +74,4 @@ def analyze(config):
 
     graph.dump_nodes_json(config.nodes_path)
 
-    # Generate required policy templates
-    if GENERATE_EDGE_POLICY:
-        graph.dump_policy_edges_json(config.policy_spec_path)
-
-    with open(config.graph_dump_path, "wb") as f:
-        pickle.dump(graph, f)
-    with open(config.config_dump_path, "wb") as f:
-        pickle.dump(app_config_parser, f)
-
-    click.echo("Analysis completed successfully!", color="green")
     return graph

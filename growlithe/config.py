@@ -5,6 +5,7 @@ from growlithe.common.file_utils import create_dir_if_not_exists
 from growlithe.common.logger import init_logger, logger
 from typing import Dict, Any
 
+
 class Config:
     _instance = None
 
@@ -65,12 +66,12 @@ class Config:
                 "template",
                 "pydatalog.zip",
             ),
-            "benchmark_name": "Benchmark2",
-            "app_name": "ImageProcessing",
+            "benchmark_name": "Benchmark3-GCP",
+            "app_name": "ShoppingCart",
             "src_dir": "src",
-            "app_config_type": "SAM",
+            "app_config_type": "GCP",
             "app_config_path": os.path.join(
-                growlithe_results_path, "Benchmark2", "ImageProcessing", "template.yaml"
+                growlithe_results_path, "Benchmark3-GCP", "ShoppingCart", "main.tf"
             ),
         }
 
@@ -140,7 +141,10 @@ class Config:
             and not key.startswith("_")
             and key not in ["config", "defaults"]
         )
-    def merge_configs(self, default_config: Dict[str, Any], loaded_config: Dict[str, Any]) -> Dict[str, Any]:
+
+    def merge_configs(
+        self, default_config: Dict[str, Any], loaded_config: Dict[str, Any]
+    ) -> Dict[str, Any]:
         merged = default_config.copy()
         for key, value in loaded_config.items():
             if key in merged:

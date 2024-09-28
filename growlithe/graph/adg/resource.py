@@ -22,7 +22,7 @@ class ResourceType(Enum):
 
 
 class Resource:
-    def __init__(self, name, type, metadata=dict()):
+    def __init__(self, name, type, metadata=dict(), deployed_region=None):
         self.name = name
         self.type: ResourceType = type
         self.metadata = metadata
@@ -30,6 +30,7 @@ class Resource:
         self.trigger = None
         self.trigger_type = None
         self.policy_actions = set()
+        self.deployed_region = deployed_region
 
     def __str__(self) -> str:
         pass

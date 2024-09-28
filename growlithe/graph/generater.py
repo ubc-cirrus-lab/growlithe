@@ -18,6 +18,7 @@ class GraphGenerator:
 
     def generate_intrafunction_graphs(self, functions: List[Function]):
         language = "python"
+        logger.info(f"Generating dataflows for {len(functions)} functions.")
         sarif_parser = SarifParser(
             os.path.join(self.config.growlithe_path, f"dataflows_{language}.sarif"),
             self.config,

@@ -3,6 +3,7 @@ Parses an AWS SAM template file to give a list of resource and their properties 
 """
 
 from typing import List
+from growlithe.common.utils import profiler_decorator
 from growlithe.graph.adg.resource import Resource
 from growlithe.graph.adg.function import Function
 from growlithe.config import Config
@@ -11,10 +12,11 @@ from growlithe.config import Config
 class StepFunctionParser:
     def __init__(self, sam_file, config):
         self.sam_file = sam_file
-        self.resources = self.parse()
+        self.resources = self.parse_step_function_config()
         self.config: Config = config
 
-    def parse(self):
+    @profiler_decorator
+    def parse_step_function_config(self):
         benchmark_name = self.config.benchmark_name
         if benchmark_name == "Benchmark2":
             transform = Function(

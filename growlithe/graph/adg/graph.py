@@ -1,7 +1,11 @@
 import json
+import ast
 from collections import deque
 from typing import List
+from multiprocessing import Pool
+from functools import partial
 from growlithe.common.logger import logger
+from growlithe.common.utils import profiler_decorator
 from growlithe.graph.adg.node import Node
 from growlithe.graph.adg.edge import Edge, EdgeType
 from growlithe.graph.adg.function import Function
@@ -29,7 +33,7 @@ class Graph:
         self.nodes.append(new_node)
         if new_node.object_fn:
             new_node.object_fn.add_node(new_node)
-            
+
         if new_node.object_type == "PARAM":
             new_node.object_fn.add_event_node(new_node)
 
@@ -54,7 +58,7 @@ class Graph:
 
     def add_resources(self, resources: list[Resource]):
         self.resources = resources
-    
+
     def visualize(self):
         adj_list = {str(node): [] for node in self.nodes}
         for edge in self.edges:
@@ -62,7 +66,7 @@ class Graph:
 
         for node in self.nodes:
             if len(adj_list[str(node)]) >= 1:
-                connections = ', '.join(map(str, adj_list[str(node)]))
+                connections = ", ".join(map(str, adj_list[str(node)]))
                 print(f"{node} -> {connections}")
             else:
                 print(node)
@@ -74,7 +78,7 @@ class Graph:
         nodes_json_list = []
         for node in self.nodes:
             nodes_json_list.append(node.to_json())
-        
+
         with open(nodes_json_path, "w") as f:
             json.dump(nodes_json_list, f, indent=4)
 
@@ -82,36 +86,76 @@ class Graph:
         policy_edges_json_list = []
         for edge in self.edges:
             egde_json = edge.to_policy_json()
-            if egde_json and (edge.source.scope != Scope.INVOCATION or edge.sink.scope != Scope.INVOCATION):
+            if egde_json and (
+                edge.source.scope != Scope.INVOCATION
+                or edge.sink.scope != Scope.INVOCATION
+            ):
                 policy_edges_json_list.append(egde_json)
-        
+
         with open(policy_edges_json_path, "w") as f:
             json.dump(policy_edges_json_list, f, indent=4)
-        logger.info(f"Policy spec generated at {policy_edges_json_path} with {len(policy_edges_json_list)}/{len(self.edges)} entries")
+        logger.info(
+            f"Policy spec generated at {policy_edges_json_path} with {len(policy_edges_json_list)}/{len(self.edges)} entries"
+        )
 
+    @profiler_decorator
     def get_updated_policy_json(self, policy_edges_json_path):
         with open(policy_edges_json_path, "r") as f:
             policy_edges = json.load(f)
-        for policy_edge in policy_edges:
-            edge_id = policy_edge["id"]
-            self.edges[edge_id].update_policy(policy_edge)
+        
+        # Create a partial function that includes self.edges
+        update_edge = partial(self.update_edge, edges=self.edges)
+        
+        # Use multiprocessing to parallelize the loop
+        with Pool() as pool:
+            pool.map(update_edge, policy_edges)
 
+    @staticmethod
+    def update_edge(policy_edge, edges):
+        edge_id = policy_edge["id"]
+        edges[edge_id].update_policy(policy_edge)
+
+    def insert_assertion(self, node: Node, assertion, code_path=None, tree=None):
+        if tree is None:
+            tree = node.object_fn.code_tree
+        if code_path is None:
+            code_path = node.object_code_location
+        start_line = code_path["physicalLocation"]["region"]["startLine"]
+        end_line = code_path["physicalLocation"]["region"].get("endLine", start_line)
+        if getattr(tree, "body", None):
+            for i, ast_node in enumerate(tree.body):
+                if (
+                    getattr(ast_node, "lineno", None) == start_line
+                    and getattr(ast_node, "end_lineno", None) == end_line
+                ):
+                    tree.body.insert(i, ast.parse(assertion))
+                    return
+                self.insert_assertion(node, assertion, code_path, ast_node)
+
+    @profiler_decorator
     def enforce_policy(self):
         self.populate_ancestors()
         for edge in self.edges:
             # TODO: Add to the instrumented code
             read_assertion = edge.read_policy.generate_assertion("python")
             if read_assertion:
-                logger.debug(f"Adding assertion in {edge.function.function_path}:\n {read_assertion}")
+                logger.debug(
+                    f"Adding assertion in {edge.function.function_path}:\n {read_assertion}"
+                )
+                self.insert_assertion(edge.source, read_assertion)
 
             write_assertion = edge.write_policy.generate_assertion("python")
             if write_assertion:
-                logger.debug(f"Adding assertion in {edge.function.function_path}:\n {write_assertion}")
+                logger.debug(
+                    f"Adding assertion in {edge.function.function_path}:\n {write_assertion}"
+                )
+                self.insert_assertion(edge.sink, write_assertion)
 
     """
     Populate ancestor information for each node in the graph
     Time Complexity: O(V + E)
     """
+
     def populate_ancestors(self):
         # Calculate in-degree for each node, i.e. number of incoming edges for each sink node
         in_degree = {node: 0 for node in self.nodes}

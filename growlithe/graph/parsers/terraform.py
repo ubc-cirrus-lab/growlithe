@@ -1,8 +1,9 @@
 """
-Parses an AWS SAM template file to give a list of resource and their properties like events
+Parses a terraform template file to give a list of resource and their properties like events (currently only for gcp and assumming all terraform resources are defined in a single file)
 """
 
 import os
+import hcl2
 import json
 import shutil
 import yaml
@@ -21,131 +22,48 @@ from growlithe.common.logger import logger
 from growlithe.graph.adg.types import Scope
 
 
-class SAMParser:
+class TerraformParser:
     def __init__(self, sam_file, config):
         self.sam_file: str = sam_file
         self.config: Config = config
         self.parsed_yaml = None
         self.step_function_path = None
-        self.resources: List[Resource] = self.parse_sam_template()
-
-    def parse_state_machine(
-        self, definition_path: str, step_function: Resource, resources: List[Resource]
-    ):
-        substitutions = {}
-        if "DefinitionSubstitutions" in step_function.metadata.keys():
-            for key, value in step_function.metadata["DefinitionSubstitutions"].items():
-                substitutions[key] = (
-                    value.items()[0][1][0]
-                    if value.items()[0][0] == "Fn::GetAtt"
-                    else value
-                )
-
-        with open(definition_path, "r") as f:
-            states = json.loads(f.read())
-        self.fix_dependencies(
-            step_function=step_function,
-            resources=resources,
-            substitutions=substitutions,
-            states=states,
-        )
-        for _, state in states["States"].items():
-            # get source function
-            self.extract_dependencies(
-                resources=resources,
-                substitutions=substitutions,
-                states=states,
-                state=state,
-            )
-
-    def extract_dependencies(self, resources, substitutions, states, state):
-        source_function = None
-        if state["Type"] == "Task":
-            source_function_name = state["Parameters"]["FunctionName"]
-            if "$" in source_function_name:
-                source_function_name = substitutions[source_function_name[2:-1]]
-            source_function = self.find_resource(source_function_name, resources)
-
-        if source_function and "Next" in state.keys():
-            next_state = states["States"][state["Next"]]
-            if next_state["Type"] == "Task":
-                target_function_name = next_state["Parameters"]["FunctionName"]
-                if "$" in target_function_name:
-                    target_function_name = substitutions[target_function_name[2:-1]]
-                target_function = self.find_resource(target_function_name, resources)
-                source_function.add_dependency(target_function)
-            elif next_state["Type"] == "Choice":
-                for choice in next_state["Choices"]:
-                    target = choice["Next"]
-                    default = next_state["Default"]
-                    target_function_name = states["States"][target]["Parameters"][
-                        "FunctionName"
-                    ]
-                    default_function_name = states["States"][default]["Parameters"][
-                        "FunctionName"
-                    ]
-                    if "$" in target_function_name:
-                        target_function_name = substitutions[target_function_name[2:-1]]
-                    if "$" in default_function_name:
-                        default_function_name = substitutions[
-                            default_function_name[2:-1]
-                        ]
-                    target_function = self.find_resource(
-                        target_function_name, resources
-                    )
-                    default_function = self.find_resource(
-                        default_function_name, resources
-                    )
-                    source_function.add_dependency(target_function)
-                    source_function.add_dependency(default_function)
-            elif next_state["Type"] == "Catch":
-                target = next_state["Next"]
-                target_function_name = states["States"][target]["Parameters"][
-                    "FunctionName"
-                ]
-                if "$" in target_function_name:
-                    target_function_name = substitutions[target_function_name[2:-1]]
-                target_function = self.find_resource(target_function_name, resources)
-                source_function.add_dependency(target_function)
-            else:
-                logger.error(f"Unsupported state type: {next_state['Type']}")
-                raise NotImplementedError
-
-    def fix_dependencies(self, step_function, resources, substitutions, states):
-        start_state = states["States"][states["StartAt"]]
-        function_name = start_state["Parameters"]["FunctionName"]
-        if "$" in function_name:
-            function_name = substitutions[function_name[2:-1]]
-
-        # fix dependencies: remove step function and add the first function
-        step_function_parents = []
-        for resource in resources:
-            if step_function in resource.dependencies:
-                step_function_parents.append(resource)
-        for parent in step_function_parents:
-            parent.dependencies.remove(step_function)
-            function = self.find_resource(function_name, resources)
-            parent.dependencies.append(function)
-            function.metadata = step_function.metadata
+        self.resources: List[Resource] = self.parse_template()
+        self.deployed_region = None
 
     @profiler_decorator
-    def parse_sam_template(self):
+    def parse_template(self):
         resources: List[Resource] = []
-        has_step_function = False
         with open(self.sam_file, "r") as f:
-            self.parsed_yaml = load_yaml(f.read())
-        for resource_name, resource_details in self.parsed_yaml["Resources"].items():
-            if resource_details["Type"] == "AWS::Serverless::Function":
-                code_uri = resource_details["Properties"]["CodeUri"]
-                handler = resource_details["Properties"]["Handler"]
-                runtime = resource_details["Properties"]["Runtime"]
-                handler_path = handler.split(".")[0]
+            self.parsed_yaml = hcl2.load(f)
+            with open("main.tf.json", "w") as file:
+                json.dump(self.parsed_yaml, file, indent=4)
+        for terraform_block in self.parsed_yaml.get("provider", []):
+            self.deployed_region = terraform_block.get("google", {}).get("region")
+        backend_buckets = set()
+        for terraform_block in self.parsed_yaml.get("terraform", []):
+            for backend in terraform_block.get("backend", []):
+                if "gcs" in backend:
+                    backend_buckets.add(backend["gcs"]["bucket"])
+
+        for resource in self.parsed_yaml.get("resource", []):
+            resource_type = list(resource.keys())[0]
+            resource_body = resource[resource_type]
+            resource_name = list(resource_body.keys())[0]
+            resource_config = resource_body[resource_name]
+
+            if resource_type == "google_cloudfunctions_function":
+                code_uri = resource_config["entry_point"]
+                handler = resource_config["entry_point"]
+                runtime = resource_config["runtime"]
+                handler_path = handler
                 file_extension = get_file_extension(runtime)
 
                 # Construct the full path to the Lambda function's code
                 function_path = os.path.normpath(
                     os.path.join(
                         self.config.benchmark_path,
+                        "src",
                         code_uri,
                         f"{handler_path}{file_extension}",
                     )
@@ -159,65 +77,30 @@ class SAMParser:
                 )
                 resource = Function(
                     name=resource_name,
-                    type=ResourceType(resource_details["Type"]),
-                    runtime=resource_details["Properties"]["Runtime"],
+                    type=ResourceType.FUNCTION,
+                    runtime=runtime,
                     function_path=function_path,
                     growlithe_function_path=growlithe_function_path,
-                    metadata=resource_details["Properties"],
+                    metadata=resource_config,
+                    deployed_region=self.deployed_region,
                 )
             else:
                 try:
+                    resource_mapping = {
+                        "google_storage_bucket": ResourceType.S3_BUCKET,
+                        "google_storage_bucket_object": ResourceType.S3_BUCKET,
+                        "google_cloudfunctions_function_iam_member": ResourceType.IAM_ROLE,
+                        "google_firestore_database": ResourceType.DYNAMODB,
+                    }
                     resource: Resource = Resource(
                         name=resource_name,
-                        type=ResourceType(resource_details["Type"]),
-                        metadata=resource_details["Properties"],
+                        type=resource_mapping[resource_type],
+                        metadata=resource_config,
+                        deployed_region=self.deployed_region,
                     )
                 except ValueError:
-                    logger.warning(
-                        "Unsupported resource type: %s", resource_details["Type"]
-                    )
-            if resource_details["Type"] == "AWS::Serverless::StateMachine":
-                definition_uri: str = os.path.join(
-                    *resource_details["Properties"]["DefinitionUri"].split(os.sep)
-                )
-                sam_file_dir: str = os.path.dirname(self.sam_file)
-                definition_path: str = os.path.join(sam_file_dir, definition_uri)
-                self.step_function_path = definition_path
-                has_step_function: bool = True
-                parent_step_function: Resource = resource
+                    logger.warning("Unsupported resource type: %s", resource_type)
             resources.append(resource)
-
-        # extract dependencies
-        for resource in resources:
-            if "Events" in resource.metadata.keys():
-                events: dict = resource.metadata["Events"].values()
-                for event in events:
-                    event_type: str = event["Type"]
-                    properties: dict = event["Properties"]
-                    ref: List[str] = []
-                    if event_type == "Api":
-                        ref.append(properties["RestApiId"]["Ref"])
-                    elif event_type == "DynamoDB":
-                        ref.append(properties["Stream"]["Fn::GetAtt"][0])
-                    elif event_type == "EventBridgeRule":
-                        ref.extend(
-                            bucket["Ref"]
-                            for bucket in properties["Pattern"]["detail"]["bucket"][
-                                "name"
-                            ]
-                        )
-                    source_resource: Resource = None
-                    for ref in ref:
-                        source_resource = self.find_resource(
-                            ref=ref, resources=resources
-                        )
-                        source_resource.add_dependency(resource)
-        if has_step_function:
-            self.parse_state_machine(
-                definition_path=definition_path,
-                step_function=parent_step_function,
-                resources=resources,
-            )
         return resources
 
     def find_resource(self, ref, resources):
@@ -234,28 +117,9 @@ class SAMParser:
         return self.resources
 
     def modify_config(self, graph: Graph):
-        self.fix_function_names()
         self.add_lambda_layer()
         self.add_iam_roles(graph)
         self.add_resource_policies(graph)
-
-    def fix_function_names(self):
-        """
-        Fixes the function names for AWS::Serverless::Function resources in the parsed YAML.
-
-        Iterates through each resource in the parsed YAML and checks if it is a lambda function.
-        If the resource does not have a "FunctionName" property, it sets the "FunctionName" property to the resource name.
-
-        Parameters:
-            None
-
-        Returns:
-            None
-        """
-        for resource_name, resource_details in self.parsed_yaml["Resources"].items():
-            if resource_details["Type"] == "AWS::Serverless::Function":
-                if not "FunctionName" in resource_details["Properties"].keys():
-                    resource_details["Properties"]["FunctionName"] = resource_name
 
     def add_resource_policies(self, graph: Graph):
         for resource in graph.resources:
