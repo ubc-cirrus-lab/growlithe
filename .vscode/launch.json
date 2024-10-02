@@ -11,5 +11,27 @@
                 "PYTHONPATH": "${workspaceFolder}"
             },
         },
+        {
+            "name": "growlithe analyze",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/growlithe/cli/analyze.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+        },
+        {
+            "name": "growlithe apply",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/growlithe/cli/apply.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+        },
     ]
 }

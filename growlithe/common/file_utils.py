@@ -117,6 +117,11 @@ def save_files(graph, growlithe_lib_path):
     None
     """
     for function in graph.functions:
+        if not function.runtime.startswith("python"):
+            logger.error(
+                f"runtime {function.runtime} not completed. Skipping save for {function.name}"
+            )
+            continue
         logger.info(
             "Saving function %s to %s", function.name, function.growlithe_function_path
         )

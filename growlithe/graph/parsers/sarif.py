@@ -1,3 +1,4 @@
+from typing import List
 from sarif import loader
 import os
 import re
@@ -7,6 +8,7 @@ from growlithe.graph.adg.edge import Edge, EdgeType
 from growlithe.graph.adg.function import Function
 from growlithe.graph.adg.graph import Graph
 from growlithe.graph.adg.node import Node
+from growlithe.graph.adg.resource import Resource
 from growlithe.graph.adg.types import InterfaceType, Reference, ReferenceType, Scope
 from growlithe.common.logger import logger
 
@@ -60,12 +62,12 @@ class SarifParser:
 
             # Parse source side
             source_node, source_location = self.create_node_from_side(
-                source_side, related_locations, function
+                source_side, related_locations, function, graph.resources
             )
 
             # Parse sink side
             sink_node, sink_location = self.create_node_from_side(
-                sink_side, related_locations, function
+                sink_side, related_locations, function, graph.resources
             )
             if source_node:
                 source_node = graph.add_node(source_node)
@@ -85,7 +87,13 @@ class SarifParser:
         else:
             logger.error(f"Invalid flow format: {flow}")
 
-    def create_node_from_side(self, node_str, related_locations, function: Function):
+    def create_node_from_side(
+        self,
+        node_str,
+        related_locations,
+        function: Function,
+        resources: List[Resource] = None,
+    ):
         if "None" in node_str:
             # logger.warning("Side is None. Creating a default node")
             return None, None
@@ -116,6 +124,12 @@ class SarifParser:
                 {},
                 scope,
             )
+            if resource_reference_type == ReferenceType.STATIC:
+                for resource in resources:
+                    if resource.name == resource_reference_name:
+                        logger.info(f"Mapping resource {resource.name} to node")
+                        node.mapped_resource = resource
+                        break
             return node, code_path
         else:
             logger.error(f"Invalid format when parsing node str: {node_str}")

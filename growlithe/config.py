@@ -28,6 +28,14 @@ class Config:
             print(f"Loading config from {config_path}")
             loaded_config = self.load_from_file(config_path)
             merged_config = self.merge_configs(default_config, loaded_config)
+            if merged_config["cloud_provider"] == "GCP":
+                merged_config["growlithe_lib_path"] = os.path.join(
+                    os.path.dirname(__file__),
+                    "enforcer",
+                    "policy",
+                    "template",
+                    "growlithe_utils_gcp.py",
+                )
         else:
             print("No config file provided, or it doesn't exist. Using defaults.")
             merged_config = default_config
@@ -69,10 +77,11 @@ class Config:
             "benchmark_name": "Benchmark3-GCP",
             "app_name": "ShoppingCart",
             "src_dir": "src",
-            "app_config_type": "GCP",
+            "app_config_type": "Terraform",
             "app_config_path": os.path.join(
                 growlithe_results_path, "Benchmark3-GCP", "ShoppingCart", "main.tf"
             ),
+            "cloud_provider": "GCP",
         }
 
     def load_from_file(self, config_path):
@@ -159,4 +168,6 @@ class Config:
 
 # Usage
 def get_config(config_path=None):
+    # TODO: Check if this imported function works fine if config is
+    # populated through a file when using CLI
     return Config(config_path)
