@@ -1,0 +1,213 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless Claims API
+
+Resources:
+  Claims:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Claims
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+  UserPlan:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: UserPlan
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  Adjusters:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Adjusters
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  ClaimAdjusterMapping:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ClaimAdjusterMapping
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+# ========================================
+  AddClaimFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/addClaim/
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      MemorySize: 1769
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Claims
+      Events:
+        AddClaimAPI:
+          Type: Api
+          Properties:
+            Path: /addClaim
+            Method: POST
+            RestApiId: !Ref ClaimsAPI
+
+  GetClaimFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/getClaim/
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      MemorySize: 1769
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref Claims
+      Events:
+        GetClaimAPI:
+          Type: Api
+          Properties:
+            Path: /getClaim/{id}
+            Method: GET
+            RestApiId: !Ref ClaimsAPI
+
+  UpdateClaimFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/updateClaim/
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      MemorySize: 1769
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Claims
+      Events:
+        UpdateClaimAPI:
+          Type: Api
+          Properties:
+            Path: /updateClaim/{id}
+            Method: PUT
+            RestApiId: !Ref ClaimsAPI
+
+  ValidateClaimFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/backend/validateClaim
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      MemorySize: 1769
+      Timeout: 30
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref Claims
+        - DynamoDBReadPolicy:
+            TableName: !Ref UserPlan
+        - AWSLambdaRole
+      Events:
+        ClaimCreatedEvent:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt Claims.StreamArn
+            StartingPosition: LATEST
+            BatchSize: 1
+
+  AssignAdjusterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/backend/assignAdjuster
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      MemorySize: 1769
+      Timeout: 30
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref Adjusters
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ClaimAdjusterMapping
+
+  GetAssignedClaimsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/getAssignedClaims/
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      MemorySize: 1769
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ClaimAdjusterMapping
+      Events:
+        GetAssignedClaimsAPI:
+          Type: Api
+          Properties:
+            Path: /getAssignedClaims
+            Method: GET
+            RestApiId: !Ref ClaimsAPI
+
+# ========================================
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: ClaimProcessing
+      AutoVerifiedAttributes:
+        - email
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: ClaimProcessingClient
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+
+  CognitoIdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: ClaimProcessingIdentityPool
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+        - ClientId: !Ref CognitoUserPoolClient
+          ProviderName: !Sub "cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}"
+
+  CognitoAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: CognitoAuthorizer
+      IdentitySource: method.request.header.Authorization
+      RestApiId: !Ref ClaimsAPI
+      Type: COGNITO_USER_POOLS
+      ProviderARNs:
+        - !GetAtt CognitoUserPool.Arn
+
+  ClaimsAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Auth:
+        DefaultAuthorizer: AWS_COGNITO_USER_POOLS
+        Authorizers:
+          AWS_COGNITO_USER_POOLS:
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
+
+Outputs:
+  ClaimsAPI:
+    Description: API Gateway endpoint URL for Prod stage
+    Value: !Sub "https://${ClaimsAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
