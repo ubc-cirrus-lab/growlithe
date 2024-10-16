@@ -3,6 +3,7 @@ import modules.Growlithe.Core
 import modules.Growlithe.Utils
 import modules.Concepts.S3Bucket
 import modules.Concepts.DynamoDB
+import modules.Concepts.FireStore
 import modules.Concepts.Image
 import semmle.python.internal.ConceptsShared
 
@@ -40,6 +41,16 @@ module Sources {
     override string getObjectPath() { result = Utils::strRepr(super.getLocalPath()) }
 
     override string getResource() { result = Utils::localFileResource() }
+  }
+
+  class FirestoreQuery extends Core::Source, FirestoreDB::FirestoreQuery {
+    override Utils::ShareType getShareType() { result = "GLOBAL" }
+
+    override string getObjectPath() { result = "STATIC:ALL_RECORDS" }
+
+    override string getResource() { result = super.getCollectionNameAsResource() }
+
+    override DataFlow::Node getMetadataSink() { result = super.getValue()  }
   }
 
   class DynamoDBTableGetItemSource extends Core::Source, DynamoDBTable::DynamoDBTableGetItem {

@@ -20,6 +20,7 @@ class Analyzer:
     def create_codeql_database(self, language):
         logger.info(f"Creating CodeQL database in {self.config.growlithe_path}")
         try:
+            logger.info(f'Running codeql database create {self.config.app_name}_codeql_ir_{language} --language={language} --overwrite -j=0 -M=2048 -s={self.config.app_path}')
             subprocess.run(
                 f"(cd {self.config.growlithe_path}\
                     && codeql database create {self.config.app_name}_codeql_ir_{language}\

@@ -14,6 +14,7 @@ from growlithe.common.tasks_config import (
 )
 from growlithe.common.file_utils import create_dir_if_not_exists, detect_languages
 from growlithe.common.utils import profiler_decorator
+from growlithe.config import get_config
 
 @profiler_decorator
 def analyze(config):
@@ -34,7 +35,7 @@ def analyze(config):
     # Parse the SAM/cloud template of the application
     if config.app_config_type == "SAM":
         app_config_parser = SAMParser(config.app_config_path, config)
-    elif config.app_config_type == "GCP":
+    elif config.app_config_type == "Terraform":
         app_config_parser = TerraformParser(config.app_config_path, config)
     elif config.app_config_type == "StepFunction":
         app_config_parser = StepFunctionParser(config.app_config_path)
@@ -75,3 +76,7 @@ def generate_adg(app_config_parser, config):
     graph.dump_nodes_json(config.nodes_path)
 
     return graph
+
+
+if __name__ == "__main__":
+    analyze(get_config(config_path=None))

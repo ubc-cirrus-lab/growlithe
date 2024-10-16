@@ -1,0 +1,211 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for ImageProcessing
+
+Resources:
+  SfnToTransformFunctionConnector:
+    Type: AWS::Serverless::Connector
+    Properties:
+      Source:
+        Id: MipStateMachine
+      Destination:
+        Id: TransformFunction
+      Permissions:
+        - Write
+
+  SfnToFilterFunctionConnector:
+    Type: AWS::Serverless::Connector
+    Properties:
+      Source:
+        Id: MipStateMachine
+      Destination:
+        Id: FilterFunction
+      Permissions:
+        - Write
+
+  SfnToTagStoreFunctionConnector:
+    Type: AWS::Serverless::Connector
+    Properties:
+      Source:
+        Id: MipStateMachine
+      Destination:
+        Id: TagStoreFunction
+      Permissions:
+        - Write
+  
+  SfnToBlurFunctionConnector:
+    Type: AWS::Serverless::Connector
+    Properties:
+      Source:
+        Id: MipStateMachine
+      Destination:
+        Id: BlurFunction
+      Permissions:
+        - Write
+
+  UserImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: sam-user-images
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+  
+  AdvertImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: sam-advert-images
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+  
+  UserImagesProcessedBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: sam-user-images-processed
+        
+  AdvertImagesProcessedBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: sam-advert-images-processed
+
+  MipStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: image_processing_sf.json
+      DefinitionSubstitutions:
+        TransformFunctionArn: !GetAtt TransformFunction.Arn
+        FilterFunctionArn: !GetAtt FilterFunction.Arn
+        TagStoreFunctionArn: !GetAtt TagStoreFunction.Arn
+        BlurFunctionArn: !GetAtt BlurFunction.Arn
+        UserBucket: !Ref UserImagesBucket
+      Events:
+        MipStateMachineStart:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: default
+            Pattern:
+              source:
+                - aws.s3
+              detail-type:
+                - Object Created
+              detail:
+                bucket:
+                  name:
+                    - !Ref UserImagesBucket
+                    - !Ref AdvertImagesBucket
+                object:
+                  key:
+                    prefix: 
+                      - 'raw/'
+
+  TransformFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/transform_image/
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      Timeout: 300
+      Layers:
+        - arn:aws:lambda:ca-central-1:770693421928:layer:Klayers-p310-Pillow:7
+    Connectors:
+      UserImagesBucketConn:
+        Properties:
+          Destination:
+            Id: UserImagesBucket
+          Permissions:
+            - Read
+            - Write
+      AdvertImagesBucketConn:
+        Properties:
+          Destination:
+            Id: AdvertImagesBucket
+          Permissions:
+            - Read
+            - Write
+
+  FilterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/filter_image/
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      Timeout: 300
+      Layers:
+        - arn:aws:lambda:ca-central-1:770693421928:layer:Klayers-p310-Pillow:7
+    Connectors:
+      UserImagesBucketConn:
+        Properties:
+          Destination:
+            Id: UserImagesBucket
+          Permissions:
+            - Read
+            - Write
+      AdvertImagesBucketConn:
+        Properties:
+          Destination:
+            Id: AdvertImagesBucket
+          Permissions:
+            - Read
+            - Write
+  
+  TagStoreFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/tag_store_image/
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      Timeout: 300
+      Layers:
+        - arn:aws:lambda:ca-central-1:770693421928:layer:Klayers-p310-Pillow:7
+    Connectors:
+      UserImagesBucketConn:
+        Properties:
+          Destination:
+            Id: UserImagesBucket
+          Permissions:
+            - Read
+      UserImagesProcessedBucketConn:
+        Properties:
+          Destination:
+            Id: UserImagesProcessedBucket
+          Permissions:
+            - Write
+      AdvertImagesBucketConn:
+        Properties:
+          Destination:
+            Id: AdvertImagesBucket
+          Permissions:
+            - Read
+      AdvertImagesProcessedBucketConn:
+        Properties:
+          Destination:
+            Id: AdvertImagesProcessedBucket
+          Permissions:
+            - Write
+
+  BlurFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/blur_image/
+      Handler: app.lambda_handler
+      Runtime: python3.10
+      Timeout: 300
+      Layers:
+        - arn:aws:lambda:ca-central-1:770693421928:layer:Klayers-p310-Pillow:7
+    Connectors:
+      UserImagesBucketConn:
+        Properties:
+          Destination:
+            Id: UserImagesBucket
+          Permissions:
+            - Read
+            - Write
+      AdvertImagesBucketConn:
+        Properties:
+          Destination:
+            Id: AdvertImagesBucket
+          Permissions:
+            - Read
+            - Write

@@ -31,6 +31,7 @@ class Function(Resource):
         self.nodes = []
         self.edges = []
         self.iam_policies = []
+        self.code_tree = None
 
         if self.function_path:
             if "python" in self.runtime:
@@ -40,7 +41,7 @@ class Function(Resource):
                     self.code_tree = tree
             elif "nodejs" in self.runtime:
                 logger.error(f"NodeJS runtime is not supported yet.")
-                raise NotImplementedError
+                # raise NotImplementedError
             else:
                 raise NotImplementedError
         else:

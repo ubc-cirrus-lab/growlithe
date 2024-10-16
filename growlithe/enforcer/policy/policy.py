@@ -3,11 +3,11 @@ import re
 from typing import List, Set
 from growlithe.common.logger import logger
 from growlithe.common.tasks_config import HYBRID_ENFORCEMENT_MODE
-from growlithe.enforcer.policy.template.growlithe import *
+from pyDatalog import pyDatalog
 from growlithe.enforcer.taint.taint_utils import online_taint_label, offline_match
 from growlithe.graph.adg.node import Node
 from growlithe.graph.adg.types import ReferenceType
-
+from growlithe.config import get_config
 
 class PolicyPredicate:
     """AND separated policy predicate in a DNF policy clause"""
@@ -76,6 +76,7 @@ class PredicateSet:
         return " & ".join([f"{pred.predicate_str}" for pred in self.predicates])
 
     def deferred_query(self, node: Node) -> str:
+        logger.debug(f"Checking offline for {self.query}")
         taint_predicates = self.taint_predicates
         if len(taint_predicates) != 0:
             for taint_pred in taint_predicates:
@@ -99,8 +100,13 @@ class PredicateSet:
                         logger.info(f"OFFLINE POLICY Optimized: No upstream path can satisfy this, removing predicate: {taint_pred.predicate_str}")
                         self.remove_predicate(taint_pred)
 
-
-        if self.contains_session_variables or self.contains_taint_predicates:
+        if self.contains_session_variables:
+            if get_config().cloud_provider == 'GCP':
+                logger.warning('Not implemented')
+                pass
+            elif get_config().cloud_provider == 'AWS':
+                return self.query
+        if self.contains_taint_predicates:
             return self.query
         try:
             if pyDatalog.ask(self.query) == None:
@@ -119,7 +125,8 @@ class PolicyClause:
         self.predicates: List[PolicyPredicate] = predicates
         self.disjoint_predicates: List[PredicateSet] = self.divide_into_disjoint_sets()
         self.policy = policy
-        self.insert_implicit_predicate()
+        config = get_config()
+        self.insert_implicit_predicate(config.cloud_provider)
 
     # # Each clause can have set of predicates that can be evaluated independently of the other predicates
     def divide_into_disjoint_sets(self) -> List[PredicateSet]:
@@ -143,7 +150,7 @@ class PolicyClause:
 
         return disjoint_sets
 
-    def insert_implicit_predicate(self):
+    def insert_implicit_predicate(self, cloud_provider='AWS'):
         for disjoint_set in self.disjoint_predicates:
             # TODO: Replace with properties stored in node/edge objects
             # Resolve growlithe identifiers
@@ -162,17 +169,30 @@ class PolicyClause:
                         == ReferenceType.STATIC
                     ):
                         try:
-                            prop = getResourceProp(
-                                var,
-                                self.policy.node.object_type,
-                                self.policy.node.resource.reference_name,
-                            )
+                            if cloud_provider == "AWS":
+                                from growlithe.enforcer.policy.template.growlithe import getResourceProp
+                                prop = getResourceProp(
+                                    var,
+                                    self.policy.node.object_type,
+                                    self.policy.node.resource.reference_name,
+                                )
+                            elif cloud_provider == "GCP":
+                                if var == 'ResourceRegion':
+                                    prop = self.policy.node.mapped_resource.deployed_region
+                                    logger.info(f"Resolved {var} to {prop}")
+                                else:
+                                    from growlithe.enforcer.policy.template.growlithe_utils_gcp import getResourceProp
+                                    prop = getResourceProp(
+                                        var,
+                                        self.policy.node.object_type,
+                                        self.policy.node.resource.reference_name,
+                                    )
                             disjoint_set.add_predicate(
                                 PolicyPredicate(f"eq({var}, '{prop}')")
                             )
                             continue
                         except Exception as e:
-                            logger.debug(f"Error while resolving {prop} offline: {e}")
+                            logger.debug(f"Error while resolving prop offline: {e}")
 
                     disjoint_set.add_predicate(
                         PolicyPredicate(
@@ -215,9 +235,13 @@ class Policy:
         self.policy_type = policy_type
         self.policy_str = "" if policy_str == "allow" else policy_str
         self.policy_clauses: List[PolicyClause] = self.parse_policy_str(self.policy_str)
+        if self.policy_str != "":
+            logger.info(f'Found policy: {self.policy_str}')
 
     def __str__(self) -> str:
         return "allow" if self.policy_str == "" else self.policy_str
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def parse_policy_str(self, policy_str: str) -> List[PolicyClause]:
         if policy_str == "":
@@ -248,15 +272,18 @@ class Policy:
             return [process_clause(policy_str)]
 
     def generate_assertion(self, language) -> str:
-        if language == "python":
+        if "python" in language:
             return self.generate_python_assertion()
 
     def generate_python_assertion(self) -> str:
         # Generate the pyDatalog assertion string for python
         valid_queries = []
-
+        logger.info(f"Policy: {self.policy_str}")
         for clause in self.policy_clauses:
-            query = clause.deferred_query(self.node) if HYBRID_ENFORCEMENT_MODE else clause.query
+            if HYBRID_ENFORCEMENT_MODE:
+                query = clause.deferred_query(self.node)
+            else:
+                query = clause.query
             if query != "":
                 valid_queries.append(f'pyDatalog.ask(f"{query}") != None')
 

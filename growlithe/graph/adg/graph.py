@@ -2,8 +2,6 @@ import json
 import ast
 from collections import deque
 from typing import List
-from multiprocessing import Pool
-from functools import partial
 from growlithe.common.logger import logger
 from growlithe.common.utils import profiler_decorator
 from growlithe.graph.adg.node import Node
@@ -103,12 +101,16 @@ class Graph:
         with open(policy_edges_json_path, "r") as f:
             policy_edges = json.load(f)
         
-        # Create a partial function that includes self.edges
-        update_edge = partial(self.update_edge, edges=self.edges)
+        # Using partial() leads to unexpected behavior with shared objects
+        for policy_edge in policy_edges:
+            self.update_edge(policy_edge, self.edges)
+        # # Create a partial function that includes self.edges
+        # update_edge = partial(self.update_edge, edges=self.edges)
         
-        # Use multiprocessing to parallelize the loop
-        with Pool() as pool:
-            pool.map(update_edge, policy_edges)
+        # # Use multiprocessing to parallelize the loop
+        # with Pool() as pool:
+        #     pool.map(update_edge, policy_edges)
+        # logger.info(f"Policy spec updated with {len(policy_edges)} entries")
 
     @staticmethod
     def update_edge(policy_edge, edges):
@@ -137,14 +139,14 @@ class Graph:
         self.populate_ancestors()
         for edge in self.edges:
             # TODO: Add to the instrumented code
-            read_assertion = edge.read_policy.generate_assertion("python")
+            read_assertion = edge.read_policy.generate_assertion(edge.function.runtime)
             if read_assertion:
                 logger.debug(
                     f"Adding assertion in {edge.function.function_path}:\n {read_assertion}"
                 )
                 self.insert_assertion(edge.source, read_assertion)
 
-            write_assertion = edge.write_policy.generate_assertion("python")
+            write_assertion = edge.write_policy.generate_assertion(edge.function.runtime)
             if write_assertion:
                 logger.debug(
                     f"Adding assertion in {edge.function.function_path}:\n {write_assertion}"

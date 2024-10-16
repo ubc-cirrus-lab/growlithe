@@ -1,7 +1,8 @@
 from itertools import count
 
+from growlithe.graph.adg.resource import Resource
 from growlithe.graph.adg.types import Reference, ReferenceType, Scope, TaintLabelMatch
-from .function import Function
+from growlithe.graph.adg.function import Function
 
 
 class Node:
@@ -32,6 +33,7 @@ class Node:
         self.object_code_location = object_code_location
         self.object_fn: Function = object_fn
         self.scope: Scope = scope
+        self.mapped_resource: Resource = None
         # Read/Write APIs?
         self.outgoing_edges = []
         self.incoming_edges = []

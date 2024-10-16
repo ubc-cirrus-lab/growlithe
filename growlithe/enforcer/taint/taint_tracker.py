@@ -18,9 +18,19 @@ class TaintTracker:
     @profiler_decorator
     def run_taint_tracking(self):
         for function in self.graph.functions:
+            if not function.runtime.startswith("python"):
+                logger.error(
+                    f"runtime {function.runtime} not supported yet for taint tracking."
+                )
+                continue
             self.add_preamble(function)
             self.add_param_taint_extraction(function)
         for edge in self.graph.edges:
+            if not edge.function.runtime.startswith("python"):
+                logger.error(
+                    f"runtime {edge.function.runtime} not supported yet for direct taint tracking."
+                )
+                return
             if edge.edge_type == EdgeType.DATA:
                 self.track_direct_taints(edge)
             elif edge.edge_type == EdgeType.INDIRECT:

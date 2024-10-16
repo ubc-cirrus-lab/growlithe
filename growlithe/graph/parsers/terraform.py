@@ -54,7 +54,8 @@ class TerraformParser:
 
             if resource_type == "google_cloudfunctions_function":
                 code_uri = resource_config["entry_point"]
-                handler = resource_config["entry_point"]
+                # handler = resource_config["entry_point"]
+                handler = "app"
                 runtime = resource_config["runtime"]
                 handler_path = handler
                 file_extension = get_file_extension(runtime)
@@ -62,8 +63,7 @@ class TerraformParser:
                 # Construct the full path to the Lambda function's code
                 function_path = os.path.normpath(
                     os.path.join(
-                        self.config.benchmark_path,
-                        "src",
+                        self.config.src_path,
                         code_uri,
                         f"{handler_path}{file_extension}",
                     )
@@ -117,89 +117,93 @@ class TerraformParser:
         return self.resources
 
     def modify_config(self, graph: Graph):
-        self.add_lambda_layer()
-        self.add_iam_roles(graph)
-        self.add_resource_policies(graph)
+        # TODO: Add alternative way of adding pyDatalog dependency for GCP
+        # TODO: Same for IAM
+        # self.add_lambda_layer()
+        # self.add_iam_roles(graph)
+        # self.add_resource_policies(graph)
+        logger.error("Not implemented, generate GCP updated terraform config")
 
-    def add_resource_policies(self, graph: Graph):
-        for resource in graph.resources:
-            if resource.type == ResourceType.FUNCTION:
-                self.parsed_yaml["Resources"][f"{resource.name}Policy"] = {
-                    "Type": "AWS::Lambda::Permission",
-                    "Properties": {
-                        "Action": "lambda:InvokeFunction",
-                        "FunctionName": {"Fn::GetAtt": [resource.name, "Arn"]},
-                        "Principal": "events.amazonaws.com",
-                    },
-                }
-            if resource.type == ResourceType.S3_BUCKET:
-                self.parsed_yaml["Resources"][f"{resource.name}Policy"] = {
-                    "Type": "AWS::S3::BucketPolicy",
-                    "Properties": {
-                        "Bucket": {"Ref": resource.name},
-                        "PolicyDocument": {
-                            "Statement": [
-                                {
-                                    "Effect": "Allow",
-                                    "Principal": {
-                                        "Service": "lambda.amazonaws.com",
-                                    },
-                                    "Action": list(resource.policy_actions),
-                                    "Resource": {
-                                        "Fn::Sub": f"arn:aws:s3:::${{{resource.name}}}/*"
-                                    },
-                                }
-                            ]
-                        },
-                    },
-                }
 
-    def add_iam_roles(self, graph: Graph):
-        for node in graph.nodes:
-            if node.scope == Scope.GLOBAL:
-                tree = node.object_fn.code_tree
-                method = self.extract_method(tree=tree, node=node)
-                iam_policy = self.generate_iam_policy(method, node)
-                node.object_fn.iam_policies.append(iam_policy)
-        for function in graph.functions:
-            if function.iam_policies:
-                self.parsed_yaml["Resources"][function.name]["Properties"].pop(
-                    "Policies", None
-                )
-                self.parsed_yaml["Resources"][function.name]["Properties"].pop(
-                    "Role", None
-                )
-                self.parsed_yaml["Resources"][function.name].pop("Connectors", None)
-                self.parsed_yaml["Resources"][f"{function.name}Role"] = {
-                    "Type": "AWS::IAM::Role",
-                    "Properties": {
-                        "AssumeRolePolicyDocument": {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Effect": "Allow",
-                                    "Principal": {"Service": "lambda.amazonaws.com"},
-                                    "Action": "sts:AssumeRole",
-                                }
-                            ],
-                        },
-                        "Policies": [
-                            {
-                                "PolicyName": "root",
-                                "PolicyDocument": {
-                                    "Version": "2012-10-17",
-                                    "Statement": function.iam_policies,
-                                },
-                            }
-                        ],
-                        "ManagedPolicyArns": [
-                            "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                        ],
-                    },
-                }
-                self.parsed_yaml["Resources"][function.name]["Properties"]["Role"] = {
-                    "Fn::GetAtt": [f"{function.name}Role", "Arn"]
-                }
+    # def add_resource_policies(self, graph: Graph):
+    #     for resource in graph.resources:
+    #         if resource.type == ResourceType.FUNCTION:
+    #             self.parsed_yaml["Resources"][f"{resource.name}Policy"] = {
+    #                 "Type": "AWS::Lambda::Permission",
+    #                 "Properties": {
+    #                     "Action": "lambda:InvokeFunction",
+    #                     "FunctionName": {"Fn::GetAtt": [resource.name, "Arn"]},
+    #                     "Principal": "events.amazonaws.com",
+    #                 },
+    #             }
+    #         if resource.type == ResourceType.S3_BUCKET:
+    #             self.parsed_yaml["Resources"][f"{resource.name}Policy"] = {
+    #                 "Type": "AWS::S3::BucketPolicy",
+    #                 "Properties": {
+    #                     "Bucket": {"Ref": resource.name},
+    #                     "PolicyDocument": {
+    #                         "Statement": [
+    #                             {
+    #                                 "Effect": "Allow",
+    #                                 "Principal": {
+    #                                     "Service": "lambda.amazonaws.com",
+    #                                 },
+    #                                 "Action": list(resource.policy_actions),
+    #                                 "Resource": {
+    #                                     "Fn::Sub": f"arn:aws:s3:::${{{resource.name}}}/*"
+    #                                 },
+    #                             }
+    #                         ]
+    #                     },
+    #                 },
+    #             }
+
+    # def add_iam_roles(self, graph: Graph):
+        # for node in graph.nodes:
+        #     if node.scope == Scope.GLOBAL:
+        #         tree = node.object_fn.code_tree
+        #         method = self.extract_method(tree=tree, node=node)
+        #         iam_policy = self.generate_iam_policy(method, node)
+        #         node.object_fn.iam_policies.append(iam_policy)
+        # for function in graph.functions:
+        #     if function.iam_policies:
+        #         self.parsed_yaml["Resources"][function.name]["Properties"].pop(
+        #             "Policies", None
+        #         )
+        #         self.parsed_yaml["Resources"][function.name]["Properties"].pop(
+        #             "Role", None
+        #         )
+        #         self.parsed_yaml["Resources"][function.name].pop("Connectors", None)
+        #         self.parsed_yaml["Resources"][f"{function.name}Role"] = {
+        #             "Type": "AWS::IAM::Role",
+        #             "Properties": {
+        #                 "AssumeRolePolicyDocument": {
+        #                     "Version": "2012-10-17",
+        #                     "Statement": [
+        #                         {
+        #                             "Effect": "Allow",
+        #                             "Principal": {"Service": "lambda.amazonaws.com"},
+        #                             "Action": "sts:AssumeRole",
+        #                         }
+        #                     ],
+        #                 },
+        #                 "Policies": [
+        #                     {
+        #                         "PolicyName": "root",
+        #                         "PolicyDocument": {
+        #                             "Version": "2012-10-17",
+        #                             "Statement": function.iam_policies,
+        #                         },
+        #                     }
+        #                 ],
+        #                 "ManagedPolicyArns": [
+        #                     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        #                 ],
+        #             },
+        #         }
+        #         self.parsed_yaml["Resources"][function.name]["Properties"]["Role"] = {
+        #             "Fn::GetAtt": [f"{function.name}Role", "Arn"]
+        #         }
 
     def extract_method(self, tree, node: Node, method=None):
         """
@@ -237,81 +241,83 @@ class TerraformParser:
                     elif node.object_type == "LAMBDA_INVOKE":
                         method = ast_node.value.func.attr
                     else:
+                        # TODO: Add support for GCP resources
                         raise NotImplementedError
                 method = self.extract_method(ast_node, node, method=method)
         return method
 
-    def generate_iam_policy(self, method, node: Node):
-        """
-        Generates an IAM policy based on the provided method and node.
+    # def generate_iam_policy(self, method, node: Node):
+        # """
+        # Generates an IAM policy based on the provided method and node.
 
-        Args:
-            method (str): The method for which the IAM policy is being generated.
-            node (Node): The node object representing the resource.
+        # Args:
+        #     method (str): The method for which the IAM policy is being generated.
+        #     node (Node): The node object representing the resource.
 
-        Returns:
-            dict: The generated IAM policy.
-        """
-        actions = []
-        if node.object_type == "S3_BUCKET":
-            if method == "download_file":
-                actions.append("s3:GetObject")
-            elif method == "upload_file":
-                actions.append("s3:PutObject")
-        elif node.object_type == "DYNAMODB_TABLE":
-            if method == "get_item":
-                actions.append("dynamodb:GetItem")
-            elif method == "put_item":
-                actions.append("dynamodb:PutItem")
-        elif node.object_type == "LAMBDA_INVOKE":
-            if method == "invoke":
-                actions.append("lambda:InvokeFunction")
-            else:
-                logger.error("Unsupported method: %s", method)
-                raise NotImplementedError
-        else:
-            logger.error("Unsupported resource type: %s", node.object_type)
-            raise NotImplementedError
-        resources = node.resource_attrs["potential_resources"]
-        for resource in resources:
-            resource.policy_actions.update(actions)
-        return {
-            "Effect": "Allow",
-            "Action": actions,
-            "Resource": [
-                {"Fn::GetAtt": [resource.name, "Arn"]} for resource in resources
-            ],
-        }
+        # Returns:
+        #     dict: The generated IAM policy.
+        # """
+        # actions = []
+        # if node.object_type == "S3_BUCKET":
+        #     if method == "download_file":
+        #         actions.append("s3:GetObject")
+        #     elif method == "upload_file":
+        #         actions.append("s3:PutObject")
+        # elif node.object_type == "DYNAMODB_TABLE":
+        #     if method == "get_item":
+        #         actions.append("dynamodb:GetItem")
+        #     elif method == "put_item":
+        #         actions.append("dynamodb:PutItem")
+        # elif node.object_type == "LAMBDA_INVOKE":
+        #     if method == "invoke":
+        #         actions.append("lambda:InvokeFunction")
+        #     else:
+        #         logger.error("Unsupported method: %s", method)
+        #         raise NotImplementedError
+        # else:
+        #     logger.error("Unsupported resource type: %s", node.object_type)
+        #     raise NotImplementedError
+        # resources = node.resource_attrs["potential_resources"]
+        # for resource in resources:
+        #     resource.policy_actions.update(actions)
+        # return {
+        #     "Effect": "Allow",
+        #     "Action": actions,
+        #     "Resource": [
+        #         {"Fn::GetAtt": [resource.name, "Arn"]} for resource in resources
+        #     ],
+        # }
 
-    def add_lambda_layer(self):
-        """
-        Adds the pydatalog lambda layer to the parsed YAML.
+    
+    # def add_lambda_layer(self):
+    #     """
+    #     Adds the pydatalog lambda layer to the parsed YAML.
 
-        This method copies the existing layer to the growlithe folder, then adds a new layer to the parsed YAML under the key "GrowlithePyDatalogLayer".
-        Additionally, it adds the "GrowlithePyDatalogLayer" to the "Layers" property of all the lambda function resources.
+    #     This method copies the existing layer to the growlithe folder, then adds a new layer to the parsed YAML under the key "GrowlithePyDatalogLayer".
+    #     Additionally, it adds the "GrowlithePyDatalogLayer" to the "Layers" property of all the lambda function resources.
 
-        Returns:
-        - None
-        """
-        self.copy_layer()
-        self.parsed_yaml["Resources"]["GrowlithePyDatalogLayer"] = {
-            "Type": "AWS::Serverless::LayerVersion",
-            "Properties": {
-                "LayerName": "GrowlithePyDatalogLayer",
-                "CompatibleArchitectures": ["x86_64"],
-                "ContentUri": "layers/pydatalog.zip",
-                "Description": "PyDatalog layer for Growlithe",
-                "CompatibleRuntimes": ["python3.10", "python3.9", "python3.8"],
-            },
-        }
-        for _, resource_details in self.parsed_yaml["Resources"].items():
-            if resource_details["Type"] == "AWS::Serverless::Function":
-                if not "Layers" in resource_details["Properties"].keys():
-                    resource_details["Properties"]["Layers"] = []
-                resource_details["Properties"]["Layers"].append(
-                    {"Ref": "GrowlithePyDatalogLayer"}
-                )
-
+    #     Returns:
+    #     - None
+    #     """
+    #     self.copy_layer()
+    #     self.parsed_yaml["Resources"]["GrowlithePyDatalogLayer"] = {
+    #         "Type": "AWS::Serverless::LayerVersion",
+    #         "Properties": {
+    #             "LayerName": "GrowlithePyDatalogLayer",
+    #             "CompatibleArchitectures": ["x86_64"],
+    #             "ContentUri": "layers/pydatalog.zip",
+    #             "Description": "PyDatalog layer for Growlithe",
+    #             "CompatibleRuntimes": ["python3.10", "python3.9", "python3.8"],
+    #         },
+    #     }
+    #     for _, resource_details in self.parsed_yaml["Resources"].items():
+    #         if resource_details["Type"] == "AWS::Serverless::Function":
+    #             if not "Layers" in resource_details["Properties"].keys():
+    #                 resource_details["Properties"]["Layers"] = []
+    #             resource_details["Properties"]["Layers"].append(
+    #                 {"Ref": "GrowlithePyDatalogLayer"}
+    #             )
+    
     def copy_layer(self):
         """
         Copies the PyDatalog layer to the growlithe location.
@@ -326,46 +332,47 @@ class TerraformParser:
         shutil.copy(self.config.pydatalog_layer_path, destination)
 
     def save_config(self):
-        """
-        Save the updated configuration to a YAML file in the growlithe folder.
+        # """
+        # Save the updated configuration to a YAML file in the growlithe folder.
 
-        Returns:
-            None
-        """
-        if self.step_function_path:
-            self.copy_step_function()
-        self.copy_config_toml()
-        path = self.config.growlithe_path
-        config_path = os.path.join(path, "template.yml")
-        with open(config_path, "w", encoding="utf-8") as f:
-            dumper = yaml_dumper.get_dumper(clean_up=True, long_form=False)
-            raw = yaml.dump(
-                self.parsed_yaml,
-                Dumper=dumper,
-                default_flow_style=False,
-                allow_unicode=True,
-            )
-            f.write(raw)
-        logger.info("Saved updated configuration to %s", config_path)
+        # Returns:
+        #     None
+        # """
+        # if self.step_function_path:
+        #     self.copy_step_function()
+        # self.copy_config_toml()
+        # path = self.config.growlithe_path
+        # config_path = os.path.join(path, "template.yml")
+        # with open(config_path, "w", encoding="utf-8") as f:
+        #     dumper = yaml_dumper.get_dumper(clean_up=True, long_form=False)
+        #     raw = yaml.dump(
+        #         self.parsed_yaml,
+        #         Dumper=dumper,
+        #         default_flow_style=False,
+        #         allow_unicode=True,
+        #     )
+        #     f.write(raw)
+        # logger.info("Saved updated configuration to %s", config_path)
+        logger.error("Implement Terraform config generator")
 
-    def copy_step_function(self):
-        """
-        Copies the step function definition to the growlithe location.
+    # def copy_step_function(self):
+    #     """
+    #     Copies the step function definition to the growlithe location.
 
-        Returns:
-            None
-        """
-        destination = self.config.growlithe_path
-        shutil.copy(self.step_function_path, destination)
+    #     Returns:
+    #         None
+    #     """
+    #     destination = self.config.growlithe_path
+    #     shutil.copy(self.step_function_path, destination)
 
-    def copy_config_toml(self):
-        """
-        Copies the 'samconfig.toml' file from the app_path to the growlithe_path.
+    # def copy_config_toml(self):
+    #     """
+    #     Copies the 'samconfig.toml' file from the app_path to the growlithe_path.
 
-        Returns:
-            None
-        """
-        path = os.path.join(self.config.app_path, "samconfig.toml")
-        destination = os.path.join(self.config.growlithe_path, "samconfig.toml")
-        if os.path.exists(path):
-            shutil.copy(path, destination)
+    #     Returns:
+    #         None
+    #     """
+    #     path = os.path.join(self.config.app_path, "samconfig.toml")
+    #     destination = os.path.join(self.config.growlithe_path, "samconfig.toml")
+    #     if os.path.exists(path):
+    #         shutil.copy(path, destination)
