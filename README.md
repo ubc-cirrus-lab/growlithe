@@ -27,3 +27,9 @@ Use Growlithe CLI on the application:
 - `growlithe analyze` to analyze the source code.
 - Configure `<app_path>/growlithe_<app_name>/policy_spec.json` with the required policies.
 - `growlithe apply` to regenerate the source code with the applied policies.
+
+## Acknowledgments
+
+This work was supported in part by the Natural Sciences and Engineering Research Council of Canada (NSERC)
+[DGDND-2021-02961, GPIN-2021-03714, DGECR-202100462], the funding from the Innovation for Defence Excellence and Security (IDEaS) Program of
+the Department of National Defense [MN3-011], and the UBC STAIR (Support for Teams to Advance Interdisciplinary Research) Program.
