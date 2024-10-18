@@ -1,8 +1,8 @@
 """
-Module for analyzing applications using CodeQL.
+Module for analyzing intra-function dataflows using CodeQL.
 
 This module provides functionality to create CodeQL databases and run CodeQL queries
-on application code, supporting static analysis for security and code quality.
+on application code.
 """
 
 import subprocess
@@ -11,7 +11,7 @@ import re
 import os
 
 from growlithe.common.logger import logger
-from growlithe.common.tasks_config import codeql_queries
+from growlithe.common.dev_config import codeql_queries
 from growlithe.common.file_utils import get_language_files
 from growlithe.common.utils import profiler_decorator
 from growlithe.config import Config
@@ -49,7 +49,7 @@ class Analyzer:
         try:
             # CodeQL database creation command
             subprocess.run(
-                f"(cd {self.config.growlithe_path} && codeql database create {self.config.app_name}_codeql_ir_{language} --language={language} --overwrite -j=0 -M=2048 -s={self.config.app_path})",
+                f"(cd {self.config.growlithe_path} && codeql database create codeql_ir_{language} --language={language} --overwrite -j=0 -M=2048 -s={self.config.app_path})",
                 shell=True,
                 stdout=subprocess.DEVNULL,
             )
@@ -57,7 +57,7 @@ class Analyzer:
             logger.error(f"Error while creating CodeQL database: {e}")
             raise Exception(f"Error while creating CodeQL database: {e}")
         logger.info(
-            f"CodeQL database created: {self.config.app_name}_codeql_ir_{language}"
+            f"CodeQL database created: codeql_ir_{language}"
         )
 
     @profiler_decorator
@@ -109,7 +109,7 @@ class Analyzer:
                         "0",
                         os.path.join(
                             self.config.growlithe_path,
-                            f"{self.config.app_name}_codeql_ir_{language}",
+                            f"codeql_ir_{language}",
                         ),
                         os.path.join(
                             current_dir, language, "queries", f"{query_file}.ql"

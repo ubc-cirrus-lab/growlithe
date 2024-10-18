@@ -54,7 +54,7 @@ class Config:
             if merged_config["cloud_provider"] == "GCP":
                 merged_config["growlithe_lib_path"] = os.path.join(
                     os.path.dirname(__file__),
-                    "enforcer",
+                    "enforcement",
                     "policy",
                     "template",
                     "growlithe_utils_gcp.py",
@@ -92,26 +92,26 @@ class Config:
             "growlithe_results_path": growlithe_results_path,
             "growlithe_lib_path": os.path.join(
                 os.path.dirname(__file__),
-                "enforcer",
+                "enforcement",
                 "policy",
                 "template",
-                "growlithe.py",
+                "growlithe_utils_aws.py",
             ),
             "pydatalog_layer_path": os.path.join(
                 os.path.dirname(__file__),
-                "enforcer",
+                "enforcement",
                 "policy",
                 "template",
                 "pydatalog.zip",
             ),
-            "benchmark_name": "Benchmark3-GCP",
-            "app_name": "ShoppingCart",
+            "benchmark_name": "Benchmark2",
+            "app_name": "ImageProcessing",
             "src_dir": "src",
-            "app_config_type": "Terraform",
+            "app_config_type": "SAM",
             "app_config_path": os.path.join(
-                growlithe_results_path, "Benchmark3-GCP", "ShoppingCart", "main.tf"
+                growlithe_results_path, "Benchmark2", "ImageProcessing", "template.yaml"
             ),
-            "cloud_provider": "GCP",
+            "cloud_provider": "AWS",
         }
 
     def load_from_file(self, config_path):
@@ -143,7 +143,7 @@ class Config:
         self.benchmark_path = os.path.dirname(self.app_config_path)
         self.app_path = self.benchmark_path
         self.src_path = os.path.join(self.app_path, self.src_dir)
-        self.growlithe_path = os.path.join(os.path.dirname(self.app_path), "growlithe")
+        self.growlithe_path = os.path.join(os.path.dirname(self.app_path), f"growlithe_{self.app_name}")
 
         self.graph_dump_path = os.path.join(self.growlithe_path, "graph_dump.pkl")
         self.config_dump_path = os.path.join(self.growlithe_path, "config_dump.pkl")

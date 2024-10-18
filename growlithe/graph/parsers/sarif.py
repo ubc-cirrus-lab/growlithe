@@ -117,7 +117,7 @@ class SarifParser:
                 Reference(resource_reference_type, resource_reference_name),
                 Reference(object_reference_type, object_reference_name),
                 object_type,
-                None,  # TODO: Extend static analysis to add handler
+                None,
                 code_path,
                 function,
                 {},

@@ -12,9 +12,9 @@ from growlithe.graph.parsers.sam import SAMParser
 from growlithe.graph.parsers.terraform import TerraformParser
 from growlithe.graph.parsers.state_machine_parser import StepFunctionParser
 from growlithe.graph.adg.graph import Graph
-from growlithe.graph.codeql.analyzer import Analyzer
-from growlithe.graph.generater import GraphGenerator
-from growlithe.common.tasks_config import (
+from growlithe.graph.codeql.intra_function_analyzer import Analyzer
+from growlithe.graph.adg_generator import GraphGenerator
+from growlithe.common.dev_config import (
     CREATE_CODEQL_DB,
     GENERATE_EDGE_POLICY,
     RUN_CODEQL_QUERIES,

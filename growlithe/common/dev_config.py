@@ -1,5 +1,5 @@
 """
-Configuration module for Growlithe tasks and runtime settings.
+Configuration module for internal Growlithe development.
 
 This module defines various configuration flags and settings that control
 the behavior of Growlithe during its execution. It specifies which tasks
@@ -31,3 +31,7 @@ FILE_LOG_LEVEL = "INFO"
 
 # List of CodeQL queries to be executed
 codeql_queries = ["dataflows", "metadataflows"]
+
+# Default policy config to generate
+# TODO: Set to allow for ease of testing, can be set to default deny 
+DEFAULT_POLICY = "allow"

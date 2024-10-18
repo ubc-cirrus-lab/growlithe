@@ -1,8 +1,10 @@
 from pyDatalog import pyDatalog
 from collections import defaultdict
-import os, time, boto3, json
+import os, time, json
+from firebase_admin import auth
+import urllib.request
 
-default_value = lambda: {os.environ["AWS_LAMBDA_FUNCTION_NAME"]}
+default_value = lambda: {"GCP_FUNCTION_NAME"}
 GROWLITHE_TAINTS = defaultdict(default_value)
 GROWLITHE_INVOCATION_ID = ""
 GROWLITHE_FILE_TAINTS = defaultdict(default_value)
@@ -31,6 +33,7 @@ pyDatalog.load(
 )
 
 
+# Binary not where Y == not(X)
 @pyDatalog.predicate()
 def not_2(X, Y):
     if X.is_const():
@@ -85,61 +88,48 @@ def taintSetExcludes(node_id, label):
 
 ##==================================================================#
 # Session properties are retrieved at runtime
-# Retrieved values are set for the required datalog variable
-# in the policy assertion at runtime
 def getInstProp(prop):
     if prop == "InstTime":
         return round(time.time())
     elif prop == "InstRegion":
-        return NotImplementedError
+        # This is retrieved from terraform
+        pass
 
 
-def getResourceProp(prop, object_type, resource_name):
+def getResourceProp(prop, resource_type, resource_name):
     if prop == "Resource":
         return resource_name
 
     elif prop == "ResourceRegion":
-        from google.cloud import firestore
-        from google.api_core.exceptions import NotFound
-
-        if object_type == "FIRESTORE_COLLECTION":
-            pass
-        else:
-            return "Unsupported object type"
-
+        # This is retrieved from terraform
+        pass
     else:
         return "Unsupported property"
 
 
-def getSessionProp(prop, request, key):
-    if key == "SessionAuth":
-        from firebase_admin import auth
-
+def getSessionProp(request, prop):
+    if prop == "SessionProfileRegion":
         return auth.verify_id_token(request.args.get("authtoken"))["region"]
-    elif key == "SessionRegion":
-        return getIpRegion(request.remote_addr)
+    elif prop == "SessionEndRegion":
+        return ipToCountryHelper(request.remote_addr)
     else:
         raise NotImplementedError
 
 
-# def getUserAttribute(request, attr):
-#     from firebase_admin import auth
-#     return auth.verify_id_token(request.args.get('authtoken'))[attr]
 ##==================================================================#
 
 
-def getIpRegion(ip):
-    import urllib.request
-    import json
+def ipToCountryHelper(ip):
+    endpoint = f"https://ipinfo.io/{ip.id}/json"
+    with urllib.request.urlopen(endpoint) as response:
+        data = json.load(response)
+        return data["country"]
 
-    endpoint = f"https://ipinfo.io/{ip}/json"
 
-    try:
-        with urllib.request.urlopen(endpoint) as response:
-            data = json.load(response)
-            return data["country"]
-    except urllib.error.URLError:
-        return "Unknown"
+@pyDatalog.predicate()
+def ipToCountry(ip, out):
+    country = ipToCountryHelper(ip.id)
+    yield (ip, country)
 
 
 def getDictNestedKeyVal(dictionary, nestedKeys):
@@ -149,6 +139,7 @@ def getDictNestedKeyVal(dictionary, nestedKeys):
     return inner
 
 
+##==================================================================#
 # Taint Tracking
 def growlithe_extract_param_taint(taint_label, event):
     global GROWLITHE_INVOCATION_ID
@@ -165,12 +156,10 @@ def growlithe_extract_param_taint(taint_label, event):
     GROWLITHE_INVOCATION_ID = event.get("GROWLITHE_INVOCATION_ID", default_id)
 
     GROWLITHE_TAINTS[taint_label] = set(event.get("GROWLITHE_TAINTS", "").split(","))
-    # dynamodb trigger
     if "Records" in event.keys():
         GROWLITHE_TAINTS[taint_label].add(
             f"DYNAMODB_TABLE:{event['Records'][0]['dynamodb']['Keys'][list(event['Records'][0]['dynamodb']['Keys'].keys())[0]]['S']}"
         )
-    # S3 trigger
     if "detail" in event.keys() and "bucket" in event["detail"]:
         GROWLITHE_TAINTS[taint_label].add(
             f"S3_BUCKET:{event['detail']['bucket']['name']}:{event['detail']['object']['key']}"

@@ -10,7 +10,7 @@ import sys
 
 from growlithe.graph.adg.graph import Graph
 from growlithe.common.file_utils import save_files
-from growlithe.enforcer.taint.taint_tracker import TaintTracker
+from growlithe.enforcement.taint.taint_tracker import TaintTracker
 from growlithe.config import Config, get_config
 from growlithe.common.utils import profiler_decorator
 
@@ -58,8 +58,8 @@ def load_dumps(config: Config):
     with open(config.graph_dump_path, "rb") as f:
         graph: Graph = pickle.load(f)
 
-    # Minor FIXME: config values use the config which was used when analyze was run,
-    # Updates to config before running apply is not taken
+    # TODO: config values use the config which was used when analyze was run,
+    # Updates to config before running apply is not taken, fix this
     with open(config.config_dump_path, "rb") as f:
         app_config_parser = pickle.load(f)
 

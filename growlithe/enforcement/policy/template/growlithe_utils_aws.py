@@ -1,6 +1,10 @@
 from pyDatalog import pyDatalog
 from collections import defaultdict
 import os, time, boto3, json
+import urllib.request
+
+s3_client = boto3.client("s3")
+dynamo_client = boto3.client("dynamodb")
 
 default_value = lambda: {os.environ["AWS_LAMBDA_FUNCTION_NAME"]}
 GROWLITHE_TAINTS = defaultdict(default_value)
@@ -13,7 +17,7 @@ pyDatalog.load(
     """
     add(X, Y, Z) <= (X == Y + Z)
     sub(X, Y, Z) <= (X == Y - Z)
-               
+
     mul(X, Y, Z) <= (X == Y * Z)
     div(X, Y, Z) <= (X == Y / Z)
 """
@@ -31,6 +35,7 @@ pyDatalog.load(
 )
 
 
+# Binary not where Y == not(X)
 @pyDatalog.predicate()
 def not_2(X, Y):
     if X.is_const():
@@ -80,82 +85,27 @@ def taintSetExcludes(node_id, label):
         if label.id in GROWLITHE_TAINTS[node_id.id]:
             yield False
         yield True
-    # FIXME: Decide what to do if node id not in taint set, so cannot check label
-
-
-##==================================================================#
-# Session properties are retrieved at runtime
-# Retrieved values are set for the required datalog variable
-# in the policy assertion at runtime
-def getInstProp(prop):
-    if prop == "InstTime":
-        return round(time.time())
-    elif prop == "InstRegion":
-        return os.environ["AWS_REGION"]
-
-
-# Session properties are retrieved at runtime
-# Retrieved values are set for the required datalog variable
-# in the policy assertion at runtime
-def getSessionProp(prop):
-    if prop == "SessionTime":
-        return round(time.time())
-    elif prop == "SessionRegion":
-        return os.environ["AWS_REGION"]
-
-
-s3_client = boto3.client("s3")
-dynamo_client = boto3.client("dynamodb")
-
-
-def getMetaProp(prop, resource_type, resource_name):
-    if prop == "MetaConduitRegion":
-        if resource_type == "S3_BUCKET":
-            return s3_client.get_bucket_location(Bucket=resource_name)[
-                "LocationConstraint"
-            ]
-        elif resource_type == "DYNAMODB_TABLE":
-            return dynamo_client.describe_table(TableName=resource_name)["Table"][
-                "TableArn"
-            ].split(":")[3]
-
-    elif prop == "MetaConduitResourceName":
-        return resource_name
 
 
 @pyDatalog.predicate()
 def getItemVal5(val, table_name, key_name, key, prop):
-    print("Getting Value")
     dynamodb = boto3.resource("dynamodb")
-    print(table_name.id, key_name.id, key.id, prop.id)
     table = dynamodb.Table(table_name.id)
-    print(table)
     response = table.get_item(Key={f"{key_name.id}": key.id})["Item"]
-    print(response)
     yield (response[prop.id], table_name, key_name, key, prop)
+
+
+def ipToCountryHelper(ip):
+    endpoint = f"https://ipinfo.io/{ip.id}/json"
+    with urllib.request.urlopen(endpoint) as response:
+        data = json.load(response)
+        return data["country"]
 
 
 @pyDatalog.predicate()
 def ipToCountry(ip, out):
-    import urllib.request
-    import json
-
-    endpoint = f"https://ipinfo.io/{ip.id}/json"
-
-    try:
-        with urllib.request.urlopen(endpoint) as response:
-            data = json.load(response)
-            yield (ip, data["country"])
-    except urllib.error.URLError:
-        pass
-
-
-def getUserAttribute(event, attr):
-    import json
-
-    return json.loads(event["requestContext"]["authorizer"]["claims"][attr])[
-        "formatted"
-    ]
+    country = ipToCountryHelper(ip.id)
+    yield (ip, country)
 
 
 def getDictNestedKeyVal(dictionary, nestedKeys):
@@ -165,6 +115,40 @@ def getDictNestedKeyVal(dictionary, nestedKeys):
     return inner
 
 
+##==================================================================#
+# Instance properties are retrieved at function runtime
+def getInstProp(prop):
+    if prop == "InstTime":
+        return round(time.time())
+    elif prop == "InstRegion":
+        return os.environ["AWS_REGION"]
+
+
+def getResourceProp(prop, resource_type, resource_name):
+    if prop == "ResourceRegion":
+        if resource_type == "S3_BUCKET":
+            return s3_client.get_bucket_location(Bucket=resource_name)[
+                "LocationConstraint"
+            ]
+        elif resource_type == "DYNAMODB_TABLE":
+            return dynamo_client.describe_table(TableName=resource_name)["Table"][
+                "TableArn"
+            ].split(":")[3]
+
+    elif prop == "ResourceName":
+        return resource_name
+
+
+def getSessionProp(event, prop):
+    if prop == "SessionProfileRegion":
+        return json.loads(event["requestContext"]["authorizer"]["claims"]["address"])[
+            "formatted"
+        ]
+    elif prop == "SessionEndRegion":
+        return ipToCountryHelper(event["requestContext"]["identity"]["sourceIp"])
+
+
+##==================================================================#
 # Taint Tracking
 def growlithe_extract_param_taint(taint_label, event):
     global GROWLITHE_INVOCATION_ID
@@ -191,6 +175,7 @@ def growlithe_extract_param_taint(taint_label, event):
         GROWLITHE_TAINTS[taint_label].add(
             f"S3_BUCKET:{event['detail']['bucket']['name']}:{event['detail']['object']['key']}"
         )
+    # Extend taint labels for other trigger sources here
 
 
 def growlithe_add_self_taint(taint_label):

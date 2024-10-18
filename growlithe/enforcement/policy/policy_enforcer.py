@@ -1,10 +1,15 @@
+"""
+Module for representing a given policy object, and policy enforcement.
+Defines class methods to resolve policies statically, and generate runtime assertions to be instrumented when necessary.
+"""
+
 from __future__ import annotations
 import re
 from typing import List, Set
 from growlithe.common.logger import logger
-from growlithe.common.tasks_config import HYBRID_ENFORCEMENT_MODE
+from growlithe.common.dev_config import HYBRID_ENFORCEMENT_MODE
 from pyDatalog import pyDatalog
-from growlithe.enforcer.taint.taint_utils import online_taint_label, offline_match
+from growlithe.enforcement.taint.taint_utils import online_taint_label, offline_match
 from growlithe.graph.adg.node import Node
 from growlithe.graph.adg.types import ReferenceType
 from growlithe.config import get_config
@@ -107,13 +112,7 @@ class PredicateSet:
                         )
                         self.remove_predicate(taint_pred)
 
-        if self.contains_session_variables:
-            if get_config().cloud_provider == "GCP":
-                logger.warning("Not implemented")
-                pass
-            elif get_config().cloud_provider == "AWS":
-                return self.query
-        if self.contains_taint_predicates:
+        if self.contains_session_variables or self.contains_taint_predicates:
             return self.query
         try:
             if pyDatalog.ask(self.query) == None:
@@ -121,9 +120,9 @@ class PredicateSet:
                     f"OFFLINE POLICY ERROR: Partial policy failed offline check: {self.query}"
                 )
             else:
-                # FIXME: Complete pipeline when offline checks are successful
                 return None
         except Exception as e:
+            # Could not resolve statically, resolve at runtime
             return self.query
 
 
@@ -137,7 +136,7 @@ class PolicyClause:
         config = get_config()
         self.insert_implicit_predicate(config.cloud_provider)
 
-    # # Each clause can have set of predicates that can be evaluated independently of the other predicates
+    # Each clause can have set of predicates that can be evaluated independently of the other predicates
     def divide_into_disjoint_sets(self) -> List[PredicateSet]:
         disjoint_sets: List[PredicateSet] = []
         predicates: List[PolicyPredicate] = self.predicates.copy()
@@ -161,23 +160,26 @@ class PolicyClause:
 
     def insert_implicit_predicate(self, cloud_provider="AWS"):
         for disjoint_set in self.disjoint_predicates:
-            # TODO: Replace with properties stored in node/edge objects
+            # TODO: Can extend to replace with properties stored in node/edge objects when applicable
             # Resolve growlithe identifiers
             for var in disjoint_set.variables:
                 if var.startswith("Session"):
+                    """Session and based predicates are always resolved at runtime."""
                     try:
                         if cloud_provider == "AWS":
-                            from growlithe.enforcer.policy.template.growlithe import (
-                                getSessionProp,
-                            )
-
                             disjoint_set.add_predicate(
                                 PolicyPredicate(
-                                    f"eq({var}, '{{getSessionProp('{var}')}}')"
+                                    f"eq({var}, '{{getSessionProp(event, '{var}')}}')"
+                                )
+                            )
+                        elif cloud_provider == "GCP":
+                            disjoint_set.add_predicate(
+                                PolicyPredicate(
+                                    f"eq({var}, '{{getSessionProp(request, '{var}')}}')"
                                 )
                             )
                     except Exception as e:
-                        raise NotImplementedError("Session variables not supported yet")
+                        logger.error("Encountered exception with SessionPredicate")
                 elif var.startswith("Inst"):
                     # Instance properties only resolved at runtime
                     disjoint_set.add_predicate(
@@ -191,7 +193,7 @@ class PolicyClause:
                     ):
                         try:
                             if cloud_provider == "AWS":
-                                from growlithe.enforcer.policy.template.growlithe import (
+                                from growlithe.enforcement.policy.template.growlithe_utils_aws import (
                                     getResourceProp,
                                 )
 
@@ -207,7 +209,7 @@ class PolicyClause:
                                     )
                                     logger.info(f"Resolved {var} to {prop}")
                                 else:
-                                    from growlithe.enforcer.policy.template.growlithe_utils_gcp import (
+                                    from growlithe.enforcement.policy.template.growlithe_utils_gcp import (
                                         getResourceProp,
                                     )
 
@@ -228,16 +230,12 @@ class PolicyClause:
                             f"eq({var}, '{{getResourceProp('{var}', '{self.policy.node.object_type}', '{self.policy.node.resource.reference_name}')}}')"
                         )
                     )
-                elif var.startswith("Object"):
-                    raise NotImplementedError("Object variables not supported yet")
                 else:
-                    pass
+                    logger.warning(f"Extend to support predicate of type {var} here")
 
             # Resolve special growlithe predicates
             for predicate in disjoint_set.predicates.copy():
                 if predicate.predicate_name == "taintSetIncludes":
-                    # TODO: Add offline optimizations for taint checks
-                    # TODO: Replace helper function with prop within node for taint labels
                     disjoint_set.add_predicate(
                         PolicyPredicate(
                             f"eq({predicate.arguments[0]}, '{online_taint_label(self.policy.node)}')"

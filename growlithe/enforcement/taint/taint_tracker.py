@@ -1,7 +1,7 @@
 import ast
 
 from growlithe.common.utils import profiler_decorator
-from growlithe.enforcer.taint.taint_utils import online_taint_label
+from growlithe.enforcement.taint.taint_utils import online_taint_label
 from growlithe.graph.adg.graph import Graph
 from growlithe.graph.adg.edge import Edge, EdgeType
 from growlithe.graph.adg.node import Node

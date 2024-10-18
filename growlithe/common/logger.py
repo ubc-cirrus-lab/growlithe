@@ -6,7 +6,7 @@ and file logging with different formatters and log levels.
 """
 
 import logging.config
-from growlithe.common.tasks_config import CONSOLE_LOG_LEVEL, FILE_LOG_LEVEL
+from growlithe.common.dev_config import CONSOLE_LOG_LEVEL, FILE_LOG_LEVEL
 
 
 def init_logger(profiler_log_path):

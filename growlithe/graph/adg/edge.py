@@ -1,9 +1,16 @@
+"""
+Module for representing edges in the Application Dependency Graph (ADG).
+
+This module defines the Edge class, which stores information about individual
+edges in the ADG, along with type of the edge.
+"""
+
 from enum import Enum
-from growlithe.enforcer.policy.policy import Policy
+from growlithe.enforcement.policy.policy_enforcer import Policy
 from growlithe.graph.adg.function import Function
 from growlithe.graph.adg.node import Node
 from itertools import count
-
+from growlithe.common.dev_config import DEFAULT_POLICY
 
 class EdgeType(Enum):
     """
@@ -36,9 +43,8 @@ class Edge:
         self.edge_id = next(self._id_generator)
 
         # Default Policies
-        # FIXME: Set to allow for ease of testing, check with default deny
-        self.read_policy = Policy("READ", "allow")
-        self.write_policy = Policy("WRITE", "allow")
+        self.read_policy = Policy("READ", DEFAULT_POLICY)
+        self.write_policy = Policy("WRITE", DEFAULT_POLICY)
 
     def __repr__(self):
         return f"{self.source.__repr__()} -{self.edge_id}-> {self.sink.__repr__()}"
