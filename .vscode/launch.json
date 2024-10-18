@@ -1,18 +1,7 @@
 {
     "configurations": [
         {
-            "name": "Main.py",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/main.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}"
-            },
-        },
-        {
-            "name": "growlithe analyze",
+            "name": "analyze",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/growlithe/cli/analyze.py",
@@ -23,7 +12,7 @@
             },
         },
         {
-            "name": "growlithe apply",
+            "name": "apply",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/growlithe/cli/apply.py",

@@ -1,20 +1,4 @@
-### Getting flows using CodeQL
+### Setup CodeQL
+- Download and [install CodeQL CLI](https://docs.github.com/en/code-security/codeql-cli/getting-started-with-the-codeql-cli/setting-up-the-codeql-cli)
 
-- Follow main README.md to setup codeql and create a database using codeql.py
-
-#### Configuration
-- Understand `modules/Growlithe` for abstractions for the analysis
-- Model new libraries in `modules/Concepts` following structures defined in `modules/Core` for modelling
-- Add new data sources/sinks in `modules/Sources` or `modules/Sinks`
-- Modify `queries/Config` to restrict to required files
-
-#### Running static analysis
-- Run `codeql pack install` in this directory
-- Run 'python run.py`
-
-- Configure run.py to recreate_database, paths and queries to run
-
-#### Code Standard Practices
-- Add reusable functions to utils and reuse
-- Avoid adding path checks separately in each module. Add all hard coded strings in Config
-- Write independent modules and call them in test query files, then import and reuse the same in integrated queries
+- Fetch CodeQL dependencies for each language by navigating to the respective directory for the language which contains `qlpack.yml`, and run `codeql pack analyze`

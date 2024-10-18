@@ -19,29 +19,30 @@ def create_dir_if_not_exists(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
+
 def get_language_files(root, language, src_dir, growlithe_path):
     """
     Retrieves a list of file paths for a specific programming language within a given directory,
     ignoring a specific growlithe path.
-    
+
     Parameters:
         root (str): The root directory to search for files.
         language (str): The programming language to filter the files by.
         src_dir (str): The subdirectory within the root directory to search for files.
         growlithe_path (str): The specific path to ignore.
-    
+
     Returns:
         list: A list of file paths that match the specified programming language within the given directory,
               excluding the specified growlithe path.
     """
     result = []
     src_full_path = os.path.join(root, src_dir)
-    
+
     for dir_path, _, files in os.walk(src_full_path):
         # Skip the specific growlithe path
         if os.path.commonpath([dir_path, growlithe_path]) == growlithe_path:
             continue
-        
+
         for file in files:
             if (language == "python" and file.endswith(".py")) or (
                 language == "javascript" and file.endswith(".js")
@@ -50,7 +51,7 @@ def get_language_files(root, language, src_dir, growlithe_path):
                 relative_path = os.path.relpath(full_path, root)
                 relative_path = relative_path.replace(os.path.sep, "/")
                 result.append(relative_path)
-    
+
     return result
 
 
@@ -105,6 +106,7 @@ def get_file_extension(runtime):
             return ext
     return ""  # Default to no extension if runtime is not recognized
 
+
 @profiler_decorator
 def save_files(graph, growlithe_lib_path):
     """
@@ -132,4 +134,3 @@ def save_files(graph, growlithe_lib_path):
             os.path.dirname(function.growlithe_function_path), "growlithe_predicates.py"
         )
         shutil.copy(growlithe_lib_path, local_lib_path)
-        

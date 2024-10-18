@@ -1,8 +1,31 @@
+"""
+Logging configuration module for Growlithe.
+
+This module sets up logging for the Growlithe application, configuring both console
+and file logging with different formatters and log levels.
+"""
+
 import logging.config
-from growlithe.common.tasks_config import CONSOLE_LOG_LEVEL, FILE_LOG_LEVEL
+from growlithe.common.dev_config import CONSOLE_LOG_LEVEL, FILE_LOG_LEVEL
 
 
 def init_logger(profiler_log_path):
+    """
+    Initialize the logging configuration for Growlithe.
+
+    This function sets up two loggers:
+    1. A console logger with colored output for general application logging.
+    2. A file logger for profiling information.
+
+    Args:
+        profiler_log_path (str): The file path where profiler logs will be written.
+
+    The function uses dictConfig to set up logging with the following features:
+    - Console logging with colored output and customizable log level.
+    - File logging for profiler data with a separate log level.
+    - Different formatters for console and file logging.
+    - Two separate loggers: 'main' for console output and 'profiler' for file output.
+    """
     logging.config.dictConfig(
         {
             "version": 1,

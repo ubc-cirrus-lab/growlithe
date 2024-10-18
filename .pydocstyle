@@ -1,0 +1,4 @@
+[pydocstyle]
+match=(?!test_).*\.py
+match_dir=(?!tests)(?!resources)(?!docs)[^\.].*
+ignore=D100,D104,D203,D213,D406,D407
