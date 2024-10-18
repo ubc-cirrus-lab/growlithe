@@ -3,13 +3,3 @@ repos:
     rev: 24.10.0
     hooks:
       - id: black
-
-# TODO: Optionally, can run running pylint & pydocstyle
-  # - repo: https://github.com/PyCQA/pylint
-  #   rev: v3.3.1
-  #   hooks:
-  #     - id: pylint
-  # - repo: https://github.com/PyCQA/pydocstyle
-  #   rev: 6.3.0
-  #   hooks:
-  #     - id: pydocstyle

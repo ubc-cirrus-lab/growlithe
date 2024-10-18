@@ -13,7 +13,6 @@ module Config {
 
   predicate constrainLocation2(DataFlow::Node node) {
     node.getLocation().getFile().getAbsolutePath().matches("%" + getFileEndingPattern())
-    // and node.getScope().getName() = getFunctionName()
   }
 
   predicate constrainLocation(Location loc) {

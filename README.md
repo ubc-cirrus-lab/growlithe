@@ -6,21 +6,24 @@ Our 2025 IEEE S&P paper provides more details about the design of Growlithe:
 - [Growlithe: A Developer-Centric Compliance Tool for Serverless Applications](#)
 
 ## Setup
-- Create a new virtual environment with python v3.10.
-- Install Growlithe as a pip package by running `pip install .` in the root directory. Refer to [CONTRIBUTING.md](/CONTRIBUTING.md) for installing an editable version instead.
+- Create a new virtual environment with python v3.10, and activate it.
+- Install CodeQL and dependencies by following [/growlithe/graph/codeql/README.md](/growlithe/graph/codeql/README.md)
+- Install Growlithe by running `pip install -e .` in the root directory.
 
 
 ## Usage
+Activate the virtual environment, then:
 - Navigate to your serverless application, create a file `growlithe_config.yaml` with the following configuration:
 ```yaml
 app_path: <Relative path to the main application>
 app_name: <Name of the application>
 src_dir: <Source code of the application relative to app_path>
 app_config_path: <Relative path to the application configuration>
-app_config_type: <Type of application config like SAM, Terraform>
-cloud_provider: <cloud provider of the application like AWS, GCP>
+app_config_type: <Type of application config - [SAM, Terraform]>
+cloud_provider: <cloud provider of the application - [AWS, GCP]>
 ```
-- Use cli to run Growlithe on the application.
+
+Use Growlithe CLI on the application:
 - `growlithe analyze` to analyze the source code.
-- Configure `<app>/growlithe/policy_spec.json` with the required policies.
+- Configure `<app_path>/growlithe_<app_name>/policy_spec.json` with the required policies.
 - `growlithe apply` to regenerate the source code with the applied policies.

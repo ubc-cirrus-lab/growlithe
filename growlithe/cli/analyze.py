@@ -56,8 +56,6 @@ def analyze(config):
         app_config_parser = SAMParser(config.app_config_path, config)
     elif config.app_config_type == "Terraform":
         app_config_parser = TerraformParser(config.app_config_path, config)
-    elif config.app_config_type == "StepFunction":
-        app_config_parser = StepFunctionParser(config.app_config_path)
     else:
         click.echo(
             f"Unsupported app_config_type: {config.app_config_type}", color="red"
