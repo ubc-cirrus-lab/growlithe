@@ -1,10 +1,3 @@
-### [Alternative Setup] Using Docker Image
-- Build the docker image using:
-`docker build -t growlithe .`
-
-- Run an interactive session using:
-`docker run -it growlithe bash`
-
 ## Contributing
 - Install Growlithe and CodeQL dependencies by following [README.md](/README.md)
 - Configure `common/dev_config.py` for development knobs.
@@ -18,3 +11,10 @@ Run the following before commits in the root directory.
 
 > Alternatively, install pre-commit to run automatically before commits:
 `pre-commit install`
+
+### [Alternative Setup] Using Docker Image
+- Build the docker image using:
+`docker build -t growlithe .`
+
+- Run an interactive session using:
+`docker run -it growlithe bash`
