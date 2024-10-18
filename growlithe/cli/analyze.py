@@ -1,3 +1,10 @@
+"""
+Main module for analyzing applications and generating dataflow graphs and policy templates.
+
+This module provides functionality to analyze applications, generate Application Dependency Graphs (ADG),
+and create policy templates based on the analysis results.
+"""
+
 import pickle
 import click
 import sys
@@ -16,10 +23,22 @@ from growlithe.common.file_utils import create_dir_if_not_exists, detect_languag
 from growlithe.common.utils import profiler_decorator
 from growlithe.config import get_config
 
+
 @profiler_decorator
 def analyze(config):
-    sys.setrecursionlimit(3000) # Increase the recursion limit to avoid RecursionError
-    """Analyze the application and generate dataflow graphs and policy templates."""
+    """
+    Analyze the application and generate dataflow graphs and policy templates.
+
+    This function performs static analysis, parses application configuration,
+    generates an Application Dependency Graph (ADG), and creates policy templates.
+
+    Args:
+        config: Configuration object containing analysis settings.
+
+    Returns:
+        Graph: The generated Application Dependency Graph.
+    """
+    sys.setrecursionlimit(3000)  # Increase the recursion limit to avoid RecursionError
 
     languages = detect_languages(path=config.app_path)
 
@@ -59,8 +78,19 @@ def analyze(config):
     click.echo("Analysis completed successfully!", color="green")
     return graph
 
+
 @profiler_decorator
 def generate_adg(app_config_parser, config):
+    """
+    Generate an Application Dependency Graph (ADG) based on the parsed application configuration.
+
+    Args:
+        app_config_parser: Parser object for the application configuration.
+        config: Configuration object containing analysis settings.
+
+    Returns:
+        Graph: The generated Application Dependency Graph.
+    """
     # Create a graph object
     graph = Graph(config.app_name)
     if app_config_parser:

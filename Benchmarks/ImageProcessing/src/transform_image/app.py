@@ -2,6 +2,7 @@ import boto3
 from PIL import Image
 import os
 
+
 def lambda_handler(event, context):
     """
     AWS Lambda function handler for processing images uploaded to S3.

@@ -29,6 +29,7 @@ START_AT = 1
 # Create Cognito client
 cognito_idp = boto3.client("cognito-idp")
 
+
 def create_user(username, email, password):
     """
     Create a user in the Cognito User Pool and set a permanent password.
@@ -52,18 +53,19 @@ def create_user(username, email, password):
             TemporaryPassword=password,
             MessageAction="SUPPRESS",
         )
-        
+
         cognito_idp.admin_set_user_password(
             UserPoolId=USER_POOL_ID,
             Username=username,
             Password=password,
-            Permanent=True
+            Permanent=True,
         )
-        
+
         return response["User"]["Username"]
     except ClientError as e:
         print(f"Error creating user {username}: {e}")
         return None
+
 
 def create_users(num_users, user_type, start_at):
     """
@@ -78,21 +80,22 @@ def create_users(num_users, user_type, start_at):
     None
     """
     filename = f"{user_type}_credentials.csv"
-    
+
     with open(filename, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Username", "Email", "Password"])
-        
+
         for i in range(num_users):
             username = f"{user_type}{i + start_at}"
             email = f"{username}@example.com"
             password = f"{user_type.capitalize()}123!{i + start_at}"
-            
+
             created_username = create_user(username, email, password)
-            
+
             if created_username:
                 writer.writerow([username, email, password])
                 print(f"Created {user_type}: {username}")
+
 
 def main():
     """
@@ -100,11 +103,12 @@ def main():
     """
     print("Creating users...")
     create_users(NUM_USERS, "user", START_AT)
-    
+
     print("\nCreating adjusters...")
     create_users(NUM_ADJUSTERS, "adjuster", START_AT)
-    
+
     print("\nUser creation complete. Check the CSV files for credentials.")
+
 
 if __name__ == "__main__":
     main()

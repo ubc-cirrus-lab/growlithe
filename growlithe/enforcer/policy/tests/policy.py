@@ -74,4 +74,5 @@ def test_disjoint_sets():
     assert len(policy.policy_clauses[1].disjoint_predicates[1].predicates) == 3
     assert len(policy.policy_clauses[2].disjoint_predicates[0].predicates) == 2
 
+
 test_disjoint_sets()

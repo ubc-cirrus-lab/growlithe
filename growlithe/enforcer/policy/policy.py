@@ -9,6 +9,7 @@ from growlithe.graph.adg.node import Node
 from growlithe.graph.adg.types import ReferenceType
 from growlithe.config import get_config
 
+
 class PolicyPredicate:
     """AND separated policy predicate in a DNF policy clause"""
 
@@ -26,7 +27,9 @@ class PolicyPredicate:
             args = [arg.strip() for arg in match.group(2).split(",")]
             return name, args
         else:
-            logger.error(f"Error: '{self.predicate_str}' is not a valid function predicate")
+            logger.error(
+                f"Error: '{self.predicate_str}' is not a valid function predicate"
+            )
             return "", []
 
     def extract_variables(self) -> Set[str]:
@@ -88,7 +91,9 @@ class PredicateSet:
                         if offline_match(taint_pred.arguments[1], ancestor):
                             possible_match = True
                     if not possible_match:
-                        logger.error(f"OFFLINE POLICY ERROR: Partial policy failed offline check: {taint_pred.predicate_str}, but no upstream path can satisfy this")
+                        logger.error(
+                            f"OFFLINE POLICY ERROR: Partial policy failed offline check: {taint_pred.predicate_str}, but no upstream path can satisfy this"
+                        )
                 elif taint_pred.predicate_name == "taintSetExcludes":
                     # If no possible matches for arg2 exist for ancestors of node in arg1,\
                     # mark this pred as successfull and do not defer, else defer
@@ -97,20 +102,24 @@ class PredicateSet:
                         if offline_match(taint_pred.arguments[1], ancestor):
                             possible_match = True
                     if not possible_match:
-                        logger.info(f"OFFLINE POLICY Optimized: No upstream path can satisfy this, removing predicate: {taint_pred.predicate_str}")
+                        logger.info(
+                            f"OFFLINE POLICY Optimized: No upstream path can satisfy this, removing predicate: {taint_pred.predicate_str}"
+                        )
                         self.remove_predicate(taint_pred)
 
         if self.contains_session_variables:
-            if get_config().cloud_provider == 'GCP':
-                logger.warning('Not implemented')
+            if get_config().cloud_provider == "GCP":
+                logger.warning("Not implemented")
                 pass
-            elif get_config().cloud_provider == 'AWS':
+            elif get_config().cloud_provider == "AWS":
                 return self.query
         if self.contains_taint_predicates:
             return self.query
         try:
             if pyDatalog.ask(self.query) == None:
-                logger.error(f"OFFLINE POLICY ERROR: Partial policy failed offline check: {self.query}")
+                logger.error(
+                    f"OFFLINE POLICY ERROR: Partial policy failed offline check: {self.query}"
+                )
             else:
                 # FIXME: Complete pipeline when offline checks are successful
                 return None
@@ -150,13 +159,25 @@ class PolicyClause:
 
         return disjoint_sets
 
-    def insert_implicit_predicate(self, cloud_provider='AWS'):
+    def insert_implicit_predicate(self, cloud_provider="AWS"):
         for disjoint_set in self.disjoint_predicates:
             # TODO: Replace with properties stored in node/edge objects
             # Resolve growlithe identifiers
             for var in disjoint_set.variables:
                 if var.startswith("Session"):
-                    raise NotImplementedError("Session variables not supported yet")
+                    try:
+                        if cloud_provider == "AWS":
+                            from growlithe.enforcer.policy.template.growlithe import (
+                                getSessionProp,
+                            )
+
+                            disjoint_set.add_predicate(
+                                PolicyPredicate(
+                                    f"eq({var}, '{{getSessionProp('{var}')}}')"
+                                )
+                            )
+                    except Exception as e:
+                        raise NotImplementedError("Session variables not supported yet")
                 elif var.startswith("Inst"):
                     # Instance properties only resolved at runtime
                     disjoint_set.add_predicate(
@@ -170,18 +191,26 @@ class PolicyClause:
                     ):
                         try:
                             if cloud_provider == "AWS":
-                                from growlithe.enforcer.policy.template.growlithe import getResourceProp
+                                from growlithe.enforcer.policy.template.growlithe import (
+                                    getResourceProp,
+                                )
+
                                 prop = getResourceProp(
                                     var,
                                     self.policy.node.object_type,
                                     self.policy.node.resource.reference_name,
                                 )
                             elif cloud_provider == "GCP":
-                                if var == 'ResourceRegion':
-                                    prop = self.policy.node.mapped_resource.deployed_region
+                                if var == "ResourceRegion":
+                                    prop = (
+                                        self.policy.node.mapped_resource.deployed_region
+                                    )
                                     logger.info(f"Resolved {var} to {prop}")
                                 else:
-                                    from growlithe.enforcer.policy.template.growlithe_utils_gcp import getResourceProp
+                                    from growlithe.enforcer.policy.template.growlithe_utils_gcp import (
+                                        getResourceProp,
+                                    )
+
                                     prop = getResourceProp(
                                         var,
                                         self.policy.node.object_type,
@@ -236,10 +265,11 @@ class Policy:
         self.policy_str = "" if policy_str == "allow" else policy_str
         self.policy_clauses: List[PolicyClause] = self.parse_policy_str(self.policy_str)
         if self.policy_str != "":
-            logger.info(f'Found policy: {self.policy_str}')
+            logger.info(f"Found policy: {self.policy_str}")
 
     def __str__(self) -> str:
         return "allow" if self.policy_str == "" else self.policy_str
+
     def __repr__(self) -> str:
         return self.__str__()
 

@@ -124,7 +124,6 @@ class TerraformParser:
         # self.add_resource_policies(graph)
         logger.error("Not implemented, generate GCP updated terraform config")
 
-
     # def add_resource_policies(self, graph: Graph):
     #     for resource in graph.resources:
     #         if resource.type == ResourceType.FUNCTION:
@@ -159,51 +158,51 @@ class TerraformParser:
     #             }
 
     # def add_iam_roles(self, graph: Graph):
-        # for node in graph.nodes:
-        #     if node.scope == Scope.GLOBAL:
-        #         tree = node.object_fn.code_tree
-        #         method = self.extract_method(tree=tree, node=node)
-        #         iam_policy = self.generate_iam_policy(method, node)
-        #         node.object_fn.iam_policies.append(iam_policy)
-        # for function in graph.functions:
-        #     if function.iam_policies:
-        #         self.parsed_yaml["Resources"][function.name]["Properties"].pop(
-        #             "Policies", None
-        #         )
-        #         self.parsed_yaml["Resources"][function.name]["Properties"].pop(
-        #             "Role", None
-        #         )
-        #         self.parsed_yaml["Resources"][function.name].pop("Connectors", None)
-        #         self.parsed_yaml["Resources"][f"{function.name}Role"] = {
-        #             "Type": "AWS::IAM::Role",
-        #             "Properties": {
-        #                 "AssumeRolePolicyDocument": {
-        #                     "Version": "2012-10-17",
-        #                     "Statement": [
-        #                         {
-        #                             "Effect": "Allow",
-        #                             "Principal": {"Service": "lambda.amazonaws.com"},
-        #                             "Action": "sts:AssumeRole",
-        #                         }
-        #                     ],
-        #                 },
-        #                 "Policies": [
-        #                     {
-        #                         "PolicyName": "root",
-        #                         "PolicyDocument": {
-        #                             "Version": "2012-10-17",
-        #                             "Statement": function.iam_policies,
-        #                         },
-        #                     }
-        #                 ],
-        #                 "ManagedPolicyArns": [
-        #                     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        #                 ],
-        #             },
-        #         }
-        #         self.parsed_yaml["Resources"][function.name]["Properties"]["Role"] = {
-        #             "Fn::GetAtt": [f"{function.name}Role", "Arn"]
-        #         }
+    # for node in graph.nodes:
+    #     if node.scope == Scope.GLOBAL:
+    #         tree = node.object_fn.code_tree
+    #         method = self.extract_method(tree=tree, node=node)
+    #         iam_policy = self.generate_iam_policy(method, node)
+    #         node.object_fn.iam_policies.append(iam_policy)
+    # for function in graph.functions:
+    #     if function.iam_policies:
+    #         self.parsed_yaml["Resources"][function.name]["Properties"].pop(
+    #             "Policies", None
+    #         )
+    #         self.parsed_yaml["Resources"][function.name]["Properties"].pop(
+    #             "Role", None
+    #         )
+    #         self.parsed_yaml["Resources"][function.name].pop("Connectors", None)
+    #         self.parsed_yaml["Resources"][f"{function.name}Role"] = {
+    #             "Type": "AWS::IAM::Role",
+    #             "Properties": {
+    #                 "AssumeRolePolicyDocument": {
+    #                     "Version": "2012-10-17",
+    #                     "Statement": [
+    #                         {
+    #                             "Effect": "Allow",
+    #                             "Principal": {"Service": "lambda.amazonaws.com"},
+    #                             "Action": "sts:AssumeRole",
+    #                         }
+    #                     ],
+    #                 },
+    #                 "Policies": [
+    #                     {
+    #                         "PolicyName": "root",
+    #                         "PolicyDocument": {
+    #                             "Version": "2012-10-17",
+    #                             "Statement": function.iam_policies,
+    #                         },
+    #                     }
+    #                 ],
+    #                 "ManagedPolicyArns": [
+    #                     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    #                 ],
+    #             },
+    #         }
+    #         self.parsed_yaml["Resources"][function.name]["Properties"]["Role"] = {
+    #             "Fn::GetAtt": [f"{function.name}Role", "Arn"]
+    #         }
 
     def extract_method(self, tree, node: Node, method=None):
         """
@@ -247,48 +246,47 @@ class TerraformParser:
         return method
 
     # def generate_iam_policy(self, method, node: Node):
-        # """
-        # Generates an IAM policy based on the provided method and node.
+    # """
+    # Generates an IAM policy based on the provided method and node.
 
-        # Args:
-        #     method (str): The method for which the IAM policy is being generated.
-        #     node (Node): The node object representing the resource.
+    # Args:
+    #     method (str): The method for which the IAM policy is being generated.
+    #     node (Node): The node object representing the resource.
 
-        # Returns:
-        #     dict: The generated IAM policy.
-        # """
-        # actions = []
-        # if node.object_type == "S3_BUCKET":
-        #     if method == "download_file":
-        #         actions.append("s3:GetObject")
-        #     elif method == "upload_file":
-        #         actions.append("s3:PutObject")
-        # elif node.object_type == "DYNAMODB_TABLE":
-        #     if method == "get_item":
-        #         actions.append("dynamodb:GetItem")
-        #     elif method == "put_item":
-        #         actions.append("dynamodb:PutItem")
-        # elif node.object_type == "LAMBDA_INVOKE":
-        #     if method == "invoke":
-        #         actions.append("lambda:InvokeFunction")
-        #     else:
-        #         logger.error("Unsupported method: %s", method)
-        #         raise NotImplementedError
-        # else:
-        #     logger.error("Unsupported resource type: %s", node.object_type)
-        #     raise NotImplementedError
-        # resources = node.resource_attrs["potential_resources"]
-        # for resource in resources:
-        #     resource.policy_actions.update(actions)
-        # return {
-        #     "Effect": "Allow",
-        #     "Action": actions,
-        #     "Resource": [
-        #         {"Fn::GetAtt": [resource.name, "Arn"]} for resource in resources
-        #     ],
-        # }
+    # Returns:
+    #     dict: The generated IAM policy.
+    # """
+    # actions = []
+    # if node.object_type == "S3_BUCKET":
+    #     if method == "download_file":
+    #         actions.append("s3:GetObject")
+    #     elif method == "upload_file":
+    #         actions.append("s3:PutObject")
+    # elif node.object_type == "DYNAMODB_TABLE":
+    #     if method == "get_item":
+    #         actions.append("dynamodb:GetItem")
+    #     elif method == "put_item":
+    #         actions.append("dynamodb:PutItem")
+    # elif node.object_type == "LAMBDA_INVOKE":
+    #     if method == "invoke":
+    #         actions.append("lambda:InvokeFunction")
+    #     else:
+    #         logger.error("Unsupported method: %s", method)
+    #         raise NotImplementedError
+    # else:
+    #     logger.error("Unsupported resource type: %s", node.object_type)
+    #     raise NotImplementedError
+    # resources = node.resource_attrs["potential_resources"]
+    # for resource in resources:
+    #     resource.policy_actions.update(actions)
+    # return {
+    #     "Effect": "Allow",
+    #     "Action": actions,
+    #     "Resource": [
+    #         {"Fn::GetAtt": [resource.name, "Arn"]} for resource in resources
+    #     ],
+    # }
 
-    
     # def add_lambda_layer(self):
     #     """
     #     Adds the pydatalog lambda layer to the parsed YAML.
@@ -317,7 +315,7 @@ class TerraformParser:
     #             resource_details["Properties"]["Layers"].append(
     #                 {"Ref": "GrowlithePyDatalogLayer"}
     #             )
-    
+
     def copy_layer(self):
         """
         Copies the PyDatalog layer to the growlithe location.

@@ -1,4 +1,3 @@
-
 """
 Offline taint label is the most conservative taint associated with the node offline.
 The offline taint labels would use ? if a resource/object name is dynamic, else will use the associated immutable string
@@ -24,6 +23,7 @@ from growlithe.graph.adg.types import ReferenceType, TaintLabelMatch
 #         o = node.object.reference_name
 #     return f"node_id:{r}:{o}"
 
+
 def offline_taint_label(item: Union[Node, Function]):
     if isinstance(item, Node):
         # Handle Node object
@@ -44,7 +44,7 @@ def offline_taint_label(item: Union[Node, Function]):
         # Handle Function object
         # Adjust this part based on the attributes available in the Function class
         # and the rules you want to apply for Functions
-        function_name = item.name if hasattr(item, 'name') else "unknown"
+        function_name = item.name if hasattr(item, "name") else "unknown"
 
         return f"function:{function_name}"
 
@@ -52,6 +52,8 @@ def offline_taint_label(item: Union[Node, Function]):
 """Generates taint labels to be used when instrumenting source code.
 The formatted string is generated offline, but when used at runtime gives the online taint label
 """
+
+
 def online_taint_label(node: Node):
     if node.resource.reference_type == ReferenceType.DYNAMIC:
         r = "{" + node.resource.reference_name + "}"
@@ -65,19 +67,20 @@ def online_taint_label(node: Node):
     # return f"{node.node_id}:{r}:{o}"
     return f"{r}:{o}"
 
+
 # //Returns Match, PossibleMatch (at runtime) and NoMatch
 def offline_match(label: str, node2: Node):
-    parts1 = label.split(':')
-    parts2 = offline_taint_label(node2).split(':')
-    
+    parts1 = label.split(":")
+    parts2 = offline_taint_label(node2).split(":")
+
     def match_part(part1, part2):
-        if part1 == '*' or part2 == '*':
+        if part1 == "*" or part2 == "*":
             return TaintLabelMatch.MATCH
-        elif part1 == '?' or part2 == '?':
+        elif part1 == "?" or part2 == "?":
             return TaintLabelMatch.POSSIBLE_MATCH
         else:
             return TaintLabelMatch.MATCH if part1 == part2 else TaintLabelMatch.NO_MATCH
-    
+
     results = [match_part(parts1[i], parts2[i]) for i in range(len(parts1))]
 
     # if TaintLabelMatch.NO_MATCH in results:

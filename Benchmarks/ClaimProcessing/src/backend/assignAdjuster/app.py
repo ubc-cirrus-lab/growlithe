@@ -6,6 +6,7 @@ claims_table = dynamodb.Table("Claims")
 adjusters_table = dynamodb.Table("Adjusters")
 claim_adjuster_mapping_table = dynamodb.Table("ClaimAdjusterMapping")
 
+
 def lambda_handler(event, context):
     """
     AWS Lambda function handler for assigning an adjuster to a claim.
@@ -25,7 +26,7 @@ def lambda_handler(event, context):
     """
     claim_id = event["claimId"]
     print(claim_id)
-    
+
     # Get a random adjuster from the Adjusters table
     adjusters = adjusters_table.scan()["Items"]
     print(adjusters)
@@ -33,8 +34,6 @@ def lambda_handler(event, context):
 
     # Store the claim-adjuster mapping
     item = {"id": claim_id, "AdjusterId": adjuster["id"]["S"]}
-    claim_adjuster_mapping_table.put_item(
-        Item=item
-    )
+    claim_adjuster_mapping_table.put_item(Item=item)
 
     print(f"Assigned adjuster {adjuster} to claim {claim_id}")

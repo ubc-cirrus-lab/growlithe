@@ -94,21 +94,33 @@ def getInstProp(prop):
         return os.environ["AWS_REGION"]
 
 
-def getResourceProp(prop, object_type, resource_name):
-    if prop == "Resource":
-        return resource_name
+# Session properties are retrieved at runtime
+# Retrieved values are set for the required datalog variable
+# in the policy assertion at runtime
+def getSessionProp(prop):
+    if prop == "SessionTime":
+        return round(time.time())
+    elif prop == "SessionRegion":
+        return os.environ["AWS_REGION"]
 
-    elif prop == "ResourceRegion":
-        if object_type == "S3_BUCKET":
-            client = boto3.client("s3")
-            return client.get_bucket_location(Bucket=resource_name)[
+
+s3_client = boto3.client("s3")
+dynamo_client = boto3.client("dynamodb")
+
+
+def getMetaProp(prop, resource_type, resource_name):
+    if prop == "MetaConduitRegion":
+        if resource_type == "S3_BUCKET":
+            return s3_client.get_bucket_location(Bucket=resource_name)[
                 "LocationConstraint"
             ]
-        elif object_type == "DYNAMODB_TABLE":
-            client = boto3.client("dynamodb")
-            return client.describe_table(TableName=resource_name)["Table"][
+        elif resource_type == "DYNAMODB_TABLE":
+            return dynamo_client.describe_table(TableName=resource_name)["Table"][
                 "TableArn"
             ].split(":")[3]
+
+    elif prop == "MetaConduitResourceName":
+        return resource_name
 
 
 @pyDatalog.predicate()

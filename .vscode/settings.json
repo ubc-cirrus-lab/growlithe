@@ -11,5 +11,9 @@
     "python.autoComplete.extraPaths": [],
     "python.analysis.extraPaths": [
         "${workspaceFolder}"
-    ]
+    ],
+    "python.formatting.provider": "black",
+    "python.linting.pylintEnabled": true,
+    "python.linting.pydocstyleEnabled": true,
+    "editor.formatOnSave": true
 }

@@ -1,3 +1,11 @@
+"""
+Module for representing and manipulating Application Dependency Graphs (ADG).
+
+This module provides the Graph class, which is the core data structure for
+representing the relationships between nodes, edges, functions, and resources
+in an application.
+"""
+
 import json
 import ast
 from collections import deque
@@ -12,17 +20,33 @@ from growlithe.graph.adg.types import Scope
 
 
 class Graph:
-    def __init__(self, name: str = ""):
-        self.name: str = name
-        self.nodes: List[Node] = []
-        self.edges: List[Edge] = []
-        self.reverse_edges: List[Edge] = []
-        self.metadata_edges: List[Edge] = []
+    """
+    Represents an Application Dependency Graph (ADG).
 
-        self.functions: List[Function] = []
-        self.resources: List[Resource] = []
+    This class manages the nodes, edges, functions, and resources that make up
+    the graph structure of an application.
+    """
+
+    def __init__(self, name: str = ""):
+        self.name: str = name  # Name of the graph
+        self.nodes: List[Node] = []  # List of all nodes in the graph
+        self.edges: List[Edge] = []  # List of all edges in the graph
+        self.reverse_edges: List[Edge] = []  # List of reverse edges
+        self.metadata_edges: List[Edge] = []  # List of metadata edges
+
+        self.functions: List[Function] = []  # List of functions in the graph
+        self.resources: List[Resource] = []  # List of resources in the graph
 
     def add_node(self, new_node: Node):
+        """
+        Add a new node to the graph if it doesn't already exist.
+
+        Args:
+            new_node (Node): The node to be added.
+
+        Returns:
+            Node: The added node or an existing equivalent node.
+        """
         # Check if a node with the same properties already exists in the graph
         for existing_node in self.nodes:
             if existing_node == new_node:
@@ -40,6 +64,15 @@ class Graph:
         return new_node
 
     def add_edge(self, edge: Edge):
+        """
+        Add a new edge to the graph if it doesn't already exist.
+
+        Args:
+            edge (Edge): The edge to be added.
+
+        Returns:
+            Edge: The added edge or an existing equivalent edge.
+        """
         for existing_edge in self.edges:
             if existing_edge == edge:
                 return existing_edge
@@ -52,12 +85,27 @@ class Graph:
         return edge
 
     def add_functions(self, functions: list[Function]):
+        """
+        Add a list of functions to the graph.
+
+        Args:
+            functions (list[Function]): The functions to be added.
+        """
         self.functions = functions
 
     def add_resources(self, resources: list[Resource]):
+        """
+        Add a list of resources to the graph.
+
+        Args:
+            resources (list[Resource]): The resources to be added.
+        """
         self.resources = resources
 
     def visualize(self):
+        """
+        Visualize the graph structure by printing node connections.
+        """
         adj_list = {str(node): [] for node in self.nodes}
         for edge in self.edges:
             adj_list[str(edge.source)].append(edge.sink)
@@ -70,9 +118,21 @@ class Graph:
                 print(node)
 
     def __str__(self):
+        """
+        Return a string representation of the graph.
+
+        Returns:
+            str: A string describing the number of nodes and edges in the graph.
+        """
         return f"Graph with {len(self.nodes)} nodes and {len(self.edges)} edges"
 
     def dump_nodes_json(self, nodes_json_path):
+        """
+        Dump the graph nodes to a JSON file.
+
+        Args:
+            nodes_json_path (str): The path to save the JSON file.
+        """
         nodes_json_list = []
         for node in self.nodes:
             nodes_json_list.append(node.to_json())
@@ -81,6 +141,12 @@ class Graph:
             json.dump(nodes_json_list, f, indent=4)
 
     def dump_policy_edges_json(self, policy_edges_json_path):
+        """
+        Dump the policy edges to a JSON file.
+
+        Args:
+            policy_edges_json_path (str): The path to save the JSON file.
+        """
         policy_edges_json_list = []
         for edge in self.edges:
             egde_json = edge.to_policy_json()
@@ -98,26 +164,40 @@ class Graph:
 
     @profiler_decorator
     def get_updated_policy_json(self, policy_edges_json_path):
+        """
+        Update the graph edges with policy information from a JSON file.
+
+        Args:
+            policy_edges_json_path (str): The path to the policy JSON file.
+        """
         with open(policy_edges_json_path, "r") as f:
             policy_edges = json.load(f)
-        
-        # Using partial() leads to unexpected behavior with shared objects
+
         for policy_edge in policy_edges:
             self.update_edge(policy_edge, self.edges)
-        # # Create a partial function that includes self.edges
-        # update_edge = partial(self.update_edge, edges=self.edges)
-        
-        # # Use multiprocessing to parallelize the loop
-        # with Pool() as pool:
-        #     pool.map(update_edge, policy_edges)
-        # logger.info(f"Policy spec updated with {len(policy_edges)} entries")
 
     @staticmethod
     def update_edge(policy_edge, edges):
+        """
+        Update a single edge with policy information.
+
+        Args:
+            policy_edge (dict): Policy information for the edge.
+            edges (list): List of edges to update.
+        """
         edge_id = policy_edge["id"]
         edges[edge_id].update_policy(policy_edge)
 
     def insert_assertion(self, node: Node, assertion, code_path=None, tree=None):
+        """
+        Insert an assertion into the AST of a function.
+
+        Args:
+            node (Node): The node where the assertion should be inserted.
+            assertion (str): The assertion to be inserted.
+            code_path (dict, optional): The code location information.
+            tree (ast.AST, optional): The AST to modify.
+        """
         if tree is None:
             tree = node.object_fn.code_tree
         if code_path is None:
@@ -136,6 +216,9 @@ class Graph:
 
     @profiler_decorator
     def enforce_policy(self):
+        """
+        Enforce policies by inserting assertions into the code.
+        """
         self.populate_ancestors()
         for edge in self.edges:
             # TODO: Add to the instrumented code
@@ -146,19 +229,24 @@ class Graph:
                 )
                 self.insert_assertion(edge.source, read_assertion)
 
-            write_assertion = edge.write_policy.generate_assertion(edge.function.runtime)
+            write_assertion = edge.write_policy.generate_assertion(
+                edge.function.runtime
+            )
             if write_assertion:
                 logger.debug(
                     f"Adding assertion in {edge.function.function_path}:\n {write_assertion}"
                 )
                 self.insert_assertion(edge.sink, write_assertion)
 
-    """
-    Populate ancestor information for each node in the graph
-    Time Complexity: O(V + E)
-    """
-
     def populate_ancestors(self):
+        """
+        Populate ancestor information for each node in the graph.
+
+        This method performs a topological sort to determine the ancestor
+        relationships between nodes and functions in the graph.
+
+        Time Complexity: O(V + E), where V is the number of nodes and E is the number of edges.
+        """
         # Calculate in-degree for each node, i.e. number of incoming edges for each sink node
         in_degree = {node: 0 for node in self.nodes}
         for edge in self.edges:
@@ -193,4 +281,4 @@ class Graph:
 
         # Check for cycles
         if sum(in_degree.values()) > 0:
-            logger.warn("ADG contains possible cycles.")
+            logger.warning("ADG contains possible cycles.")

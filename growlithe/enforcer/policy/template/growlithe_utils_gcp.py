@@ -101,45 +101,32 @@ def getResourceProp(prop, object_type, resource_name):
     elif prop == "ResourceRegion":
         from google.cloud import firestore
         from google.api_core.exceptions import NotFound
+
         if object_type == "FIRESTORE_COLLECTION":
-            #TODO: Get the region of the Firestore collection from Terraform
             pass
-            # client = firestore.Client('data-terminus-393416')
-            # try:
-            #     # Attempt to get the collection
-            #     collection_ref = client.collection(resource_name)
-            #     print(collection_ref.get())
-            #     # Get a document from the collection to verify its existence
-            #     docs = collection_ref.limit(1).get()
-            #     print(docs)
-            #     next(docs, None) 
-
-            #     # If we reach here, the collection exists
-            #     # For Firestore, the region is typically the same as the project's region
-            #     return client.project.split('-')[0]  # This assumes project ID format like 'region-project'
-
-            # except NotFound:
-            #     return "Collection not found"
-
         else:
             return "Unsupported object type"
 
     else:
         return "Unsupported property"
 
+
 def getSessionProp(prop, request, key):
-    if key == 'SessionAuth':
+    if key == "SessionAuth":
         from firebase_admin import auth
-        return auth.verify_id_token(request.args.get('authtoken'))['region']
-    elif key == 'SessionRegion':
+
+        return auth.verify_id_token(request.args.get("authtoken"))["region"]
+    elif key == "SessionRegion":
         return getIpRegion(request.remote_addr)
     else:
         raise NotImplementedError
+
 
 # def getUserAttribute(request, attr):
 #     from firebase_admin import auth
 #     return auth.verify_id_token(request.args.get('authtoken'))[attr]
 ##==================================================================#
+
 
 def getIpRegion(ip):
     import urllib.request
@@ -153,6 +140,7 @@ def getIpRegion(ip):
             return data["country"]
     except urllib.error.URLError:
         return "Unknown"
+
 
 def getDictNestedKeyVal(dictionary, nestedKeys):
     inner = dictionary

@@ -1,10 +1,30 @@
+"""
+Module for building SAM (Serverless Application Model) applications.
+
+This module provides functionality to build SAM applications using the AWS SAM CLI.
+It includes error handling and output formatting for better user experience.
+"""
+
 import os
 import subprocess
 import click
 
 
 def build(config):
-    """Run 'sam build' in the current directory."""
+    """
+    Run 'sam build' command to build the SAM application.
+    TODO: Extend this to make the interface build other types of application package
+
+    This function executes the 'sam build' command in the appropriate directory,
+    either the current directory or the Growlithe-generated template directory.
+    It handles the build process, captures output, and provides formatted feedback.
+
+    Args:
+        config: Configuration object containing application settings.
+
+    Raises:
+        SystemExit: If the build process fails or if the SAM CLI is not installed.
+    """
     command = ["sam", "build"]
 
     if os.path.isfile(os.path.join(config.growlithe_path, "template.yaml")):

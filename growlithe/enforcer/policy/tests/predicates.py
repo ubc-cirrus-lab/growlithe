@@ -1,14 +1,14 @@
 from enforcer.policy.template.growlithe import *
 
 # Example usage
-print(pyDatalog.ask('X == 1'))
-assert pyDatalog.ask('X == 1') == set([(1,)])
+print(pyDatalog.ask("X == 1"))
+assert pyDatalog.ask("X == 1") == set([(1,)])
 
-print(pyDatalog.ask('(X == 1) & (Y == 2)'))
-assert pyDatalog.ask('(X == 1) & (Y == 2)') == set([(1, 2)])
+print(pyDatalog.ask("(X == 1) & (Y == 2)"))
+assert pyDatalog.ask("(X == 1) & (Y == 2)") == set([(1, 2)])
 
 print(pyDatalog.ask('concat3(X, "hel", "lo")'))
-assert pyDatalog.ask('concat3(X, "hel", "lo")') == set([('hello',)])
+assert pyDatalog.ask('concat3(X, "hel", "lo")') == set([("hello",)])
 
 print(pyDatalog.ask("eq(Y, 1) & eq(Z, 3) & add(X, Y, Z)"))
 

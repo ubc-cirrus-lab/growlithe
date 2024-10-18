@@ -5,6 +5,7 @@ dynamodb = boto3.resource("dynamodb")
 claims_table = dynamodb.Table("Claims")
 claim_adjuster_mapping_table = dynamodb.Table("ClaimAdjusterMapping")
 
+
 def lambda_handler(event, context):
     """
     AWS Lambda function handler for updating claim status.

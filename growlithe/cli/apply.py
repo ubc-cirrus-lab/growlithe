@@ -1,3 +1,10 @@
+"""
+Module for applying security policies and performing taint tracking on Application Dependency Graphs.
+
+This module provides functionality to load previously analyzed graph data,
+apply security policies, perform taint tracking, and update the application configuration.
+"""
+
 import pickle
 import sys
 
@@ -10,6 +17,15 @@ from growlithe.common.utils import profiler_decorator
 
 @profiler_decorator
 def apply(config: Config):
+    """
+    Apply security policies and perform taint tracking on the Application Dependency Graph.
+
+    This function loads the previously analyzed graph data, applies security policies,
+    performs taint tracking, and updates the application configuration.
+
+    Args:
+        config (Config): Configuration object containing application settings.
+    """
     sys.setrecursionlimit(3000)  # Increase the recursion limit to avoid RecursionError
     graph, app_config_parser = load_dumps(config)
     graph.get_updated_policy_json(config.policy_spec_path)
@@ -30,14 +46,23 @@ def apply(config: Config):
 
 @profiler_decorator
 def load_dumps(config: Config):
+    """
+    Load previously dumped graph and application configuration data.
+
+    Args:
+        config (Config): Configuration object containing file paths.
+
+    Returns:
+        tuple: A tuple containing the loaded Graph object and application configuration parser.
+    """
     with open(config.graph_dump_path, "rb") as f:
         graph: Graph = pickle.load(f)
-    # Minor FIXME: For some reason config.pydatalog_layer_path
-    # resorts to the value of config.pydatlog_layer_path which
-    # existed when growlithe analyze was run even if the path changes in growlithe_config.yml
 
+    # Minor FIXME: config values use the config which was used when analyze was run,
+    # Updates to config before running apply is not taken
     with open(config.config_dump_path, "rb") as f:
         app_config_parser = pickle.load(f)
+
     return graph, app_config_parser
 
 

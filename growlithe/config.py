@@ -1,3 +1,11 @@
+"""
+Configuration module for Growlithe.
+
+This module defines the Config class, which manages the configuration settings
+for the Growlithe application. It handles loading configurations from files,
+setting default values, and managing derived paths.
+"""
+
 import yaml
 import os
 import platform
@@ -7,15 +15,30 @@ from typing import Dict, Any
 
 
 class Config:
+    """
+    Singleton class for managing Growlithe configuration.
+
+    This class handles loading, merging, and storing configuration settings
+    for the Growlithe application. It ensures only one instance of the
+    configuration is created and used throughout the application.
+    """
+
     _instance = None
 
     def __new__(cls, config_path=None):
+        """Ensure only one instance of Config is created."""
         if cls._instance is None:
             cls._instance = super(Config, cls).__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 
     def __init__(self, config_path=None):
+        """
+        Initialize the Config instance.
+
+        Args:
+            config_path (str, optional): Path to the configuration file.
+        """
         if self._initialized:
             return
         self._initialized = True
@@ -50,6 +73,13 @@ class Config:
         logger.info(self.__str__())
 
     def get_defaults(self):
+        """
+        Get the default configuration settings.
+        Update the paths to attach debugger easily with Growlithe
+
+        Returns:
+            dict: Default configuration settings.
+        """
         system_platform = platform.system()
         if system_platform == "Windows":
             growlithe_results_path = r"D:\Code\growlithe-results"
@@ -85,15 +115,31 @@ class Config:
         }
 
     def load_from_file(self, config_path):
+        """
+        Load configuration from a YAML file.
+
+        Args:
+            config_path (str): Path to the configuration file.
+
+        Returns:
+            dict: Loaded configuration.
+        """
         with open(config_path, "r") as f:
             config_instance = yaml.safe_load(f)
         return config_instance
 
     def set_config_values(self, config_instance):
+        """
+        Set configuration values as attributes of the Config instance.
+
+        Args:
+            config_instance (dict): Configuration dictionary.
+        """
         for key, val in config_instance.items():
             setattr(self, key, config_instance.get(key, val))
 
     def set_derived_paths(self):
+        """Set derived paths based on the configuration values."""
         self.benchmark_path = os.path.dirname(self.app_config_path)
         self.app_path = self.benchmark_path
         self.src_path = os.path.join(self.app_path, self.src_dir)
@@ -111,6 +157,7 @@ class Config:
         self.policy_spec_path = os.path.join(self.growlithe_path, "policy_spec.json")
 
     def make_paths_absolute(self):
+        """Convert all path attributes to absolute paths."""
         path_attributes = [
             "app_config_path",
             "benchmark_path",
@@ -129,6 +176,12 @@ class Config:
                 setattr(self, attr, os.path.abspath(getattr(self, attr)))
 
     def __str__(self):
+        """
+        Generate a string representation of the configuration.
+
+        Returns:
+            str: Formatted string of configuration settings.
+        """
         header = "Growlithe is using the following configuration:"
         separator = "=" * 72
 
@@ -145,6 +198,15 @@ class Config:
         )
 
     def has_key(self, key):
+        """
+        Check if a key exists in the configuration.
+
+        Args:
+            key (str): The key to check.
+
+        Returns:
+            bool: True if the key exists, False otherwise.
+        """
         return (
             key in self.__dict__.keys()
             and not key.startswith("_")
@@ -154,6 +216,16 @@ class Config:
     def merge_configs(
         self, default_config: Dict[str, Any], loaded_config: Dict[str, Any]
     ) -> Dict[str, Any]:
+        """
+        Merge loaded configuration with default configuration.
+
+        Args:
+            default_config (Dict[str, Any]): Default configuration dictionary.
+            loaded_config (Dict[str, Any]): Loaded configuration dictionary.
+
+        Returns:
+            Dict[str, Any]: Merged configuration dictionary.
+        """
         merged = default_config.copy()
         for key, value in loaded_config.items():
             if key in merged:
@@ -166,8 +238,14 @@ class Config:
         return merged
 
 
-# Usage
 def get_config(config_path=None):
-    # TODO: Check if this imported function works fine if config is
-    # populated through a file when using CLI
+    """
+    Get the Config instance.
+
+    Args:
+        config_path (str, optional): Path to the configuration file.
+
+    Returns:
+        Config: The Config instance.
+    """
     return Config(config_path)
