@@ -7,6 +7,7 @@ primarily for performance profiling and timing of function executions.
 
 import time
 import functools
+import subprocess
 from growlithe.common.logger import profiler_logger
 
 
@@ -39,3 +40,19 @@ def profiler_decorator(func):
         return result
 
     return wrapper
+
+
+def initialize_node():
+    """
+    Initialize Node.js environment.
+
+    This function sets up the Node.js environment by installing
+    the required dependencies and packages.
+    """
+    try:
+        subprocess.run(
+            ["npm", "install", "--prefix", "growlithe/graph/adg/js"], check=True
+        )
+    except Exception as e:
+        profiler_logger.error("Error initializing Node.js environment: %s", e)
+        raise e

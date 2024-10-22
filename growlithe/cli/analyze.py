@@ -20,7 +20,7 @@ from growlithe.common.dev_config import (
     RUN_CODEQL_QUERIES,
 )
 from growlithe.common.file_utils import create_dir_if_not_exists, detect_languages
-from growlithe.common.utils import profiler_decorator
+from growlithe.common.utils import profiler_decorator, initialize_node
 from growlithe.config import get_config
 
 
@@ -41,6 +41,9 @@ def analyze(config):
     sys.setrecursionlimit(3000)  # Increase the recursion limit to avoid RecursionError
 
     languages = detect_languages(path=config.app_path)
+
+    if "javascript" in languages:
+        initialize_node()
 
     # Run Static analysis
     create_dir_if_not_exists(path=config.growlithe_path)

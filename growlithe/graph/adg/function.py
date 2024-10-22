@@ -5,7 +5,10 @@ This module defines the Function class, which stores information about individua
 functions in an application, including their dependencies, nodes, and edges.
 """
 
+import os
 import ast
+import json
+import subprocess
 
 from growlithe.common.logger import logger
 from growlithe.graph.adg.resource import Resource
@@ -63,12 +66,22 @@ class Function(Resource):
                     tree = ast.parse(code)
                     self.code_tree = tree
             elif "nodejs" in self.runtime:
-                logger.error(f"NodeJS runtime is not supported yet.")
+                subprocess.run(
+                    [
+                        "node",
+                        "growlithe/graph/adg/js/file2ast.js",
+                        self.function_path,
+                    ],
+                    check=True,
+                )
+                with open("tmp.json", encoding="utf-8") as f:
+                    self.code_tree = json.load(f)
+                os.remove("tmp.json")
                 # raise NotImplementedError
             else:
                 raise NotImplementedError
         else:
-            logger.error(f"Path for function {self.name} is empty.")
+            logger.error("Path for function %s is empty.", self.name)
             raise FileNotFoundError
 
     def __str__(self):

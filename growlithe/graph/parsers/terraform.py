@@ -120,7 +120,6 @@ class TerraformParser:
         # self.add_lambda_layer()
         self.add_iam_roles(graph)
         # self.add_resource_policies(graph)
-        logger.error("Not implemented, generate GCP updated terraform config")
 
     def add_resource_policies(self, graph: Graph):
         for resource in graph.resources:
