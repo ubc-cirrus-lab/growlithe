@@ -3,7 +3,7 @@
  * @id py/dataFlows
  */
 
-import modules.Growlithe.TaintAnalysis
+import modules.growlithe_dfa.TaintAnalysis
 import queries.Config
 import semmle.python.dataflow.new.DataFlow
 

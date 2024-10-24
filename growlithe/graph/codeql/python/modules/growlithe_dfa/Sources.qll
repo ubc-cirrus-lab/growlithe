@@ -1,10 +1,10 @@
 import python
-import modules.Growlithe.Core
-import modules.Growlithe.Utils
-import modules.Concepts.S3Bucket
-import modules.Concepts.DynamoDB
-import modules.Concepts.FireStore
-import modules.Concepts.Image
+import modules.growlithe_dfa.Core
+import modules.growlithe_dfa.Utils
+import modules.concepts.S3Bucket
+import modules.concepts.DynamoDB
+import modules.concepts.FireStore
+import modules.concepts.Image
 import semmle.python.internal.ConceptsShared
 
 module Sources {
@@ -50,7 +50,7 @@ module Sources {
 
     override string getResource() { result = super.getCollectionNameAsResource() }
 
-    override DataFlow::Node getMetadataSink() { result = super.getValue()  }
+    override DataFlow::Node getMetadataSink() { result = super.getValue() }
   }
 
   class DynamoDBTableGetItemSource extends Core::Source, DynamoDBTable::DynamoDBTableGetItem {
@@ -60,7 +60,7 @@ module Sources {
 
     override string getResource() { result = super.getTableNameAsResource() }
 
-    override DataFlow::Node getMetadataSink() { result = super.getKey()  }
+    override DataFlow::Node getMetadataSink() { result = super.getKey() }
   }
 
   class DynamoDBTableScanSource extends Core::Source, DynamoDBTable::DynamoDBTableScan {
@@ -76,7 +76,9 @@ module Sources {
 
     override string getObjectPath() { result = "DYNAMIC:Query" }
 
-    override DataFlow::Node getMetadataSink() { result in [super.getKeyConditionExpression(), super.getExpressionAttributeValues()]  }
+    override DataFlow::Node getMetadataSink() {
+      result in [super.getKeyConditionExpression(), super.getExpressionAttributeValues()]
+    }
 
     override string getResource() { result = super.getTableNameAsResource() }
   }
@@ -93,9 +95,13 @@ module Sources {
     Http::Client::Request httpClientRequest;
 
     HttpRequest() { this = httpClientRequest }
+
     override string getObjectPath() { result = Utils::strRepr(httpClientRequest.getAUrlPart()) }
+
     override Utils::ShareType getShareType() { result = "GLOBAL" }
+
     override string getResource() { result = "API:STATIC:API" }
+
     override DataFlow::Node getMetadataSink() { result = httpClientRequest.getAUrlPart() }
   }
 }

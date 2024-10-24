@@ -1,8 +1,8 @@
 import javascript
 import DataFlow
-import modules.Concepts.DynamoDB
-import modules.Concepts.FirestoreDB
-import modules.Growlithe.Core
+import modules.concepts.DynamoDB
+import modules.concepts.FirestoreDB
+import modules.growlithe_dfa.Core
 import queries.Config
 
 module AdditionalTaints {
@@ -10,9 +10,9 @@ module AdditionalTaints {
     override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
       exists(DataFlow::MethodCallNode methodCall |
         methodCall.getAnArgument() = nodeFrom and
-        methodCall = nodeTo
-        and Config::constrainLocation2(nodeFrom)
-        and Config::constrainLocation2(nodeTo)
+        methodCall = nodeTo and
+        Config::constrainLocation2(nodeFrom) and
+        Config::constrainLocation2(nodeTo)
       )
     }
   }
@@ -28,11 +28,11 @@ module AdditionalTaints {
 
   class ObjectPropToObject extends Core::AdditionalTaintStep {
     override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
-      exists(DataFlow::ObjectLiteralNode objNode | 
+      exists(DataFlow::ObjectLiteralNode objNode |
         objNode.getAPropertySource() = nodeFrom and
-        objNode = nodeTo
-        and Config::constrainLocation2(nodeFrom)
-        and Config::constrainLocation2(nodeTo)
+        objNode = nodeTo and
+        Config::constrainLocation2(nodeFrom) and
+        Config::constrainLocation2(nodeTo)
       )
     }
   }
@@ -44,6 +44,7 @@ module AdditionalTaints {
         nodeTo = dynamoDBUpdate
       )
     }
+
     override string toString() { result = "DynamoDBPayloadToCall" }
   }
 }

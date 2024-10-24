@@ -1,13 +1,13 @@
 import python
 import semmle.python.dataflow.new.DataFlow
-import modules.Concepts.Image
-import modules.Concepts.S3Bucket
-import modules.Concepts.DynamoDB
-import modules.Concepts.FireStore
-import modules.Concepts.File
-import modules.Growlithe.Sources
-import modules.Growlithe.Sinks
-import modules.Growlithe.Core
+import modules.concepts.Image
+import modules.concepts.S3Bucket
+import modules.concepts.DynamoDB
+import modules.concepts.FireStore
+import modules.concepts.File
+import modules.growlithe_dfa.Sources
+import modules.growlithe_dfa.Sinks
+import modules.growlithe_dfa.Core
 import semmle.python.ApiGraphs
 
 module AdditionalTaints {
@@ -95,6 +95,7 @@ module AdditionalTaints {
       )
     }
   }
+
   // class FirestoreDBDocumentToCall extends AdditionalTaintStep {
   //   override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
   //     exists(Image::ImageTransform imgTransform |
@@ -207,7 +208,6 @@ module AdditionalTaints {
   //     )
   //   }
   // }
-
   class ObjectToAttributeTaintStep extends AdditionalTaintStep {
     override predicate step(DataFlow::Node nodeFrom, DataFlow::Node nodeTo) {
       exists(DataFlow::AttrRead attr |

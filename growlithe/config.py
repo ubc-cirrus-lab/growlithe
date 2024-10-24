@@ -56,7 +56,7 @@ class Config:
                     os.path.dirname(__file__),
                     "enforcement",
                     "policy",
-                    "template",
+                    "platform_predicates",
                     "growlithe_utils_gcp.py",
                 )
         else:
@@ -94,14 +94,14 @@ class Config:
                 os.path.dirname(__file__),
                 "enforcement",
                 "policy",
-                "template",
+                "platform_predicates",
                 "growlithe_utils_aws.py",
             ),
             "pydatalog_layer_path": os.path.join(
                 os.path.dirname(__file__),
                 "enforcement",
                 "policy",
-                "template",
+                "platform_predicates",
                 "pydatalog.zip",
             ),
             "benchmark_name": "Benchmark2",

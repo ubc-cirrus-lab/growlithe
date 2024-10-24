@@ -1,11 +1,10 @@
 import javascript
 import DataFlow
 import TaintTracking as TT
-
-import modules.Growlithe.AdditionalTaints
-import modules.Growlithe.Sources
-import modules.Growlithe.Sinks
-import modules.Growlithe.Core
+import modules.growlithe_dfa.AdditionalTaints
+import modules.growlithe_dfa.Sources
+import modules.growlithe_dfa.Sinks
+import modules.growlithe_dfa.Core
 import queries.Config
 
 module TaintAnalysis {

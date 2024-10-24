@@ -1,7 +1,7 @@
 import javascript
 import DataFlow
-import modules.Growlithe.Core
-import modules.Growlithe.Utils
+import modules.growlithe_dfa.Core
+import modules.growlithe_dfa.Utils
 
 module Sources {
   class ParameterSource extends Core::Source {
@@ -26,7 +26,9 @@ module Sources {
     AxiosRequest() { this = axiosUrlRequest }
 
     override string getResource() { result = axiosUrlRequest.getUrl().toString() }
+
     override Utils::ShareType getShareType() { result = "GLOBAL" }
+
     override string getObjectPath() { result = Utils::strRepr(this) }
   }
 }
