@@ -6,10 +6,18 @@ Our 2025 IEEE S&P paper provides more details about the design of Growlithe:
 - [Growlithe: A Developer-Centric Compliance Tool for Serverless Applications](#)
 
 ## Setup
-- Create a new virtual environment with python v3.10, and activate it.
+- Create a [new virtual environment](https://docs.python.org/3/library/venv.html) with python v3.10, and activate it.
+```bash
+python -m venv env
+source env/bin/activate  # On Windows use `env\Scripts\activate`
+```
+
 - Install CodeQL and dependencies by following [/growlithe/graph/codeql/README.md](/growlithe/graph/codeql/README.md)
 - Install Growlithe by running `pip install -e .` in the root directory.
-- If your application uses JavaScript functions, install Node.js for running the JavaScript analysis and code generation and run `npm install --prefix growlithe/graph/adg/js` to install the required dependencies.
+> Note: You may be prompted to install Microsoft Visual C++ Build Tools if using Windows. Download from [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/).
+
+- If using JavaScript functions, ensure Node.js is installed and install dependencies by running:
+`npm install --prefix growlithe/graph/adg/js`
 
 
 ## Usage
