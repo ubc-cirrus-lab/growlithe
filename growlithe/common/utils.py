@@ -7,6 +7,7 @@ primarily for performance profiling and timing of function executions.
 
 import time
 import functools
+import subprocess
 from growlithe.common.logger import profiler_logger
 
 

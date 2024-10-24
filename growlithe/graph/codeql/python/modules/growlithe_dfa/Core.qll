@@ -1,6 +1,6 @@
 import python
 import semmle.python.dataflow.new.DataFlow
-import modules.Growlithe.Utils
+import modules.growlithe_dfa.Utils
 
 module Core {
   abstract class Node extends DataFlow::Node {

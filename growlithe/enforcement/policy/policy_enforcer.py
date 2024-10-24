@@ -321,3 +321,31 @@ class Policy:
             return (
                 f"assert {' or '.join(valid_queries)}, 'Policy evaluated to be false'"
             )
+
+    def generate_javascript_assertion(self) -> str:
+        clauses = []
+        for clause in self.clauses:
+            predicates = []
+            for predicate in clause:
+                if predicate.op == 'eq':
+                    predicates.append(f"logic.eq({predicate.left}, {predicate.right})")
+                # Add more operations as needed (e.g., 'neq', 'gt', 'lt', etc.)
+            clauses.append(f"logic.and({', '.join(predicates)})")
+        
+        js_code = f"""
+            async function assertLogic() {{
+            const logic = require('logicjs');
+            const assert = require('assert');
+
+            const clauses = [
+                {',\n    '.join(clauses)}
+            ];
+
+            const result = logic.run(logic.or(...clauses));
+            
+            assert(result.length > 0, "No valid solution found");
+            }}
+
+            assertLogic().catch(error => console.error(error));
+        """
+        return js_code

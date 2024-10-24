@@ -20,7 +20,7 @@ from growlithe.common.dev_config import (
     RUN_CODEQL_QUERIES,
 )
 from growlithe.common.file_utils import create_dir_if_not_exists, detect_languages
-from growlithe.common.utils import profiler_decorator
+from growlithe.common.utils import profiler_decorator, initialize_node
 from growlithe.config import get_config
 
 

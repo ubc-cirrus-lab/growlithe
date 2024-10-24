@@ -1,6 +1,6 @@
 import javascript
 import DataFlow
-import modules.Growlithe.Utils
+import modules.growlithe_dfa.Utils
 
 module Core {
   abstract class Node extends DataFlow::Node {
@@ -33,7 +33,8 @@ module Core {
     Utils::InterfaceType getInterfaceType() { result = "SINK" }
 
     string getFlowState() {
-      result = getInterfaceType() + ", " + getShareType() + ", " + getResource() + ", " + getObjectPath()
+      result =
+        getInterfaceType() + ", " + getShareType() + ", " + getResource() + ", " + getObjectPath()
     }
   }
 

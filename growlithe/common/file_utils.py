@@ -1,6 +1,8 @@
 import os
 import ast
+import json
 import shutil
+import subprocess
 
 from growlithe.common.logger import logger
 from growlithe.common.utils import profiler_decorator
@@ -119,18 +121,42 @@ def save_files(graph, growlithe_lib_path):
     None
     """
     for function in graph.functions:
-        if not function.runtime.startswith("python"):
-            logger.error(
-                f"runtime {function.runtime} not completed. Skipping save for {function.name}"
-            )
-            continue
         logger.info(
             "Saving function %s to %s", function.name, function.growlithe_function_path
         )
-        os.makedirs(os.path.dirname(function.growlithe_function_path), exist_ok=True)
-        with open(function.growlithe_function_path, "w") as f:
-            f.write(ast.unparse(ast.fix_missing_locations(function.code_tree)))
-        local_lib_path = os.path.join(
-            os.path.dirname(function.growlithe_function_path), "growlithe_predicates.py"
-        )
-        shutil.copy(growlithe_lib_path, local_lib_path)
+        if function.runtime.startswith("python"):
+            os.makedirs(
+                os.path.dirname(function.growlithe_function_path), exist_ok=True
+            )
+            with open(function.growlithe_function_path, "w") as f:
+                f.write(ast.unparse(ast.fix_missing_locations(function.code_tree)))
+            local_lib_path = os.path.join(
+                os.path.dirname(function.growlithe_function_path),
+                "growlithe_predicates.py",
+            )
+            shutil.copy(growlithe_lib_path, local_lib_path)
+        elif function.runtime.startswith("nodejs"):
+            os.makedirs(
+                os.path.dirname(function.growlithe_function_path), exist_ok=True
+            )
+            with open("tmp.json", "w", encoding="utf-8") as f:
+                json.dump(function.code_tree, f, ensure_ascii=False, indent=4)
+            subprocess.run(
+                [
+                    "node",
+                    "growlithe/graph/adg/js/ast2file.js",
+                    "tmp.json",
+                    function.growlithe_function_path,
+                ],
+                check=True,
+            )
+            os.remove("tmp.json")
+            # TODO: add the predicates file for nodejs
+            local_lib_path = os.path.join(
+                os.path.dirname(function.growlithe_function_path),
+                "growlithe_predicates.js",
+            )
+            shutil.copy(growlithe_lib_path, local_lib_path)
+        else:
+            logger.error("Unsupported runtime %s", function.runtime)
+            raise NotImplementedError

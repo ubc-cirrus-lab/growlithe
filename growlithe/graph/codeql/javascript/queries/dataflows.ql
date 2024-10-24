@@ -4,7 +4,7 @@
  */
 
 import javascript
-import modules.Growlithe.TaintAnalysis
+import modules.growlithe_dfa.TaintAnalysis
 
 // from TaintAnalysis::Tracker config, DataFlow::PathNode edgeSource, DataFlow::PathNode edgeSink
 // where

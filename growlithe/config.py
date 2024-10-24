@@ -56,7 +56,7 @@ class Config:
                     os.path.dirname(__file__),
                     "enforcement",
                     "policy",
-                    "template",
+                    "platform_predicates",
                     "growlithe_utils_gcp.py",
                 )
         else:
@@ -94,14 +94,14 @@ class Config:
                 os.path.dirname(__file__),
                 "enforcement",
                 "policy",
-                "template",
+                "platform_predicates",
                 "growlithe_utils_aws.py",
             ),
             "pydatalog_layer_path": os.path.join(
                 os.path.dirname(__file__),
                 "enforcement",
                 "policy",
-                "template",
+                "platform_predicates",
                 "pydatalog.zip",
             ),
             "benchmark_name": "Benchmark2",
@@ -143,7 +143,9 @@ class Config:
         self.benchmark_path = os.path.dirname(self.app_config_path)
         self.app_path = self.benchmark_path
         self.src_path = os.path.join(self.app_path, self.src_dir)
-        self.growlithe_path = os.path.join(os.path.dirname(self.app_path), f"growlithe_{self.app_name}")
+        self.growlithe_path = os.path.join(
+            os.path.dirname(self.app_path), f"growlithe_{self.app_name}"
+        )
 
         self.graph_dump_path = os.path.join(self.growlithe_path, "graph_dump.pkl")
         self.config_dump_path = os.path.join(self.growlithe_path, "config_dump.pkl")
