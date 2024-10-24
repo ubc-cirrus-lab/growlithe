@@ -104,14 +104,14 @@ class Config:
                 "template",
                 "pydatalog.zip",
             ),
-            "benchmark_name": "Benchmark3-GCP",
-            "app_name": "ShoppingCart",
+            "benchmark_name": "Benchmark2",
+            "app_name": "ImageProcessing",
             "src_dir": "src",
-            "app_config_type": "Terraform",
+            "app_config_type": "SAM",
             "app_config_path": os.path.join(
-                growlithe_results_path, "Benchmark3-GCP", "ShoppingCart", "main.tf"
+                growlithe_results_path, "Benchmark2", "ImageProcessing", "template.yaml"
             ),
-            "cloud_provider": "GCP",
+            "cloud_provider": "AWS",
         }
 
     def load_from_file(self, config_path):

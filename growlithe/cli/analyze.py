@@ -42,9 +42,6 @@ def analyze(config):
 
     languages = detect_languages(path=config.app_path)
 
-    if "javascript" in languages:
-        initialize_node()
-
     # Run Static analysis
     create_dir_if_not_exists(path=config.growlithe_path)
     analyzer = Analyzer(config)

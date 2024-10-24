@@ -9,7 +9,7 @@ Our 2025 IEEE S&P paper provides more details about the design of Growlithe:
 - Create a new virtual environment with python v3.10, and activate it.
 - Install CodeQL and dependencies by following [/growlithe/graph/codeql/README.md](/growlithe/graph/codeql/README.md)
 - Install Growlithe by running `pip install -e .` in the root directory.
-- If your application uses JavaScript functions, install Node.js for running the JavaScript analysis and code generation.
+- If your application uses JavaScript functions, install Node.js for running the JavaScript analysis and code generation and run `npm install --prefix growlithe/graph/adg/js` to install the required dependencies.
 
 
 ## Usage
