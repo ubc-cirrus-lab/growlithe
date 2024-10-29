@@ -327,11 +327,11 @@ class Policy:
         for clause in self.clauses:
             predicates = []
             for predicate in clause:
-                if predicate.op == 'eq':
+                if predicate.op == "eq":
                     predicates.append(f"logic.eq({predicate.left}, {predicate.right})")
                 # Add more operations as needed (e.g., 'neq', 'gt', 'lt', etc.)
             clauses.append(f"logic.and({', '.join(predicates)})")
-        
+
         js_code = f"""
             async function assertLogic() {{
             const logic = require('logicjs');
