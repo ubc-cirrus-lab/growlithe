@@ -101,7 +101,7 @@ class PredicateSet:
                         )
                 elif taint_pred.predicate_name == "taintSetExcludes":
                     # If no possible matches for arg2 exist for ancestors of node in arg1,\
-                    # mark this pred as successfull and do not defer, else defer
+                    # mark this pred as successful and do not defer, else defer
                     possible_match = False
                     for ancestor in node.ancestor_nodes.union(node.ancestor_functions):
                         if offline_match(taint_pred.arguments[1], ancestor):
@@ -327,11 +327,11 @@ class Policy:
         for clause in self.clauses:
             predicates = []
             for predicate in clause:
-                if predicate.op == 'eq':
+                if predicate.op == "eq":
                     predicates.append(f"logic.eq({predicate.left}, {predicate.right})")
                 # Add more operations as needed (e.g., 'neq', 'gt', 'lt', etc.)
             clauses.append(f"logic.and({', '.join(predicates)})")
-        
+
         js_code = f"""
             async function assertLogic() {{
             const logic = require('logicjs');

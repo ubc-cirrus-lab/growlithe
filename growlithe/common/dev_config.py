@@ -33,5 +33,5 @@ FILE_LOG_LEVEL = "INFO"
 codeql_queries = ["dataflows", "metadataflows"]
 
 # Default policy config to generate
-# TODO: Set to allow for ease of testing, can be set to default deny 
+# TODO: Set to allow for ease of testing, can be set to default deny
 DEFAULT_POLICY = "allow"

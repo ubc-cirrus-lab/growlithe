@@ -10,7 +10,7 @@ GROWLITHE_INVOCATION_ID = ""
 GROWLITHE_FILE_TAINTS = defaultdict(default_value)
 
 ##==================================================================#
-# Arithemtic predicates for numerical operations
+# Arithmetic predicates for numerical operations
 pyDatalog.load(
     """
     add(X, Y, Z) <= (X == Y + Z)
