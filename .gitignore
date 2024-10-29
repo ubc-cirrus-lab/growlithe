@@ -37,5 +37,5 @@ __pycache__/
 tmp/
 
 policies.txt
-venv/
+env/
 growlithe.egg-info/
