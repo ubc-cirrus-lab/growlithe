@@ -3,7 +3,7 @@ Growlithe is tool that integrates with the serverless application development li
 Growlithe allows specifying declarative policies on an application's  dataflow graph, and enforces them with static and runtime checks.
 
 Our 2025 IEEE S&P paper provides more details about the design of Growlithe:
-- [Growlithe: A Developer-Centric Compliance Tool for Serverless Applications](#)
+- [Growlithe: A Developer-Centric Compliance Tool for Serverless Applications](https://cirrus.ece.ubc.ca/papers/sp25_growlithe.pdf)
 
 ## Setup
 - Create a [new virtual environment](https://docs.python.org/3/library/venv.html) with python v3.10, and activate it.
