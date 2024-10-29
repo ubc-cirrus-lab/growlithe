@@ -147,7 +147,7 @@ class TaintTracker:
                     and getattr(ast_node, "end_lineno", None) == end_line
                 ):
                     if sink_node.object_type == "S3_BUCKET":
-                        # add taint to the metadat of the s3 object.
+                        # add taint to the metadata of the s3 object.
                         tree.body[i].value.keywords.append(
                             ast.keyword(
                                 arg="ExtraArgs",
