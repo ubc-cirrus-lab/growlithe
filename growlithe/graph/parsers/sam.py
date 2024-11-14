@@ -459,7 +459,7 @@ class SAMParser:
             self.config.growlithe_path, "layers", "pydatalog.zip"
         )
         os.makedirs(destination, exist_ok=True)
-        if os.exists(self.config.pydatalog_layer_path):
+        if os.path.exists(self.config.pydatalog_layer_path):
             shutil.copy(self.config.pydatalog_layer_path, destination)
         else:
             logger.warning(f"No zip found at {self.config.pydatalog_layer_path}")
