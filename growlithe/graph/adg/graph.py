@@ -186,7 +186,9 @@ class Graph:
             edges (list): List of edges to update.
         """
         edge_id = policy_edge["id"]
-        edges[edge_id].update_policy(policy_edge)
+        for edge in edges:
+            if edge.edge_id == edge_id:
+                edge.update_policy(policy_edge)
 
     def insert_assertion(self, node: Node, assertion, code_path=None, tree=None):
         """

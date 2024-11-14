@@ -56,9 +56,7 @@ class Analyzer:
         except Exception as e:
             logger.error(f"Error while creating CodeQL database: {e}")
             raise Exception(f"Error while creating CodeQL database: {e}")
-        logger.info(
-            f"CodeQL database created: codeql_ir_{language}"
-        )
+        logger.info(f"CodeQL database created: codeql_ir_{language}")
 
     @profiler_decorator
     def run_codeql_queries(self, language):
