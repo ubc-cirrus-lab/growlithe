@@ -8,8 +8,8 @@ Our 2025 IEEE S&P paper provides more details about the design of Growlithe:
 ## Setup
 - Create a [new virtual environment](https://docs.python.org/3/library/venv.html) with python v3.10, and activate it.
 ```bash
-python -m venv env
-source env/bin/activate  # On Windows use `env\Scripts\activate`
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 ```
 
 - Install CodeQL and dependencies by following [/growlithe/graph/codeql/README.md](/growlithe/graph/codeql/README.md)
@@ -24,7 +24,7 @@ source env/bin/activate  # On Windows use `env\Scripts\activate`
 Activate the virtual environment, then:
 - Navigate to your serverless application, create a file `growlithe_config.yaml` with the following configuration:
 ```yaml
-app_path: <Relative path to the main application>
+# app_path: <Relative path to the main application>
 app_name: <Name of the application>
 src_dir: <Source code of the application relative to app_path>
 app_config_path: <Relative path to the application configuration>
