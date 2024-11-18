@@ -5,7 +5,8 @@
 
 # codeql databases
 codeqldb/
-
+growlithe_*/
+benchmarks/*/growlithe*.yaml
 # test files
 test.ql
 test.py
@@ -37,5 +38,8 @@ __pycache__/
 tmp/
 
 policies.txt
-env/
+venv/
 growlithe.egg-info/
+
+# Growlithe outputs
+growlithe_SampleApp/

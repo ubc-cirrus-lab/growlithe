@@ -44,7 +44,7 @@ class Config:
         self._initialized = True
 
         self.config = {}
-
+        self.config_path = config_path
         default_config = self.get_defaults()
 
         if config_path and os.path.exists(config_path):
@@ -159,7 +159,12 @@ class Config:
         self.policy_spec_path = os.path.join(self.growlithe_path, "policy_spec.json")
 
     def make_paths_absolute(self):
-        """Convert all path attributes to absolute paths."""
+        """Convert all path attributes to absolute paths based on config file's directory."""
+        if not hasattr(self, "config_path"):
+            raise AttributeError("config_path is not set. Cannot make paths absolute.")
+
+        config_dir = os.path.dirname(os.path.abspath(self.config_path))
+
         path_attributes = [
             "app_config_path",
             "benchmark_path",
@@ -173,9 +178,18 @@ class Config:
             "nodes_path",
             "policy_spec_path",
         ]
+
         for attr in path_attributes:
             if hasattr(self, attr):
-                setattr(self, attr, os.path.abspath(getattr(self, attr)))
+                current_path = getattr(self, attr)
+                if not os.path.isabs(current_path):
+                    absolute_path = os.path.normpath(
+                        os.path.join(config_dir, current_path)
+                    )
+                    setattr(self, attr, absolute_path)
+                else:
+                    # If the path is already absolute, keep it as is
+                    setattr(self, attr, current_path)
 
     def __str__(self):
         """

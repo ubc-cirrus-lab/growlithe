@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Serverless State Machine App
+Resources:
+  Function1:
+    Properties:
+      CodeUri: src/
+      Environment:
+        Variables:
+          BUCKET_NAME: sample-test-bucket
+      Handler: function1.lambda_handler
+      Policies:
+      - S3CrudPolicy:
+          BucketName: sample-test-bucket
+      Runtime: python3.10
+    Type: AWS::Serverless::Function
+  Function2:
+    Properties:
+      CodeUri: src/
+      Environment:
+        Variables:
+          BUCKET_NAME: sample-test-bucket
+      Handler: function2.lambda_handler
+      Policies:
+      - S3CrudPolicy:
+          BucketName: sample-test-bucket
+      Runtime: python3.10
+    Type: AWS::Serverless::Function
+  StateMachine:
+    Properties:
+      DefinitionSubstitutions:
+        function1-arn: !GetAtt 'Function1.Arn'
+        function2-arn: !GetAtt 'Function2.Arn'
+      DefinitionUri: state_machine.asl.json
+      Policies:
+      - LambdaInvokePolicy:
+          FunctionName: '*'
+      - S3CrudPolicy:
+          BucketName: sample-test-bucket
+    Type: AWS::Serverless::StateMachine
+Transform: AWS::Serverless-2016-10-31

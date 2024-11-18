@@ -193,7 +193,7 @@ class PolicyClause:
                     ):
                         try:
                             if cloud_provider == "AWS":
-                                from growlithe.enforcement.policy.template.growlithe_utils_aws import (
+                                from growlithe.enforcement.policy.platform_predicates.growlithe_utils_aws import (
                                     getResourceProp,
                                 )
 
@@ -209,7 +209,7 @@ class PolicyClause:
                                     )
                                     logger.info(f"Resolved {var} to {prop}")
                                 else:
-                                    from growlithe.enforcement.policy.template.growlithe_utils_gcp import (
+                                    from growlithe.enforcement.policy.platform_predicates.growlithe_utils_gcp import (
                                         getResourceProp,
                                     )
 
@@ -326,26 +326,73 @@ class Policy:
         clauses = []
         for clause in self.clauses:
             predicates = []
+            variables = set([])
+            temp_counter = 0
             for predicate in clause:
+                for arg in predicate.args:
+                    variables.add(f"GROWLITHE_INLINE_{arg.strip()}")
                 if predicate.op == "eq":
-                    predicates.append(f"logic.eq({predicate.left}, {predicate.right})")
-                # Add more operations as needed (e.g., 'neq', 'gt', 'lt', etc.)
-            clauses.append(f"logic.and({', '.join(predicates)})")
+                    predicates.append(
+                        f"logic.eq({predicate.args[0]}, {predicate.args[1]})"
+                    )
+                if predicate.op == "neq":
+                    predicates.append(
+                        f"logic.implies(logic.eq({predicate.args[0]}, {predicate.args[1]}), logic.fail)"
+                    )
+                if predicate.op == "lt":
+                    predicates.append(
+                        f"logic.and(logic.less_equal({predicate.args[0]}, {predicate.args[1]}), logic.implies(logic.eq({predicate.args[0]}, {predicate.args[1]}), logic.fail))"
+                    )
+                if predicate.op == "le":
+                    predicates.append(
+                        f"logic.less_equal({predicate.args[0]}, {predicate.args[1]})"
+                    )
+                if predicate.op == "gt":
+                    predicates.append(
+                        f"logic.implies(logic.less_equal({predicate.args[0]}, {predicate.args[1]}), logic.fail)"
+                    )
+                if predicate.op == "gte":
+                    predicates.append(
+                        f"logic.implies(logic.and(logic.less_equal({predicate.args[0]}, {predicate.args[1]}), logic.implies(logic.eq({predicate.args[0]}, {predicate.args[1]}), logic.fail)), logic.fail)"
+                    )
+                if predicate.op == "add":
+                    predicates.append(
+                        f"logic.add({predicate.args[2]}, {predicate.args[0]}, {predicate.args[1]})"
+                    )
+                if predicate.op == "sub":
+                    predicates.append(
+                        f"logic.sub({predicate.args[2]}, {predicate.args[0]}, {predicate.args[1]})"
+                    )
+                if predicate.op == "mul":
+                    predicates.append(
+                        f"logic.mul({predicate.args[2]}, {predicate.args[0]}, {predicate.args[1]})"
+                    )
+                if predicate.op == "div":
+                    predicates.append(
+                        f"logic.div({predicate.args[2]}, {predicate.args[0]}, {predicate.args[1]})"
+                    )
+                if predicate.op == "rem":  # TODO not tested
+                    temp1 = f"GROWLITHE_INLINE_TEMP_{temp_counter}"
+                    temp_counter = temp_counter + 1
+                    variables.add(temp1)
+                    temp2 = f"GROWLITHE_INLINE_TEMP_{temp_counter}"
+                    temp_counter = temp_counter + 1
+                    variables.add(temp2)
+                    predicates.append(
+                        f"logic.and(logic.div(x, y, {temp1}), logic.mul(y, {temp1}, {temp2}), logic.sub(x, {temp2}, ans))"
+                    )
+                # Does not include: string based (except equality), data based, or taint based predicates
 
         js_code = f"""
-            async function assertLogic() {{
-            const logic = require('logicjs');
-            const assert = require('assert');
-
-            const clauses = [
-                {',\n    '.join(clauses)}
-            ];
-
-            const result = logic.run(logic.or(...clauses));
-            
-            assert(result.length > 0, "No valid solution found");
-            }}
-
-            assertLogic().catch(error => console.error(error));
+            await (async (logic, assert) => {{
+                var {', '.append(map(lambda s: f"{s} = logic.lvar()", variables))};
+                assert(
+                    logic.run(
+                        {clauses.append(f"logic.and({', '.join(predicates)})")},
+                        [{', '.append(list(variables))}]
+                    ).length == 0,
+                    false
+                );
+            }})(require(\"logicjs\"), require(\"assert\"));
         """
         return js_code

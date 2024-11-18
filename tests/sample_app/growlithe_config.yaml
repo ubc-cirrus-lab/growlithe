@@ -1,0 +1,6 @@
+app_path: .
+app_name: SampleApp
+src_dir: src
+app_config_path: template.yaml
+app_config_type: SAM
+cloud_provider: AWS

@@ -12,6 +12,7 @@ from growlithe.graph.adg.node import Node
 from itertools import count
 from growlithe.common.dev_config import DEFAULT_POLICY
 
+
 class EdgeType(Enum):
     """
     Enum class to define the type of edge.
