@@ -1,0 +1,178 @@
+[
+    {
+        "id": 0,
+        "source": "0:SourceCode:$event",
+        "sink": "1:tempfs:$transformed_temp_file",
+        "read": "allow",
+        "write": "allow",
+        "function": "TransformFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\transform_image\\app.py)"
+    },
+    {
+        "id": 1,
+        "source": "2:tempfs:$tempFile",
+        "sink": "1:tempfs:$transformed_temp_file",
+        "read": "allow",
+        "write": "allow",
+        "function": "TransformFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\transform_image\\app.py)"
+    },
+    {
+        "id": 3,
+        "source": "0:SourceCode:$event",
+        "sink": "7:$bucket_name:$output_key",
+        "read": "allow",
+        "write": "eq(InstRegion, ResourceRegion) & concat(Label, ResourceName, ':*') & taintSetIncludes(PredNode, Label)",
+        "function": "TransformFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\transform_image\\app.py)"
+    },
+    {
+        "id": 4,
+        "source": "1:tempfs:$transformed_temp_file",
+        "sink": "7:$bucket_name:$output_key",
+        "read": "allow",
+        "write": "eq(InstRegion, ResourceRegion) & concat(Label, ResourceName, ':*') & taintSetIncludes(PredNode, Label)",
+        "function": "TransformFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\transform_image\\app.py)"
+    },
+    {
+        "id": 5,
+        "source": "0:SourceCode:$event",
+        "sink": "2:tempfs:$tempFile",
+        "read": "allow",
+        "write": "allow",
+        "function": "TransformFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\transform_image\\app.py)"
+    },
+    {
+        "id": 6,
+        "source": "14:$bucket_name:$object_key",
+        "sink": "2:tempfs:$tempFile",
+        "read": "eq(InstRegion, ResourceRegion)",
+        "write": "allow",
+        "function": "TransformFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\transform_image\\app.py)"
+    },
+    {
+        "id": 7,
+        "source": "18:SourceCode:$event",
+        "sink": "19:$bucket_name:$output_key",
+        "read": "allow",
+        "write": "eq(InstRegion, ResourceRegion) & concat(Label, ResourceName, ':*') & taintSetIncludes(PredNode, Label)",
+        "function": "FilterFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\filter_image\\app.py)"
+    },
+    {
+        "id": 8,
+        "source": "20:tempfs:$transformed_temp_file",
+        "sink": "19:$bucket_name:$output_key",
+        "read": "allow",
+        "write": "eq(InstRegion, ResourceRegion) & concat(Label, ResourceName, ':*') & taintSetIncludes(PredNode, Label)",
+        "function": "FilterFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\filter_image\\app.py)"
+    },
+    {
+        "id": 10,
+        "source": "18:SourceCode:$event",
+        "sink": "20:tempfs:$transformed_temp_file",
+        "read": "allow",
+        "write": "allow",
+        "function": "FilterFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\filter_image\\app.py)"
+    },
+    {
+        "id": 11,
+        "source": "28:tempfs:$tempFile",
+        "sink": "20:tempfs:$transformed_temp_file",
+        "read": "allow",
+        "write": "allow",
+        "function": "FilterFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\filter_image\\app.py)"
+    },
+    {
+        "id": 12,
+        "source": "18:SourceCode:$event",
+        "sink": "28:tempfs:$tempFile",
+        "read": "allow",
+        "write": "allow",
+        "function": "FilterFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\filter_image\\app.py)"
+    },
+    {
+        "id": 13,
+        "source": "34:$bucket_name:$object_key",
+        "sink": "28:tempfs:$tempFile",
+        "read": "eq(InstRegion, ResourceRegion)",
+        "write": "allow",
+        "function": "FilterFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\filter_image\\app.py)"
+    },
+    {
+        "id": 14,
+        "source": "36:SourceCode:$event",
+        "sink": "37:$final_bucket_name:$final_object_key",
+        "read": "allow",
+        "write": "allow",
+        "function": "TagStoreFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\tag_store_image\\app.py)"
+    },
+    {
+        "id": 15,
+        "source": "38:tempfs:$tempFile",
+        "sink": "37:$final_bucket_name:$final_object_key",
+        "read": "allow",
+        "write": "(eq(InstRegion, ResourceRegion) & eq(Resource, 'FinalAdvertImgs') & taintSetIncludes(PredNode, 'AdvertImgs:*')) or (eq(InstRegion, ResourceRegion) & eq(Resource, 'FinalUserImgs') & taintSetIncludes(PredNode, 'UserImgs:*')) & taintSetIncludes(PredNode, 'Blur'))",
+        "function": "TagStoreFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\tag_store_image\\app.py)"
+    },
+    {
+        "id": 17,
+        "source": "36:SourceCode:$event",
+        "sink": "38:tempfs:$tempFile",
+        "read": "allow",
+        "write": "allow",
+        "function": "TagStoreFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\tag_store_image\\app.py)"
+    },
+    {
+        "id": 18,
+        "source": "46:$bucket_name:$object_key",
+        "sink": "38:tempfs:$tempFile",
+        "read": "eq(InstRegion, ResourceRegion)",
+        "write": "allow",
+        "function": "TagStoreFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\tag_store_image\\app.py)"
+    },
+    {
+        "id": 19,
+        "source": "48:SourceCode:$event",
+        "sink": "49:tempfs:$transformed_temp_file",
+        "read": "allow",
+        "write": "allow",
+        "function": "BlurFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\blur_image\\app.py)"
+    },
+    {
+        "id": 20,
+        "source": "50:tempfs:$tempFile",
+        "sink": "49:tempfs:$transformed_temp_file",
+        "read": "allow",
+        "write": "allow",
+        "function": "BlurFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\blur_image\\app.py)"
+    },
+    {
+        "id": 22,
+        "source": "48:SourceCode:$event",
+        "sink": "55:$bucket_name:$output_key",
+        "read": "allow",
+        "write": "eq(InstRegion, ResourceRegion) & concat(Label, ResourceName, ':*') & taintSetIncludes(PredNode, Label)",
+        "function": "BlurFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\blur_image\\app.py)"
+    },
+    {
+        "id": 23,
+        "source": "49:tempfs:$transformed_temp_file",
+        "sink": "55:$bucket_name:$output_key",
+        "read": "allow",
+        "write": "eq(InstRegion, ResourceRegion) & concat(Label, ResourceName, ':*') & taintSetIncludes(PredNode, Label)",
+        "function": "BlurFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\blur_image\\app.py)"
+    },
+    {
+        "id": 24,
+        "source": "48:SourceCode:$event",
+        "sink": "50:tempfs:$tempFile",
+        "read": "allow",
+        "write": "allow",
+        "function": "BlurFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\blur_image\\app.py)"
+    },
+    {
+        "id": 25,
+        "source": "62:$bucket_name:$object_key",
+        "sink": "50:tempfs:$tempFile",
+        "read": "eq(InstRegion, ResourceRegion)",
+        "write": "allow",
+        "function": "BlurFunction (D:\\Code\\growlithe-results\\Benchmark2\\ImageProcessing\\src\\blur_image\\app.py)"
+    }
+]

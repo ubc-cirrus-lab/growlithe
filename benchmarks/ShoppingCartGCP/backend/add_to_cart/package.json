@@ -1,0 +1,10 @@
+{
+  "main": "function.js",
+  "dependencies": {
+    "@google-cloud/firestore": "^6.0.0",
+    "@google-cloud/functions-framework": "^3.0.0",
+    "axios": "^0.21.1",
+    "cookie": "^0.4.0",
+    "firebase-admin": "^12.5.0"
+  }
+}
