@@ -1,0 +1,58 @@
+[
+    {
+        "id": 0,
+        "source": "0:SourceCode:$event",
+        "sink": "1:Claims:$item",
+        "read": "allow",
+        "write": "allow",
+        "function": "AddClaimFunction (D:\\Code\\growlithe-results\\Benchmark1\\ClaimProcessing\\src\\addClaim\\app.py)"
+    },
+    {
+        "id": 2,
+        "source": "5:Claims:$Dict",
+        "sink": "4:SourceCode:$response",
+        "read": "(getVal(U, SessionAuth, 'sub') & getVal(C, ObjectHandler, 'UserID') & eq(U, C)) or (getVal(U, SessionAuth, 'sub') & getExternalVal(A, 'ClaimAdjMap', Object, 'AdjID') & eq(U, A))",    
+        "write": "allow",
+        "function": "GetClaimFunction (D:\\Code\\growlithe-results\\Benchmark1\\ClaimProcessing\\src\\getClaim\\app.py)"
+    },
+    {
+        "id": 3,
+        "source": "7:SourceCode:$event",
+        "sink": "8:Claims:$Dict",
+        "read": "allow",
+        "write": "allow",
+        "function": "UpdateClaimFunction (D:\\Code\\growlithe-results\\Benchmark1\\ClaimProcessing\\src\\updateClaim\\app.py)"
+    },
+    {
+        "id": 5,
+        "source": "12:SourceCode:$event",
+        "sink": "13:ClaimProcessing-AssignAdjusterFunction-D2B89MEqaZiN:$payload",
+        "read": "allow",
+        "write": "allow",
+        "function": "ValidateClaimFunction (D:\\Code\\growlithe-results\\Benchmark1\\ClaimProcessing\\src\\backend\\validateClaim\\app.py)"
+    },
+    {
+        "id": 6,
+        "source": "14:SourceCode:$event",
+        "sink": "15:ClaimAdjusterMapping:$item",
+        "read": "allow",
+        "write": "allow",
+        "function": "AssignAdjusterFunction (D:\\Code\\growlithe-results\\Benchmark1\\ClaimProcessing\\src\\backend\\assignAdjuster\\app.py)"
+    },
+    {
+        "id": 7,
+        "source": "16:Adjusters:ALL_RECORDS",
+        "sink": "15:ClaimAdjusterMapping:$item",
+        "read": "allow",
+        "write": "taintSetExcludes(CurrNode, 'UserPlan:*')",
+        "function": "AssignAdjusterFunction (D:\\Code\\growlithe-results\\Benchmark1\\ClaimProcessing\\src\\backend\\assignAdjuster\\app.py)"
+    },
+    {
+        "id": 8,
+        "source": "19:ClaimAdjusterMapping:ALL_RECORDS",
+        "sink": "20:SourceCode:$Dict",
+        "read": "allow",
+        "write": "allow",
+        "function": "GetAssignedClaimsFunction (D:\\Code\\growlithe-results\\Benchmark1\\ClaimProcessing\\src\\getAssignedClaims\\app.py)"
+    }
+]

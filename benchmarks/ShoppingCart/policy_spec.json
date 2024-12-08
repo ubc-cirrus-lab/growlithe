@@ -1,0 +1,37 @@
+[
+    {
+        "id": 0,
+        "source": "2:SourceCode:$event",
+        "sink": "3:amplify-aws-serverless-shopping-cart-shoppingcart-service-DynamoDBShoppingCartTable-10FXG2YGDBN55:$key",
+        "read": "getVal(R, SessionAuth, 'address', 'region') & eq(R, SessionRegion) & eq(R, InstRegion)",
+        "write": "allow"
+    },
+    {
+        "id": 1,
+        "source": "4:API:$BinaryExpr",
+        "sink": "3:amplify-aws-serverless-shopping-cart-shoppingcart-service-DynamoDBShoppingCartTable-10FXG2YGDBN55:$key",
+        "read": "allow",
+        "write": "allow"
+    },
+    {
+        "id": 5,
+        "source": "14:$Subscript:$Query",
+        "sink": "15:$Subscript:$Dict",
+        "read": "eq(InstRegion, ResourceRegion)",
+        "write": "allow"
+    },
+    {
+        "id": 6,
+        "source": "14:$Subscript:$Query",
+        "sink": "13:SourceCode:$Dict",
+        "read": "allow",
+        "write": "allow"
+    },
+    {
+        "id": 7,
+        "source": "2:SourceCode:$event",
+        "sink": "4:API:$BinaryExpr",
+        "read": "allow",
+        "write": "isSuffix(ResourceName, SessionRegion)"
+    }
+]

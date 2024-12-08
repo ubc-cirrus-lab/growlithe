@@ -1,0 +1,5 @@
+app_path: SampleApp/
+app_name: SensitivityStudy
+src_dir: src
+app_config_path: SampleApp/template.yaml
+app_config_type: SAM
